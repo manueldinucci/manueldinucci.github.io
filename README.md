@@ -3,7 +3,7 @@
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
 
-## Novità v10
+## Novità v11
 
 - header con pulsanti tema e impostazioni `⚙`;
 - pulsante `FANTA` rinominato `LIVE`;
@@ -296,9 +296,9 @@ Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Ast
 
 Il Service Worker usa la cache `fantacalcio-checklist-v9`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
 
-## Novità v10 — schermata principale più operativa
+## Novità v11 — schermata principale più operativa
 
-La v10 elimina completamente la vecchia modalità ASTA: non esistono più pulsante, filtro o stato dedicato. La schermata corrente è sempre quella operativa.
+La v11 elimina completamente la vecchia modalità ASTA: non esistono più pulsante, filtro o stato dedicato. La schermata corrente è sempre quella operativa.
 
 Nell'header trovi il pulsante tema e `⚙` per gli strumenti. Il pulsante `LIVE` apre la situazione Fantallenatori.
 

@@ -382,9 +382,6 @@
 
   function renderCountsAndDemand() {
     const rolePlayers = state.players.filter(p => p.ruolo === state.role);
-    const taken = rolePlayers.filter(p => p.preso).length;
-    const available = rolePlayers.length - taken;
-    $('counts').textContent = `Presi: ${taken} · Rimasti: ${available} · Totali: ${rolePlayers.length}`;
     renderDemandSummary(rolePlayers);
   }
 
