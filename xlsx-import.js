@@ -1,5 +1,6 @@
 (() => {
   const APP_FIELDS = [
+    { key: 'source_id', label: 'ID listone', required: false, aliases: ['id','id giocatore','codice','codice giocatore'] },
     { key: 'nome', label: 'Nome', required: true, aliases: ['nome','calciatore','giocatore','player'] },
     { key: 'squadra', label: 'Squadra', required: false, aliases: ['squadra','team','club'] },
     { key: 'ruolo', label: 'Ruolo', required: true, aliases: ['r','ruolo','role'] },
@@ -95,12 +96,47 @@
     throw new Error('Formato non supportato. Usa .xlsx, .csv o .json.');
   }
 
+  function headerRowScore(row) {
+    if (!Array.isArray(row)) return -1;
+    const cells = row.map(v => normalizeHeader(v)).filter(Boolean);
+    if (!cells.length) return -1;
+    let score = 0;
+    const exact = new Set(cells);
+    const aliases = APP_FIELDS.flatMap(f => f.aliases.map(normalizeHeader));
+    for (const cell of cells) {
+      if (aliases.includes(cell)) score += 3;
+    }
+    if (exact.has('nome') || exact.has('calciatore') || exact.has('giocatore')) score += 8;
+    if (exact.has('r') || exact.has('ruolo')) score += 7;
+    if (exact.has('squadra') || exact.has('team')) score += 4;
+    if (exact.has('fvm') || exact.has('fvm m')) score += 4;
+    if (exact.has('id')) score += 2;
+    return score;
+  }
+
+  function detectHeaderRow(rows, maxScan = 25) {
+    let bestIndex = 0;
+    let bestScore = -1;
+    const limit = Math.min(rows.length, maxScan);
+    for (let i = 0; i < limit; i++) {
+      const score = headerRowScore(rows[i]);
+      if (score > bestScore) { bestScore = score; bestIndex = i; }
+    }
+    return bestScore >= 10 ? bestIndex : 0;
+  }
+
   function rowsToImportModel(rows) {
-    const nonEmpty = rows.filter(r => Array.isArray(r) && r.some(v => String(v ?? '').trim() !== ''));
-    if (nonEmpty.length < 2) throw new Error('Il file non contiene intestazioni e righe dati sufficienti.');
-    const headers = makeUniqueHeaders(nonEmpty[0]);
-    const dataRows = nonEmpty.slice(1).map(r => headers.map((_, i) => r[i] ?? ''));
-    return { headers, rows: dataRows, mapping: inferMapping(headers) };
+    const original = rows.filter(r => Array.isArray(r));
+    if (original.length < 2) throw new Error('Il file non contiene intestazioni e righe dati sufficienti.');
+    const headerRowIndex = detectHeaderRow(original);
+    const rawHeaders = original[headerRowIndex] || [];
+    const lastHeaderCol = Math.max(0, rawHeaders.reduce((last, v, i) => String(v ?? '').trim() ? i : last, -1));
+    const headers = makeUniqueHeaders(rawHeaders.slice(0, lastHeaderCol + 1));
+    const dataRows = original.slice(headerRowIndex + 1)
+      .filter(r => r.some(v => String(v ?? '').trim() !== ''))
+      .map(r => headers.map((_, i) => r[i] ?? ''));
+    if (!headers.length || !dataRows.length) throw new Error('Non sono state trovate intestazioni e righe dati valide.');
+    return { headers, rows: dataRows, mapping: inferMapping(headers), headerRowIndex };
   }
 
   function cleanRole(value) {
@@ -133,6 +169,7 @@
       if (!nome) { issues.push(`Riga ${idx + 2}: nome mancante`); return; }
       if (!['P','D','C','A'].includes(ruolo)) { issues.push(`Riga ${idx + 2}: ruolo non riconosciuto (${get('ruolo') ?? ''})`); return; }
       players.push({
+        source_id: String(get('source_id') ?? '').trim(),
         nome,
         squadra: String(get('squadra') ?? '').trim(),
         ruolo,
@@ -148,6 +185,7 @@
     APP_FIELDS,
     normalizeHeader,
     inferMapping,
+    detectHeaderRow,
     readFileToRows,
     rowsToImportModel,
     buildPlayers

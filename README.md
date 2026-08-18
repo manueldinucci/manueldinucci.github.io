@@ -139,3 +139,22 @@ Il test verifica:
 - presenza di tutti gli asset dichiarati nel precache del Service Worker.
 
 Per i test iPhone/PWA è comunque obbligatoria la verifica manuale offline descritta sopra, perché il comportamento di installazione e gestione cache dipende da Safari/iOS.
+
+## Aggiornamenti quotidiani del listone Fantacalcio
+
+La build v2 riconosce automaticamente righe introduttive prima della tabella. Nel file ufficiale `Quotazioni_Fantacalcio_Stagione_2026_27.xlsx`, ad esempio, il titolo è alla riga 1 e le intestazioni reali (`Id`, `R`, `RM`, `Nome`, `Squadra`, `Qt.A`, ..., `FVM`) sono alla riga 2.
+
+L'importatore usa anche la colonna `Id` del listone come identificatore sorgente stabile. I dati sono separati in tre livelli:
+
+- dati listone: squadra, ruolo, Mantra, quotazione, FVM, ID sorgente;
+- dati personali: slot, Affare, Ideale min/max, Price cap, commento, preferito;
+- stato asta: preso, prezzo acquisto, manager.
+
+Perciò un nuovo XLSX può aggiornare quotazioni/FVM/squadra/ruolo senza sovrascrivere commenti, prezzi personali, preferiti o stato asta. Se un calciatore cambia squadra, l'ID stabile permette di riallineare i dati personali alla nuova chiave.
+
+Modalità import:
+
+- **Sostituisci listone**: rende l'elenco base coerente con il file appena importato, mantenendo i dati personali e d'asta dei giocatori riconosciuti. È la modalità più adatta per caricare l'ultima versione ufficiale prima dell'asta.
+- **Aggiorna esistente**: aggiorna e aggiunge i giocatori presenti nel file, ma non rimuove dal listone locale quelli assenti dal nuovo file.
+
+Prima di una sostituzione resta consigliato esportare un backup JSON.

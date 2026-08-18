@@ -22,7 +22,7 @@
     theme: 'system',
     selectedKey: null,
     importModel: null,
-    importMode: 'replace'
+    importMode: 'update'
   };
 
   let uiSaveTimer = null;
@@ -411,15 +411,15 @@
       state.importModel = FantaImport.rowsToImportModel(rows);
       state.importModel.fileName = file.name;
       state.importModel.fileSize = file.size;
-      state.importMode = 'replace';
-      $('importModeSegment').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'replace'));
+      state.importMode = 'update';
+      $('importModeSegment').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'update'));
       renderImportSheet(); openOnly('importSheet');
     } catch (err) { toast(err.message || 'Errore durante la lettura del file.'); }
   }
 
   function renderImportSheet() {
     const m = state.importModel; if (!m) return;
-    $('importFileMeta').textContent = `${m.fileName} · ${m.rows.length} righe dati`;
+    $('importFileMeta').textContent = `${m.fileName} · ${m.rows.length} righe dati · intestazioni riga ${m.headerRowIndex + 1}`;
     $('mappingGrid').innerHTML = FantaImport.APP_FIELDS.map(field => `
       <div class="mapping-row">
         <div class="app-field">${esc(field.label)}${field.required?' *':''}</div>
@@ -456,7 +456,7 @@
     try {
       const result = await FantaDB.importBasePlayers(players, state.importMode);
       await refreshPlayers(); closeAllSheets();
-      toast(`Importati ${result.imported} giocatori${result.duplicates.length ? ` · duplicati ignorati ${result.duplicates.length}` : ''}`);
+      toast(`Importati ${result.imported} · riconosciuti ${result.matched} · nuovi ${result.newPlayers}${result.migrated ? ` · appunti riallineati ${result.migrated}` : ''}${result.duplicates.length ? ` · duplicati ${result.duplicates.length}` : ''}`);
     } catch (err) { toast(err.message || 'Importazione non riuscita.'); }
   }
 

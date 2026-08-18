@@ -92,7 +92,8 @@
     const key = raw.key || makePlayerKey(raw.nome, raw.squadra);
     const base = {
       key,
-      id: raw.id || key,
+      id: raw.id || raw.source_id || key,
+      source_id: raw.source_id == null ? '' : String(raw.source_id).trim(),
       nome: String(raw.nome || '').trim(),
       squadra: String(raw.squadra || '').trim(),
       ruolo: String(raw.ruolo || '').trim().toUpperCase(),
@@ -197,23 +198,67 @@
   }
 
   async function importBasePlayers(players, mode = 'update') {
+    const existingBase = await getAll(STORES.base);
+    const existingPersonal = await getAll(STORES.personal);
+    const existingAuction = await getAll(STORES.auction);
+
+    const byKey = new Map(existingBase.map(x => [x.key, x]));
+    const bySourceId = new Map(existingBase.filter(x => x.source_id).map(x => [String(x.source_id), x]));
+    const byName = new Map();
+    for (const x of existingBase) {
+      const n = normalizeText(x.nome);
+      if (!byName.has(n)) byName.set(n, []);
+      byName.get(n).push(x);
+    }
+    const personalMap = new Map(existingPersonal.map(x => [x.key, x]));
+    const auctionMap = new Map(existingAuction.map(x => [x.key, x]));
+
     const prepared = [];
     const seen = new Set();
     const duplicates = [];
+    const migrations = [];
+    let matched = 0;
+    let newPlayers = 0;
+
     for (const raw of players) {
       const { base } = splitPlayerRecord(raw);
       if (!base.nome || !base.ruolo) continue;
       if (seen.has(base.key)) { duplicates.push(base.key); continue; }
       seen.add(base.key);
+
+      let previous = null;
+      if (base.source_id && bySourceId.has(String(base.source_id))) previous = bySourceId.get(String(base.source_id));
+      if (!previous && byKey.has(base.key)) previous = byKey.get(base.key);
+      if (!previous) {
+        const sameName = byName.get(normalizeText(base.nome)) || [];
+        if (sameName.length === 1) previous = sameName[0];
+      }
+
+      if (previous) {
+        matched++;
+        if (!base.source_id && previous.source_id) base.source_id = previous.source_id;
+        if (previous.key !== base.key) migrations.push({ oldKey: previous.key, newKey: base.key });
+      } else {
+        newPlayers++;
+      }
       prepared.push(base);
     }
 
-    await tx([STORES.base, STORES.meta], 'readwrite', stores => {
+    await tx([STORES.base, STORES.personal, STORES.auction, STORES.meta], 'readwrite', stores => {
       if (mode === 'replace') stores[STORES.base].clear();
+
+      for (const { oldKey, newKey } of migrations) {
+        const personal = personalMap.get(oldKey);
+        if (personal) { stores[STORES.personal].put({ ...personal, key: newKey }); stores[STORES.personal].delete(oldKey); }
+        const auction = auctionMap.get(oldKey);
+        if (auction) { stores[STORES.auction].put({ ...auction, key: newKey }); stores[STORES.auction].delete(oldKey); }
+        if (mode !== 'replace') stores[STORES.base].delete(oldKey);
+      }
+
       for (const base of prepared) stores[STORES.base].put(base);
-      stores[STORES.meta].put({ key: 'lastImport', value: { at: Date.now(), mode, count: prepared.length } });
+      stores[STORES.meta].put({ key: 'lastImport', value: { at: Date.now(), mode, count: prepared.length, matched, newPlayers, migrated: migrations.length } });
     });
-    return { imported: prepared.length, duplicates };
+    return { imported: prepared.length, duplicates, matched, newPlayers, migrated: migrations.length };
   }
 
   async function getSetting(key, fallback = null) {
