@@ -2,13 +2,25 @@
 
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
+
+## Novità v10
+
+- header con pulsanti tema e impostazioni `⚙`;
+- pulsante `FANTA` rinominato `LIVE`;
+- rimossa completamente la vecchia modalità ASTA;
+- una sola riga di fabbisogno, con `⚠` quando il bacino principale è inferiore agli slot ancora da riempire;
+- assegnazione dalla card tramite `+` nero a destra e rimozione protetta tramite `−` attenuato;
+- preferiti evidenziati con stella oro e nome oro, senza alterare lo sfondo S1–S5;
+- rimossi i filtri “Solo con commento” e “Modalità asta”.
+
 ## Cosa include
 
-- checklist per P / D / C / A con card compatte;
+- lista live P / D / C / A con card compatte e pulsanti `+ / −` per assegnazione/rimozione;
 - ordinamento alfabetico circolare da lettera scelta;
 - dimensione continua del nome basata su FVM e slider di enfasi;
-- preso/libero, preferiti, contatori e indicatore di scarsità;
-- filtri live per nome, squadra, slot, FVM, prezzo, preferiti, liberi e commenti;
+- preso/libero, preferiti e contatori;
+- riga fabbisogno ruolo-specifica basata su slot residui e giocatori S1–S5 ancora disponibili;
+- filtri live per nome, squadra, slot, FVM, prezzo, preferiti e liberi;
 - modalità compatta;
 - bottom sheet mobile per slot, Range Target, commento, prezzo acquisto e manager;
 - salvataggio automatico in IndexedDB;
@@ -18,7 +30,7 @@ PWA mobile-first e offline-first per usare l’iPhone come unico strumento duran
 - backup JSON completo e ripristino;
 - aggiunta/rimozione giocatori;
 - reset asta e reset completo con conferma forte;
-- tema chiaro/scuro con toggle immediato;
+- tema chiaro/scuro con pulsante dedicato nell’header;
 - Service Worker, manifest e icone PWA, senza API o CDN runtime.
 
 > Nota `.xls`: questa build gestisce direttamente `.xlsx`, `.csv` e `.json`. Il vecchio formato binario `.xls` viene rifiutato con un messaggio esplicito; basta salvarlo come `.xlsx` o `.csv` prima dell’importazione.
@@ -97,7 +109,7 @@ Questo test va fatto prima dell’asta reale, non il giorno stesso per la prima 
 
 ## Aggiornare il listone
 
-Apri **••• → IMPORTA LISTONE XLSX**.
+Apri **⚙ → IMPORTA LISTONE XLSX**.
 
 1. scegli il file dall’app File;
 2. controlla il mapping;
@@ -110,7 +122,7 @@ I campi personali e lo stato asta restano separati dal listone e vengono riassoc
 
 ## Backup
 
-Da **•••**:
+Da **⚙**:
 
 - **Esporta backup** genera un JSON completo scaricabile/salvabile nell’app File;
 - **Importa backup** ripristina listone, personalizzazioni, stato asta e impostazioni.
@@ -187,7 +199,7 @@ Il numero dei partecipanti coincide con le righe configurate: usa **+ Aggiungi**
 
 ### Assegnazione rapida
 
-Quando sono presenti fantallenatori configurati, il tap sulla checkbox di un giocatore libero apre il foglio rapido di assegnazione:
+Quando sono presenti fantallenatori configurati, il tap sul pulsante `+` di un giocatore libero apre il foglio rapido di assegnazione:
 
 1. scegli il fantallenatore;
 2. inserisci il prezzo;
@@ -199,7 +211,7 @@ Le statistiche non sono incrementate/decrementate in modo fragile: vengono sempr
 
 ### Pannello Fantallenatori
 
-Il pulsante **FANTA** apre il riepilogo con:
+Il pulsante **LIVE** apre il riepilogo con:
 
 - budget residuo / iniziale;
 - spesa totale;
@@ -258,7 +270,7 @@ La v9 rifinisce soprattutto la lettura live da iPhone.
 
 ### Fantallenatori
 
-La sezione **FANTA** usa ora una sola vista unificata. Ogni card mostra soltanto:
+La sezione **LIVE** usa ora una sola vista unificata. Ogni card mostra soltanto:
 
 - budget residuo;
 - max offerta;
@@ -283,3 +295,20 @@ Le card libere hanno anche una scala di grigi molto leggera basata su S1–S5. G
 Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Asta Live Manager** (`Asta Live` come short name PWA).
 
 Il Service Worker usa la cache `fantacalcio-checklist-v9`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
+
+## Novità v10 — schermata principale più operativa
+
+La v10 elimina completamente la vecchia modalità ASTA: non esistono più pulsante, filtro o stato dedicato. La schermata corrente è sempre quella operativa.
+
+Nell'header trovi il pulsante tema e `⚙` per gli strumenti. Il pulsante `LIVE` apre la situazione Fantallenatori.
+
+La schermata principale usa una sola riga di fabbisogno:
+
+- P: `P • Fabbisogno: X • S1 disponibili: Y • S2 disponibili: Z`
+- D: `D • Fabbisogno: X • S1-S3 disponibili: Y • S4-S5 disponibili: Z`
+- C: `C • Fabbisogno: X • S1-S3 disponibili: Y • S4-S5 disponibili: Z`
+- A: `A • Fabbisogno: X • S1-S2 disponibili: Y • S3 disponibili: Z`
+
+`⚠` compare solo quando il bacino principale è inferiore al fabbisogno residuo complessivo della lega.
+
+Sulle card, la stella è l'unico controllo a sinistra. A destra `+` assegna il giocatore; dopo l'assegnazione diventa `−` e richiede conferma prima di liberarlo. Lo sfondo resta legato allo slot S1–S5; un preferito usa stella e nome oro senza sostituire lo sfondo.
