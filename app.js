@@ -18,11 +18,12 @@
     onlyFavorites: false,
     onlyComments: false,
     compact: false,
+    liveMode: false,
     emphasis: 65,
     theme: 'system',
     selectedKey: null,
     importModel: null,
-    importMode: 'update'
+    importMode: 'replace'
   };
 
   let uiSaveTimer = null;
@@ -69,6 +70,7 @@
       onlyFavorites: state.onlyFavorites,
       onlyComments: state.onlyComments,
       compact: state.compact,
+      liveMode: state.liveMode,
       emphasis: state.emphasis
     };
   }
@@ -85,6 +87,11 @@
   }
 
   function renderAll() {
+    document.body.classList.toggle('auction-live', state.liveMode);
+    $('liveModeBtn').classList.toggle('active', state.liveMode);
+    $('liveModeBtn').setAttribute('aria-pressed', String(state.liveMode));
+    $('liveModeBtn').textContent = state.liveMode ? 'LIVE' : 'ASTA';
+    if ($('liveModeCheck')) $('liveModeCheck').checked = state.liveMode;
     renderRoleTabs();
     renderPlayers();
     renderCountsAndScarcity();
@@ -130,6 +137,7 @@
     $('onlyFavorites').checked = state.onlyFavorites;
     $('onlyComments').checked = state.onlyComments;
     $('compactMode').checked = state.compact;
+    $('liveModeCheck').checked = state.liveMode;
     $('emphasisSlider').value = state.emphasis;
     $('emphasisValue').textContent = `${state.emphasis}%`;
     $('minFvmFilter').value = state.minFvm;
@@ -209,7 +217,7 @@
     const frag = document.createDocumentFragment();
     for (const p of list) {
       const card = document.createElement('article');
-      card.className = `player-card${p.preso?' taken':''}${state.compact?' compact':''}`;
+      card.className = `player-card${p.preso?' taken':''}${state.compact?' compact':''}${state.liveMode?' live':''}`;
       card.dataset.key = p.key;
       const size = nameFontSize(p.fvm, scale).toFixed(1);
       card.innerHTML = `
@@ -218,7 +226,7 @@
         <div class="player-main" tabindex="0" role="button" aria-label="Apri ${esc(p.nome)}">
           <div class="player-line"><span class="player-name" style="font-size:${size}px">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
           <div class="player-prices">${esc(pricesText(p))}</div>
-          ${state.compact ? '' : `<div class="player-comment">${esc(p.commento || `FVM ${displayNum(p.fvm)} · ${p.slot || 'slot —'}`)}</div>`}
+          ${(state.compact && !state.liveMode) ? '' : `<div class="player-comment">${esc(p.commento || (state.liveMode ? '' : `FVM ${displayNum(p.fvm)} · ${p.slot || 'slot —'}`))}</div>`}
         </div>`;
       card.querySelector('.take-btn').addEventListener('click', () => toggleTaken(p.key));
       card.querySelector('.fav-btn').addEventListener('click', () => toggleFavorite(p.key));
@@ -231,12 +239,23 @@
     $('emptyState').classList.toggle('hidden', list.length !== 0);
   }
 
-  async function toggleTaken(key) {
+  async function toggleTaken(key, { allowUndo = true } = {}) {
     const p = state.players.find(x => x.key === key); if (!p) return;
+    const before = { preso: p.preso, prezzo_acquisto: p.prezzo_acquisto, manager_acquirente: p.manager_acquirente };
     p.preso = !p.preso;
     if (!p.preso) { p.prezzo_acquisto = null; p.manager_acquirente = ''; }
     await FantaDB.updateAuction(key, { preso: p.preso, prezzo_acquisto: p.prezzo_acquisto, manager_acquirente: p.manager_acquirente });
     renderPlayers(); renderCountsAndScarcity();
+    if (allowUndo) {
+      const action = p.preso ? 'segnato preso' : 'segnato libero';
+      toast(`${p.nome} ${action}`, 'Annulla', async () => {
+        Object.assign(p, before);
+        await FantaDB.updateAuction(key, before);
+        renderPlayers(); renderCountsAndScarcity();
+        if (state.selectedKey === key && !$('playerSheet').classList.contains('hidden')) openPlayerSheet(key, true);
+        toast('Modifica annullata');
+      }, 4800);
+    }
   }
 
   async function toggleFavorite(key) {
@@ -253,31 +272,53 @@
     const available = rolePlayers.length - taken;
     $('counts').textContent = `Presi: ${taken} · Rimasti: ${available} · Totali: ${rolePlayers.length}`;
 
-    const free = rolePlayers.filter(p => !p.preso);
-    const slotCounts = {};
-    free.forEach(p => { if (p.slot) slotCounts[p.slot] = (slotCounts[p.slot] || 0) + 1; });
-    const preferred = ['S1','S2','S3'];
-    const summary = preferred.filter(s => slotCounts[s] != null).map(s => `${s} ${slotCounts[s]}`).join(' · ');
-    $('slotSummary').textContent = summary ? `${summary} · Tot ${available}` : `Liberi ${available}`;
-    $('scarcitySummary').textContent = summary || `${roleName(state.role)} ${rolePlayers.length}`;
-    $('marketPressure').textContent = computeMarketPressure(rolePlayers);
+    const scarcity = getScarcityModel(rolePlayers);
+    $('slotSummary').textContent = scarcity.summary;
+    $('scarcitySummary').textContent = scarcity.shortSummary;
+    $('marketPressure').textContent = scarcity.pressure;
   }
 
-  function computeMarketPressure(rolePlayers) {
-    const topBySlot = rolePlayers.filter(p => ['S1','S2'].includes(String(p.slot).toUpperCase()));
-    let totalTop = topBySlot.length;
-    let remainingTop = topBySlot.filter(p => !p.preso).length;
-    if (!totalTop) {
-      const vals = rolePlayers.map(p => num(p.fvm)).filter(v => v != null).sort((a,b)=>a-b);
-      if (!vals.length) return 'NORMALE';
-      const cut = percentile(vals, .75);
-      const top = rolePlayers.filter(p => (num(p.fvm) ?? -Infinity) >= cut);
-      totalTop = top.length;
-      remainingTop = top.filter(p => !p.preso).length;
+  function getScarcityModel(rolePlayers) {
+    const available = rolePlayers.filter(p => !p.preso);
+    const slotPlayers = rolePlayers.filter(p => String(p.slot || '').trim());
+    if (slotPlayers.length) {
+      const labels = ['S1','S2','S3'];
+      const parts = labels.map(slot => {
+        const total = rolePlayers.filter(p => String(p.slot || '').toUpperCase() === slot).length;
+        const left = available.filter(p => String(p.slot || '').toUpperCase() === slot).length;
+        return total ? { slot, total, left } : null;
+      }).filter(Boolean);
+      const top = parts.filter(x => ['S1','S2'].includes(x.slot));
+      const totalTop = top.reduce((a,x)=>a+x.total,0);
+      const leftTop = top.reduce((a,x)=>a+x.left,0);
+      const ratio = totalTop ? leftTop / totalTop : 1;
+      return {
+        summary: parts.length ? `${parts.map(x => `${x.slot} ${x.left}/${x.total}`).join(' · ')} · Tot ${available.length}/${rolePlayers.length}` : `Liberi ${available.length}/${rolePlayers.length}`,
+        shortSummary: parts.slice(0,2).map(x => `${x.slot} ${x.left}/${x.total}`).join(' · ') || `${roleName(state.role)} ${available.length}/${rolePlayers.length}`,
+        pressure: pressureFromRatio(ratio)
+      };
     }
-    if (!totalTop) return 'NORMALE';
-    const ratio = remainingTop / totalTop;
-    if (ratio > .75) return 'ABBONDANZA';
+
+    const vals = rolePlayers.map(p => num(p.fvm)).filter(v => v != null).sort((a,b)=>a-b);
+    if (!vals.length) return { summary:`Liberi ${available.length}/${rolePlayers.length}`, shortSummary:`${roleName(state.role)} ${available.length}/${rolePlayers.length}`, pressure:'NORMALE' };
+    const topCut = percentile(vals, .85);
+    const semiCut = percentile(vals, .65);
+    const topAll = rolePlayers.filter(p => (num(p.fvm) ?? -Infinity) >= topCut);
+    const semiAll = rolePlayers.filter(p => (num(p.fvm) ?? -Infinity) >= semiCut && (num(p.fvm) ?? -Infinity) < topCut);
+    const topLeft = topAll.filter(p=>!p.preso).length;
+    const semiLeft = semiAll.filter(p=>!p.preso).length;
+    const weightedTotal = topAll.length * 2 + semiAll.length;
+    const weightedLeft = topLeft * 2 + semiLeft;
+    const ratio = weightedTotal ? weightedLeft / weightedTotal : 1;
+    return {
+      summary: `TOP ${topLeft}/${topAll.length} · SEMITOP ${semiLeft}/${semiAll.length} · Tot ${available.length}/${rolePlayers.length}`,
+      shortSummary: `TOP ${topLeft}/${topAll.length} · SEMI ${semiLeft}/${semiAll.length}`,
+      pressure: pressureFromRatio(ratio)
+    };
+  }
+
+  function pressureFromRatio(ratio) {
+    if (ratio > .72) return 'ABBONDANZA';
     if (ratio > .45) return 'NORMALE';
     if (ratio > .20) return 'SCARSITÀ';
     return 'CRITICO';
@@ -287,6 +328,7 @@
     $('startLetter').addEventListener('change', e => { state.startLetter = e.target.value; scheduleUISave(); renderPlayers(); });
     $('searchInput').addEventListener('input', e => { state.search = e.target.value; scheduleUISave(); renderPlayers(); });
     $('filtersBtn').addEventListener('click', () => $('filtersPanel').classList.toggle('hidden'));
+    $('liveModeBtn').addEventListener('click', () => setLiveMode(!state.liveMode));
     bindFilter('teamFilter','team','change');
     bindFilter('slotFilter','slot','change');
     bindFilter('minFvmFilter','minFvm','input');
@@ -295,6 +337,7 @@
     bindCheck('onlyFavorites','onlyFavorites');
     bindCheck('onlyComments','onlyComments');
     bindCheck('compactMode','compact');
+    $('liveModeCheck').addEventListener('change', e => setLiveMode(e.target.checked));
     $('emphasisSlider').addEventListener('input', e => {
       state.emphasis = Number(e.target.value); $('emphasisValue').textContent = `${state.emphasis}%`; scheduleUISave(); renderPlayers();
     });
@@ -321,6 +364,7 @@
     $('importModeSegment').querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
       state.importMode = btn.dataset.mode;
       $('importModeSegment').querySelectorAll('button').forEach(x => x.classList.toggle('active', x === btn));
+      updateImportStats();
     }));
     $('confirmImportBtn').addEventListener('click', confirmImport);
 
@@ -337,6 +381,13 @@
   }
   function bindCheck(id, key) {
     $(id).addEventListener('change', e => { state[key] = e.target.checked; scheduleUISave(); renderPlayers(); });
+  }
+
+  function setLiveMode(enabled) {
+    state.liveMode = Boolean(enabled);
+    if (state.liveMode) $('filtersPanel').classList.add('hidden');
+    scheduleUISave();
+    renderAll();
   }
 
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
@@ -411,8 +462,8 @@
       state.importModel = FantaImport.rowsToImportModel(rows);
       state.importModel.fileName = file.name;
       state.importModel.fileSize = file.size;
-      state.importMode = 'update';
-      $('importModeSegment').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'update'));
+      state.importMode = 'replace';
+      $('importModeSegment').querySelectorAll('button').forEach(b => b.classList.toggle('active', b.dataset.mode === 'replace'));
       renderImportSheet(); openOnly('importSheet');
     } catch (err) { toast(err.message || 'Errore durante la lettura del file.'); }
   }
@@ -444,6 +495,51 @@
     const { players, issues } = FantaImport.buildPlayers(m.headers, m.rows, m.mapping);
     $('importStats').textContent = `Riconosciuti: ${players.length} · Problemi: ${issues.length}`;
     $('importIssues').innerHTML = issues.slice(0, 10).map(x=>`<div>${esc(x)}</div>`).join('') + (issues.length > 10 ? `<div>… altri ${issues.length-10}</div>` : '');
+    renderImportChanges(compareImportedPlayers(players));
+  }
+
+  function compareImportedPlayers(players) {
+    const existing = state.players;
+    const bySource = new Map(existing.filter(p=>p.source_id).map(p=>[String(p.source_id),p]));
+    const byKey = new Map(existing.map(p=>[p.key,p]));
+    const byName = new Map();
+    existing.forEach(p => { const n=FantaDB.normalizeText(p.nome); if(!byName.has(n)) byName.set(n,[]); byName.get(n).push(p); });
+    const matchedKeys = new Set();
+    const changes = { added:[], removed:[], team:[], role:[], fvm:[], quote:[], matched:0 };
+    for (const raw of players) {
+      const key = FantaDB.makePlayerKey(raw.nome, raw.squadra);
+      let old = raw.source_id ? bySource.get(String(raw.source_id)) : null;
+      if (!old) old = byKey.get(key);
+      if (!old) { const same = byName.get(FantaDB.normalizeText(raw.nome)) || []; if (same.length === 1) old = same[0]; }
+      if (!old) { changes.added.push(raw); continue; }
+      matchedKeys.add(old.key); changes.matched++;
+      if (String(old.squadra||'') !== String(raw.squadra||'')) changes.team.push({old,raw});
+      if (String(old.ruolo||'') !== String(raw.ruolo||'') || String(old.ruolo_mantra||'') !== String(raw.ruolo_mantra||'')) changes.role.push({old,raw});
+      if ((num(old.fvm) ?? null) !== (num(raw.fvm) ?? null)) changes.fvm.push({old,raw});
+      if ((num(old.quotazione) ?? null) !== (num(raw.quotazione) ?? null)) changes.quote.push({old,raw});
+    }
+    changes.removed = existing.filter(p => !matchedKeys.has(p.key));
+    return changes;
+  }
+
+  function renderImportChanges(c) {
+    const removedLabel = state.importMode === 'replace' ? 'rimossi' : 'non più nel file';
+    const chips = [
+      ['Nuovi', c.added.length],
+      [removedLabel, c.removed.length],
+      ['Cambio squadra', c.team.length],
+      ['Ruolo', c.role.length],
+      ['FVM', c.fvm.length],
+      ['Quotazione', c.quote.length]
+    ];
+    const details = [];
+    c.team.slice(0,3).forEach(x => details.push(`${x.old.nome}: ${x.old.squadra || '—'} → ${x.raw.squadra || '—'}`));
+    c.fvm.slice(0,3).forEach(x => details.push(`${x.old.nome}: FVM ${displayNum(x.old.fvm)} → ${displayNum(x.raw.fvm)}`));
+    $('importChanges').innerHTML = `
+      <div class="change-title">Confronto con il listone sul dispositivo</div>
+      <div class="change-chips">${chips.map(([label,n])=>`<span><strong>${n}</strong>${esc(label)}</span>`).join('')}</div>
+      ${details.length ? `<div class="change-details">${details.map(x=>`<div>${esc(x)}</div>`).join('')}</div>` : '<div class="change-details">Nessuna variazione significativa nei giocatori riconosciuti.</div>'}
+      ${state.importMode === 'update' && c.removed.length ? '<div class="change-note">Con “Aggiorna senza rimuovere” i giocatori assenti dal nuovo file resteranno nel database.</div>' : ''}`;
   }
 
   async function confirmImport() {
@@ -452,7 +548,7 @@
     const { players, issues } = FantaImport.buildPlayers(m.headers, m.rows, m.mapping);
     if (!players.length) { toast('Nessun giocatore valido da importare.'); return; }
     if (issues.length && !confirm(`Sono presenti ${issues.length} righe problematiche che verranno ignorate. Continuare?`)) return;
-    if (state.importMode === 'replace' && state.players.length && !confirm('Sostituire il listone attuale? Commenti, prezzi personali e stato vengono conservati per i giocatori riconosciuti.')) return;
+    if (state.importMode === 'replace' && state.players.length && !confirm('Sincronizzare il database con questo listone? I giocatori non più presenti verranno rimossi dal listone, mentre commenti, prezzi personali, preferiti e stato dei giocatori riconosciuti verranno conservati.')) return;
     try {
       const result = await FantaDB.importBasePlayers(players, state.importMode);
       await refreshPlayers(); closeAllSheets();
@@ -539,7 +635,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',priceMax:'',onlyAvailable:false,onlyFavorites:false,onlyComments:false,compact:false,emphasis:65,theme:'system'});
+    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',priceMax:'',onlyAvailable:false,onlyFavorites:false,onlyComments:false,compact:false,liveMode:false,emphasis:65,theme:'system'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','system'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 
@@ -549,9 +645,22 @@
     $('themeSelect').value = state.theme;
   }
 
-  function toast(message) {
-    clearTimeout(toastTimer); const el = $('toast'); el.textContent = message; el.classList.remove('hidden');
-    toastTimer = setTimeout(() => el.classList.add('hidden'), 2300);
+  function toast(message, actionLabel = '', actionCallback = null, duration = 2300) {
+    clearTimeout(toastTimer);
+    const el = $('toast');
+    const messageEl = $('toastMessage');
+    const actionEl = $('toastAction');
+    messageEl.textContent = message;
+    actionEl.classList.toggle('hidden', !actionLabel || !actionCallback);
+    actionEl.textContent = actionLabel || '';
+    actionEl.onclick = actionCallback ? async () => {
+      clearTimeout(toastTimer);
+      el.classList.add('hidden');
+      const cb = actionCallback; actionEl.onclick = null;
+      await cb();
+    } : null;
+    el.classList.remove('hidden');
+    toastTimer = setTimeout(() => { el.classList.add('hidden'); actionEl.onclick = null; }, duration);
   }
 
   function registerServiceWorker() {

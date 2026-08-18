@@ -158,3 +158,13 @@ Modalità import:
 - **Aggiorna esistente**: aggiorna e aggiunge i giocatori presenti nel file, ma non rimuove dal listone locale quelli assenti dal nuovo file.
 
 Prima di una sostituzione resta consigliato esportare un backup JSON.
+
+## Novità v3
+
+- **Confronto intelligente prima dell'import**: mostra nuovi giocatori, assenti dal nuovo file, cambi squadra/ruolo e variazioni di FVM/quotazione prima della conferma.
+- **Sincronizza listone**: pensato per caricare il file Fantacalcio più recente poco prima dell'asta. Aggiorna i dati ufficiali e rimuove dal listone i giocatori non più presenti, preservando dati personali e stato per i giocatori riconosciuti tramite ID stabile (con fallback nome/squadra).
+- **Modalità ASTA LIVE**: un tap sul pulsante ASTA/LIVE riduce l'ingombro dell'interfaccia e rende le card più dense mantenendo preso, preferito, nome, prezzi target e nota sintetica.
+- **Undo immediato**: dopo aver segnato un giocatore preso/libero compare `Annulla` per alcuni secondi.
+- **Scarsità evoluta**: visualizza `S1 rimasti/totali`, `S2 rimasti/totali`, ecc.; se gli slot non sono compilati usa fasce FVM TOP/SEMITOP con rapporto rimasti/totali.
+
+Per distribuire questa versione su GitHub Pages, sostituisci i file della repository con il contenuto di questa cartella, esegui commit/push e apri una volta il sito con Internet attivo per consentire al Service Worker `v3` di aggiornare la cache offline.
