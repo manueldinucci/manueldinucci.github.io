@@ -218,3 +218,11 @@ Nel dettaglio di un giocatore libero compare **Possibili competitori**. Sono mos
 Il backup JSON v2 comprende anche configurazione asta e fantallenatori. I vecchi backup v1 restano importabili.
 
 **Reset asta** azzera assegnazioni, prezzi di acquisto e acquirenti. Budget e slot tornano automaticamente ai valori iniziali perché sono statistiche derivate. Commenti, target, slot personali e preferiti non vengono cancellati.
+
+## Novità v6 — Occhi sugli avversari
+
+La v6 aggiunge una lettura strategica del ruolo corrente senza introdurre dipendenze online. Nella configurazione dei partecipanti è possibile indicare un solo profilo come **Io**; quando presente, i riepiloghi “avversari” lo escludono automaticamente.
+
+Dopo un'assegnazione compare per circa 5,6 secondi una mini-card con fantallenatore, giocatore, prezzo, slot rimasti nel ruolo appena occupato, budget residuo, max bid e slot totali. Se il reparto viene completato compare `RUOLO COMPLETO ✓`. `ANNULLA` continua a ripristinare assegnazione, budget e slot.
+
+Il pannello Fantallenatori dispone della vista **Occhi sugli avversari**, riferita al ruolo selezionato nell'app. Mostra domanda residua, avversari attivi, giocatori di interesse ancora disponibili, rapporto domanda/offerta, pressione del ruolo e indicatori di bisogno/minaccia. Tutti i valori vengono ricalcolati dalle assegnazioni reali e non da contatori incrementali.

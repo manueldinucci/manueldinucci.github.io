@@ -275,7 +275,8 @@
       id: String(raw.id || makeManagerId()),
       nome: String(raw.nome || '').trim(),
       squadra: String(raw.squadra || '').trim(),
-      budgetInitial: budget
+      budgetInitial: budget,
+      isMe: Boolean(raw.isMe)
     };
   }
 

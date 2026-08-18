@@ -125,6 +125,62 @@
     return { label:'BASSA', count:relevant };
   }
 
+  function roleNeedLevel(remaining, total) {
+    const t = Math.max(0, numberOr(total, 0));
+    const r = Math.max(0, numberOr(remaining, 0));
+    if (t <= 0 || r <= 0) return { label:'FUORI', need:'COMPLETO', ratio:0 };
+    const ratio = Math.min(1, r / t);
+    if (ratio >= .75) return { label:'ALTA', need:'MOLTO ALTO', ratio };
+    if (ratio >= .5) return { label:'ALTA', need:'ALTO', ratio };
+    if (ratio >= .25) return { label:'MEDIA', need:'MEDIO', ratio };
+    return { label:'BASSA', need:'BASSO', ratio };
+  }
+
+  function threatLevel(stats, role, config, priceCap = null) {
+    const c = makeDefaultConfig(config);
+    const total = c.roster[role] || 0;
+    const remaining = stats?.roleRemaining?.[role] || 0;
+    if (remaining <= 0 || stats?.rosterComplete) return { label:'FUORI', score:0 };
+    const need = roleNeedLevel(remaining, total);
+    const economicRatio = stats.budgetInitial > 0 ? Math.min(1, stats.maxBid / stats.budgetInitial) : 0;
+    const cap = Number(priceCap);
+    const capPower = Number.isFinite(cap) && cap > 0 ? Math.min(1.25, stats.maxBid / cap) : economicRatio;
+    const score = need.ratio * .55 + Math.min(1, capPower) * .3 + economicRatio * .15;
+    if (score >= .68) return { label:'ALTA', score };
+    if (score >= .38) return { label:'MEDIA', score };
+    return { label:'BASSA', score };
+  }
+
+  function opponentManagers(managers) {
+    const list = managers || [];
+    const hasSelf = list.some(m => m?.isMe);
+    return hasSelf ? list.filter(m => !m?.isMe) : list;
+  }
+
+  function computeRoleDemand(managers, players, config, role) {
+    const c = makeDefaultConfig(config);
+    const opponents = opponentManagers(managers);
+    const rows = computeAllManagerStats(opponents, players, c);
+    const active = rows.filter(({stats}) => stats.roleRemaining[role] > 0 && !stats.rosterComplete);
+    const demand = active.reduce((sum, {stats}) => sum + stats.roleRemaining[role], 0);
+    const groups = { hungry:0, medium:0, almost:0, complete:rows.length-active.length };
+    for (const {stats} of active) {
+      const ratio = c.roster[role] ? stats.roleRemaining[role] / c.roster[role] : 0;
+      if (ratio >= .5) groups.hungry += 1;
+      else if (stats.roleRemaining[role] >= 2) groups.medium += 1;
+      else groups.almost += 1;
+    }
+    return { opponents, rows, active, demand, groups, activeCount:active.length, totalOpponents:rows.length };
+  }
+
+  function strategicScore(stats, role, config) {
+    const c = makeDefaultConfig(config);
+    const needRatio = c.roster[role] ? Math.min(1, stats.roleRemaining[role] / c.roster[role]) : 0;
+    const budgetRatio = stats.budgetInitial ? Math.min(1, stats.budgetRemaining / stats.budgetInitial) : 0;
+    const maxRatio = stats.budgetInitial ? Math.min(1, stats.maxBid / stats.budgetInitial) : 0;
+    return needRatio * .5 + budgetRatio * .25 + maxRatio * .25;
+  }
+
   window.FantaAuction = {
     ROLES,
     makeDefaultConfig,
@@ -133,6 +189,11 @@
     computeAllManagerStats,
     validateAssignment,
     getCompetitors,
-    competitionLevel
+    competitionLevel,
+    roleNeedLevel,
+    threatLevel,
+    opponentManagers,
+    computeRoleDemand,
+    strategicScore
   };
 })();

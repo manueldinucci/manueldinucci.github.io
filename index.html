@@ -43,6 +43,7 @@
           <div id="counts" class="counts"></div>
           <div id="scarcitySummary" class="scarcity-summary"></div>
         </div>
+        <div id="opponentSummary" class="opponent-summary"></div>
       </div>
     </header>
 
@@ -219,12 +220,18 @@
       <button id="closeManagersBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
     <div class="sheet-scroll">
+      <div class="segmented managers-view-segment" id="managerViewSegment">
+        <button type="button" data-view="overview" class="active">Panoramica</button>
+        <button type="button" data-view="eyes">Occhi sugli avversari</button>
+      </div>
       <div class="managers-toolbar">
         <label>Ordina<select id="managerSort">
-          <option value="budget">Budget residuo</option><option value="maxBid">Max offerta</option><option value="slots">Slot rimasti</option><option value="name">Nome</option>
+          <option value="budget">Budget residuo</option><option value="maxBid">Max offerta</option><option value="slots">Slot rimasti</option><option value="roleMore">Più slot nel ruolo</option><option value="roleLess">Meno slot nel ruolo</option><option value="need">Bisogno del ruolo</option><option value="strategic">Strategico</option><option value="name">Nome</option>
         </select></label>
+        <label>Mostra ruolo<select id="slotDisplayMode"><option value="remaining">Rimasti</option><option value="bought">Acquistati</option></select></label>
         <label class="switch-line"><input id="managerCompact" type="checkbox" /><span>Ultra compatta</span></label>
       </div>
+      <div id="opponentRoleSummary" class="opponent-role-summary"></div>
       <div id="auctionConfigSummary" class="auction-config-summary"></div>
       <button id="openManagerConfigBtn" class="secondary-btn full-width-btn">Configura asta e partecipanti</button>
       <div id="managerCards" class="manager-cards"></div>
@@ -263,7 +270,7 @@
     <div id="simpleFormBody" class="sheet-scroll"></div>
   </section>
 
-  <div id="toast" class="toast hidden" role="status"><span id="toastMessage"></span><button id="toastAction" class="toast-action hidden" type="button"></button></div>
+  <div id="toast" class="toast hidden" role="status"><div id="toastMessage" class="toast-message"></div><button id="toastAction" class="toast-action hidden" type="button"></button><button id="toastClose" class="toast-close" type="button" aria-label="Chiudi">×</button></div>
 
   <script src="vendor/xlsx-local-reader.js"></script>
   <script src="players.js"></script>
