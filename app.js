@@ -217,7 +217,7 @@
     const frag = document.createDocumentFragment();
     for (const p of list) {
       const card = document.createElement('article');
-      card.className = `player-card${p.preso?' taken':''}${state.compact?' compact':''}${state.liveMode?' live':''}`;
+      card.className = `player-card${p.preso?' taken':''}${p.preferito?' favorite':''}${state.compact?' compact':''}${state.liveMode?' live':''}`;
       card.dataset.key = p.key;
       const size = nameFontSize(p.fvm, scale).toFixed(1);
       card.innerHTML = `
@@ -368,10 +368,12 @@
     }));
     $('confirmImportBtn').addEventListener('click', confirmImport);
 
-    ['editSlot','editDeal','editIdealMin','editIdealMax','editCap','editComment','editPurchase','editManager'].forEach(id => {
+    ['editDeal','editIdealMin','editIdealMax','editCap','editComment','editPurchase','editManager'].forEach(id => {
       $(id).addEventListener('input', scheduleSelectedPlayerSave);
       $(id).addEventListener('focus', () => setTimeout(() => $(id).scrollIntoView({block:'center',behavior:'smooth'}), 250));
     });
+    $('editSlot').addEventListener('change', scheduleSelectedPlayerSave);
+    $('editSlot').addEventListener('focus', () => setTimeout(() => $('editSlot').scrollIntoView({block:'center',behavior:'smooth'}), 250));
     $('toggleTakenSheet').addEventListener('click', async () => { if (state.selectedKey) { await toggleTaken(state.selectedKey); openPlayerSheet(state.selectedKey, true); } });
     $('toggleFavoriteSheet').addEventListener('click', async () => { if (state.selectedKey) { await toggleFavorite(state.selectedKey); openPlayerSheet(state.selectedKey, true); } });
   }
@@ -409,7 +411,15 @@
     $('sheetInfoGrid').innerHTML = [
       ['FVM',displayNum(p.fvm)], ['Quotazione',displayNum(p.quotazione)], ['Stato',p.preso?'PRESO':'LIBERO']
     ].map(([a,b]) => `<div class="info-chip"><span>${esc(a)}</span><strong>${esc(b)}</strong></div>`).join('');
-    $('editSlot').value = p.slot || '';
+    const slotSelect = $('editSlot');
+    slotSelect.querySelectorAll('option[data-custom]').forEach(o => o.remove());
+    const currentSlot = String(p.slot || '').trim();
+    if (currentSlot && ![...slotSelect.options].some(o => o.value === currentSlot)) {
+      const custom = document.createElement('option');
+      custom.value = currentSlot; custom.textContent = currentSlot; custom.dataset.custom = '1';
+      slotSelect.appendChild(custom);
+    }
+    slotSelect.value = currentSlot;
     $('editDeal').value = p.prezzo_affare ?? '';
     $('editIdealMin').value = p.prezzo_ideale_min ?? '';
     $('editIdealMax').value = p.prezzo_ideale_max ?? '';

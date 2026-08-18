@@ -80,7 +80,7 @@
 
   <div id="sheetBackdrop" class="backdrop hidden"></div>
 
-  <section id="playerSheet" class="bottom-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="sheetPlayerName">
+  <section id="playerSheet" class="bottom-sheet player-edit-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="sheetPlayerName">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <div>
@@ -92,17 +92,37 @@
     <div id="sheetSaveStatus" class="save-status">Salvato</div>
     <div class="sheet-scroll">
       <div class="sheet-info-grid" id="sheetInfoGrid"></div>
-      <div class="edit-grid">
-        <label>Slot<input id="editSlot" type="text" autocomplete="off" placeholder="S1" /></label>
-        <label>Affare ≤<input id="editDeal" type="number" inputmode="numeric" min="0" /></label>
-        <label>Ideale min<input id="editIdealMin" type="number" inputmode="numeric" min="0" /></label>
-        <label>Ideale max<input id="editIdealMax" type="number" inputmode="numeric" min="0" /></label>
-        <label>Price cap<input id="editCap" type="number" inputmode="numeric" min="0" /></label>
-        <label>Prezzo acquisto<input id="editPurchase" type="number" inputmode="numeric" min="0" /></label>
+
+      <div class="edit-section">
+        <div class="edit-section-title">Valutazione personale</div>
+        <div class="edit-grid target-grid">
+          <label>Slot
+            <select id="editSlot">
+              <option value="">—</option>
+              <option value="S1">S1</option>
+              <option value="S2">S2</option>
+              <option value="S3">S3</option>
+              <option value="S4">S4</option>
+              <option value="S5">S5</option>
+            </select>
+          </label>
+          <label>Affare ≤<input id="editDeal" type="number" inputmode="numeric" min="0" /></label>
+          <label>Ideale min<input id="editIdealMin" type="number" inputmode="numeric" min="0" /></label>
+          <label>Ideale max<input id="editIdealMax" type="number" inputmode="numeric" min="0" /></label>
+          <label class="cap-field">Price cap<input id="editCap" type="number" inputmode="numeric" min="0" /></label>
+        </div>
+        <label class="full-field comment-field">Commento<textarea id="editComment" rows="4" placeholder="Nota personale..."></textarea></label>
       </div>
-      <label class="full-field">Manager acquirente<input id="editManager" type="text" autocomplete="off" /></label>
-      <label class="full-field">Commento<textarea id="editComment" rows="5" placeholder="Nota personale..."></textarea></label>
-      <div class="sheet-actions">
+
+      <details class="purchase-details">
+        <summary>Dati acquisto <span>opzionali</span></summary>
+        <div class="edit-grid purchase-grid">
+          <label>Prezzo acquisto<input id="editPurchase" type="number" inputmode="numeric" min="0" /></label>
+          <label>Manager acquirente<input id="editManager" type="text" autocomplete="off" /></label>
+        </div>
+      </details>
+
+      <div class="sheet-actions player-sheet-actions">
         <button id="toggleTakenSheet" class="secondary-btn">Segna preso</button>
         <button id="toggleFavoriteSheet" class="secondary-btn">☆ Preferito</button>
       </div>
