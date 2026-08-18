@@ -13,7 +13,6 @@
     team: '',
     slot: '',
     minFvm: '',
-    priceMax: '',
     onlyAvailable: false,
     onlyFavorites: false,
     compact: false,
@@ -65,6 +64,7 @@
     await loadAuctionContext();
     bindStaticEvents();
     initLetterSelect();
+    initFvmSelect();
     applyStateToControls();
     applyTheme();
     await refreshPlayers();
@@ -76,7 +76,7 @@
   async function loadSettings() {
     const saved = await FantaDB.getSetting('uiState', null);
     if (saved && typeof saved === 'object') {
-      const { liveMode: _legacyLiveMode, onlyComments: _legacyOnlyComments, ...cleanSaved } = saved;
+      const { liveMode: _legacyLiveMode, onlyComments: _legacyOnlyComments, priceMax: _removedPriceMax, ...cleanSaved } = saved;
       Object.assign(state, cleanSaved);
     }
     state.theme = await FantaDB.getSetting('theme', state.theme || 'light');
@@ -111,7 +111,6 @@
       team: state.team,
       slot: state.slot,
       minFvm: state.minFvm,
-      priceMax: state.priceMax,
       onlyAvailable: state.onlyAvailable,
       onlyFavorites: state.onlyFavorites,
       compact: state.compact,
@@ -159,6 +158,11 @@
     $('startLetter').innerHTML = letters.map(l => `<option value="${l}">${l}</option>`).join('');
   }
 
+  function initFvmSelect() {
+    $('minFvmFilter').innerHTML = '<option value="">—</option>' + Array.from({length:100}, (_, i) => i + 1)
+      .map(v => `<option value="${v}">${v}</option>`).join('');
+  }
+
   function populateDynamicFilters() {
     const rolePlayers = state.players.filter(p => p.ruolo === state.role);
     const teams = [...new Set(rolePlayers.map(p => p.squadra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
@@ -176,11 +180,12 @@
     $('searchInput').value = state.search;
     $('onlyAvailable').checked = state.onlyAvailable;
     $('onlyFavorites').checked = state.onlyFavorites;
-    $('compactMode').checked = state.compact;
     $('emphasisSlider').value = state.emphasis;
     $('emphasisValue').textContent = `${state.emphasis}%`;
+    const minFvm = Number(state.minFvm);
+    state.minFvm = Number.isInteger(minFvm) && minFvm >= 1 && minFvm <= 100 ? String(minFvm) : '';
     $('minFvmFilter').value = state.minFvm;
-    $('priceMaxFilter').value = state.priceMax;
+    updateCompactButton();
     updateThemeButton();
   }
 
@@ -200,14 +205,12 @@
   function getFilteredPlayers() {
     const q = FantaDB.normalizeText(state.search);
     const minFvm = num(state.minFvm);
-    const maxPrice = num(state.priceMax);
     return state.players
       .filter(p => p.ruolo === state.role)
       .filter(p => !q || FantaDB.normalizeText(`${p.nome} ${p.squadra}`).includes(q))
       .filter(p => !state.team || p.squadra === state.team)
       .filter(p => !state.slot || p.slot === state.slot)
       .filter(p => minFvm == null || (num(p.fvm) ?? -Infinity) >= minFvm)
-      .filter(p => maxPrice == null || (num(p.target_max) ?? num(p.prezzo_ideale_max) ?? Infinity) <= maxPrice)
       .filter(p => !state.onlyAvailable || !p.preso)
       .filter(p => !state.onlyFavorites || p.preferito)
       .sort((a,b) => circularRank(a.nome) - circularRank(b.nome) || a.nome.localeCompare(b.nome,'it',{sensitivity:'base'}));
@@ -434,11 +437,9 @@
     $('managersBtn').addEventListener('click', openManagersPanel);
     bindFilter('teamFilter','team','change');
     bindFilter('slotFilter','slot','change');
-    bindFilter('minFvmFilter','minFvm','input');
-    bindFilter('priceMaxFilter','priceMax','input');
+    bindFilter('minFvmFilter','minFvm','change');
     bindCheck('onlyAvailable','onlyAvailable');
     bindCheck('onlyFavorites','onlyFavorites');
-    bindCheck('compactMode','compact');
     $('emphasisSlider').addEventListener('input', e => {
       state.emphasis = Number(e.target.value); $('emphasisValue').textContent = `${state.emphasis}%`; scheduleUISave(); renderPlayers();
     });
@@ -465,6 +466,7 @@
     $('manageManagersBtn').addEventListener('click', openManagerConfig);
     $('resetAuctionBtn').addEventListener('click', resetAuction);
     $('resetAllBtn').addEventListener('click', resetAll);
+    $('compactHeaderBtn').addEventListener('click', toggleCompact);
     $('themeHeaderBtn').addEventListener('click', toggleTheme);
 
     $('importModeSegment').querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
@@ -511,7 +513,7 @@
   }
 
   function activeFilterCount() {
-    return [state.team, state.slot, state.minFvm, state.priceMax, state.onlyAvailable, state.onlyFavorites].filter(v => v !== '' && v !== false && v != null).length;
+    return [state.team, state.slot, state.minFvm, state.onlyAvailable, state.onlyFavorites].filter(v => v !== '' && v !== false && v != null).length;
   }
 
   function renderFilterButton() {
@@ -986,8 +988,24 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',priceMax:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'budget',managerView:'unified',slotDisplayMode:'remaining'});
+    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'budget',managerView:'unified',slotDisplayMode:'remaining'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
+  }
+
+  function updateCompactButton() {
+    const btn = $('compactHeaderBtn');
+    if (!btn) return;
+    btn.classList.toggle('active', state.compact);
+    btn.setAttribute('aria-pressed', state.compact ? 'true' : 'false');
+    btn.setAttribute('aria-label', state.compact ? 'Disattiva modalità compatta' : 'Attiva modalità compatta');
+    btn.setAttribute('title', state.compact ? 'Vista normale' : 'Modalità compatta');
+  }
+
+  function toggleCompact() {
+    state.compact = !state.compact;
+    updateCompactButton();
+    scheduleUISave();
+    renderPlayers();
   }
 
   function updateThemeButton() {

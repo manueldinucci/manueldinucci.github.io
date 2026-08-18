@@ -22,6 +22,11 @@
           <h1>Asta Live Manager</h1>
         </div>
         <div class="header-actions">
+          <button id="compactHeaderBtn" class="header-icon-btn compact-toggle-btn" type="button" aria-label="Attiva modalità compatta" aria-pressed="false" title="Modalità compatta">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+              <path d="M7 6h10M7 18h10M9 9l3 3 3-3M9 15l3-3 3 3" />
+            </svg>
+          </button>
           <button id="themeHeaderBtn" class="header-icon-btn" type="button" aria-label="Attiva tema scuro">☾</button>
           <button id="menuBtn" class="header-icon-btn" aria-label="Apri impostazioni">⚙</button>
         </div>
@@ -56,13 +61,11 @@
           <div class="filter-grid">
             <label>Squadra<select id="teamFilter"><option value="">Tutte</option></select></label>
             <label>Slot<select id="slotFilter"><option value="">Tutti</option></select></label>
-            <label>FVM minimo<input id="minFvmFilter" type="number" inputmode="numeric" min="0" placeholder="0" /></label>
-            <label>Target max ≤<input id="priceMaxFilter" type="number" inputmode="numeric" min="0" placeholder="—" /></label>
+            <label>FVM minimo<select id="minFvmFilter" aria-label="FVM minimo"><option value="">—</option></select></label>
           </div>
           <div class="toggle-grid">
             <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
             <label class="switch-line"><input id="onlyFavorites" type="checkbox" /><span>Solo preferiti</span></label>
-            <label class="switch-line"><input id="compactMode" type="checkbox" /><span>Modalità compatta</span></label>
           </div>
           <label class="slider-field">Enfasi dimensione <span id="emphasisValue">65%</span>
             <input id="emphasisSlider" type="range" min="0" max="100" step="1" value="65" />

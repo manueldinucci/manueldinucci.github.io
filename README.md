@@ -3,6 +3,16 @@
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
 
+
+## Novità v12
+
+- riga del fabbisogno leggermente più grande e leggibile, senza aumentarne l'ingombro verticale;
+- pulsanti `+ / −` visivamente più piccoli, mantenendo un'area touch estesa;
+- filtro `FVM minimo` trasformato in menu a tendina da 1 a 100;
+- rimosso il filtro `Target max ≤`;
+- `Modalità compatta` spostata dai filtri nell'header, subito a sinistra del tema, con toggle dedicato e stato persistente;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v12`.
+
 ## Novità v11
 
 - header con pulsanti tema e impostazioni `⚙`;
@@ -20,7 +30,7 @@ PWA mobile-first e offline-first per usare l’iPhone come unico strumento duran
 - dimensione continua del nome basata su FVM e slider di enfasi;
 - preso/libero, preferiti e contatori;
 - riga fabbisogno ruolo-specifica basata su slot residui e giocatori S1–S5 ancora disponibili;
-- filtri live per nome, squadra, slot, FVM, prezzo, preferiti e liberi;
+- filtri live per nome, squadra, slot, FVM, preferiti e liberi;
 - modalità compatta;
 - bottom sheet mobile per slot, Range Target, commento, prezzo acquisto e manager;
 - salvataggio automatico in IndexedDB;
@@ -294,7 +304,7 @@ Le card libere hanno anche una scala di grigi molto leggera basata su S1–S5. G
 
 Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Asta Live Manager** (`Asta Live` come short name PWA).
 
-Il Service Worker usa la cache `fantacalcio-checklist-v9`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
+Il Service Worker usa la cache `fantacalcio-checklist-v12`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
 
 ## Novità v11 — schermata principale più operativa
 
