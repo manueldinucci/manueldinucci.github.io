@@ -463,3 +463,87 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
 @media (max-width: 390px) {
   .simplified-toolbar { grid-template-columns: 1fr; }
 }
+
+/* v9 — Asta Live Manager: cards più dense e vista Fantallenatori unificata */
+.theme-toggle-btn { width: 100%; justify-content: center; }
+.v9-manager-toolbar { grid-template-columns: minmax(0, 220px); margin-bottom: 8px; }
+.v9-manager { padding: 8px 9px 7px; }
+.v9-manager .manager-card-head strong { font-size: 14px; }
+.v9-manager .manager-card-head b { font-size: 14px; }
+.manager-focus-line {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: baseline;
+  margin-top: 5px;
+  font-size: 11px;
+}
+.manager-focus-line strong { color: var(--text); font-size: 12px; }
+.manager-focus-line span { color: var(--muted); font-weight: 760; white-space: nowrap; }
+.v9-manager .manager-roster { margin-top: 6px; padding-top: 5px; }
+.v9-manager .manager-roster summary {
+  display: grid;
+  grid-template-columns: auto minmax(0,1fr) auto;
+  gap: 8px;
+  min-height: 32px;
+  font-size: 10px;
+}
+.v9-manager .manager-roster summary > span { color: var(--text); font-weight: 800; }
+.v9-manager .manager-roster summary > b {
+  min-width: 0;
+  color: var(--muted);
+  font-weight: 680;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.v9-manager .manager-roster summary::after { margin-left: 0; }
+
+.player-primary-meta {
+  margin-top: 3px;
+  font-size: 12px;
+  line-height: 1.15;
+  font-weight: 800;
+  color: color-mix(in srgb, var(--text) 88%, var(--muted));
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-secondary-meta {
+  margin-top: 2px;
+  color: var(--muted);
+  font-size: 10.5px;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.player-card.compact .player-main,
+.player-card.live .player-main {
+  display: block;
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.player-card.compact .player-primary-meta,
+.player-card.live .player-primary-meta { font-size: 11px; margin-top: 2px; }
+.player-card.compact .player-secondary-meta,
+.player-card.live .player-secondary-meta { font-size: 9.5px; margin-top: 1px; }
+.player-card.compact .player-purchase,
+.player-card.live .player-purchase { margin-top: 2px; font-size: 11px; }
+
+/* Slot → intensità neutra dello sfondo. Applicata solo ai liberi non preferiti. */
+html[data-theme="light"] .player-card.slot-s1:not(.taken):not(.favorite) { background: #e7e7ea; }
+html[data-theme="light"] .player-card.slot-s2:not(.taken):not(.favorite) { background: #ededf0; }
+html[data-theme="light"] .player-card.slot-s3:not(.taken):not(.favorite) { background: #f2f2f4; }
+html[data-theme="light"] .player-card.slot-s4:not(.taken):not(.favorite) { background: #f7f7f8; }
+html[data-theme="light"] .player-card.slot-s5:not(.taken):not(.favorite) { background: var(--surface); }
+html[data-theme="dark"] .player-card.slot-s1:not(.taken):not(.favorite) { background: #2a2a2f; }
+html[data-theme="dark"] .player-card.slot-s2:not(.taken):not(.favorite) { background: #25252a; }
+html[data-theme="dark"] .player-card.slot-s3:not(.taken):not(.favorite) { background: #212126; }
+html[data-theme="dark"] .player-card.slot-s4:not(.taken):not(.favorite) { background: #1d1d21; }
+html[data-theme="dark"] .player-card.slot-s5:not(.taken):not(.favorite) { background: var(--surface); }
+
+@media (max-width: 390px) {
+  .v9-manager .manager-roster summary { gap: 5px; font-size: 9px; }
+  .manager-focus-line { font-size: 10px; }
+}

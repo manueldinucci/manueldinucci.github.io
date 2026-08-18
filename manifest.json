@@ -1,7 +1,7 @@
 {
-  "name": "Fantacalcio — Checklist Asta",
-  "short_name": "Fanta Checklist",
-  "description": "Checklist offline-first per la gestione live di un'asta Fantacalcio.",
+  "name": "Fantacalcio — Asta Live Manager",
+  "short_name": "Asta Live",
+  "description": "Asta Live Manager offline-first per Fantacalcio.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

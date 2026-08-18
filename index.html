@@ -7,11 +7,11 @@
   <meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)" />
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
-  <meta name="apple-mobile-web-app-title" content="Fanta Checklist" />
+  <meta name="apple-mobile-web-app-title" content="Asta Live" />
   <link rel="apple-touch-icon" href="icons/icon-192.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
-  <title>Fantacalcio — Checklist Asta</title>
+  <title>Fantacalcio — Asta Live Manager</title>
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -19,7 +19,7 @@
       <div class="title-row">
         <div>
           <div class="eyebrow">FANTACALCIO</div>
-          <h1>Checklist Asta</h1>
+          <h1>Asta Live Manager</h1>
         </div>
         <button id="menuBtn" class="icon-btn" aria-label="Apri strumenti">•••</button>
       </div>
@@ -157,13 +157,7 @@
       <button id="addPlayerBtn" class="secondary-btn">Aggiungi giocatore</button>
       <button id="removePlayerBtn" class="secondary-btn">Rimuovi giocatore</button>
       <button id="manageManagersBtn" class="secondary-btn">Gestione fantallenatori</button>
-      <label class="full-field">Tema
-        <select id="themeSelect">
-          <option value="system">Sistema</option>
-          <option value="light">Chiaro</option>
-          <option value="dark">Scuro</option>
-        </select>
-      </label>
+      <button id="themeToggleBtn" class="secondary-btn theme-toggle-btn" type="button" aria-label="Cambia tema">Tema: Chiaro</button>
       <button id="resetAuctionBtn" class="secondary-btn danger-soft">Reset asta</button>
       <button id="resetAllBtn" class="secondary-btn danger">Reset completo</button>
       <p class="tool-note">I dati restano sul dispositivo. Prima di sostituire il listone è consigliato esportare un backup.</p>
@@ -225,19 +219,13 @@
       <button id="closeManagersBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
     <div class="sheet-scroll">
-      <div class="segmented managers-view-segment" id="managerViewSegment">
-        <button type="button" data-view="overview" class="active">Panoramica</button>
-        <button type="button" data-view="eyes">Occhi sugli avversari</button>
-      </div>
-      <div class="managers-toolbar simplified-toolbar">
+      <div class="managers-toolbar v9-manager-toolbar">
         <label>Ordina<select id="managerSort">
-          <option value="slots">Slot rimasti</option>
-          <option value="maxBid">Max offerta</option>
           <option value="budget">Budget residuo</option>
+          <option value="maxBid">Max offerta</option>
+          <option value="slots">Slot rimasti</option>
         </select></label>
-        <label>Mostra ruolo<select id="slotDisplayMode"><option value="remaining">Rimasti</option><option value="bought">Acquistati</option></select></label>
       </div>
-      <button id="openManagerConfigBtn" class="secondary-btn full-width-btn">Configura asta e partecipanti</button>
       <div id="managerCards" class="manager-cards"></div>
     </div>
   </section>

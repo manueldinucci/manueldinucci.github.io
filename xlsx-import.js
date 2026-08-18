@@ -5,7 +5,8 @@
     { key: 'squadra', label: 'Squadra', required: false, aliases: ['squadra','team','club'] },
     { key: 'ruolo', label: 'Ruolo', required: true, aliases: ['r','ruolo','role'] },
     { key: 'ruolo_mantra', label: 'Ruolo Mantra', required: false, aliases: ['rm','mantra','ruolo mantra','ruolomantra'] },
-    { key: 'quotazione', label: 'Quotazione', required: false, aliases: ['qt a','qta','qt','quotazione','quot'] },
+    { key: 'quotazione', label: 'Quotazione attuale', required: false, aliases: ['qt a','qta','quotazione attuale'] },
+    { key: 'quotazione_iniziale', label: 'Quotazione iniziale', required: false, aliases: ['qt i','qti','quotazione iniziale','qi'] },
     { key: 'fvm', label: 'FVM', required: false, aliases: ['fvm','fvm m','fvmm','fanta valore mercato'] }
   ];
 
@@ -175,6 +176,7 @@
         ruolo,
         ruolo_mantra: String(get('ruolo_mantra') ?? '').trim(),
         quotazione: num(get('quotazione')),
+        quotazione_iniziale: num(get('quotazione_iniziale')),
         fvm: num(get('fvm'))
       });
     });

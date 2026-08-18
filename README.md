@@ -1,4 +1,4 @@
-# Fantacalcio — Checklist Asta
+# Fantacalcio — Asta Live Manager
 
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
@@ -18,7 +18,7 @@ PWA mobile-first e offline-first per usare l’iPhone come unico strumento duran
 - backup JSON completo e ripristino;
 - aggiunta/rimozione giocatori;
 - reset asta e reset completo con conferma forte;
-- tema chiaro/scuro/sistema;
+- tema chiaro/scuro con toggle immediato;
 - Service Worker, manifest e icone PWA, senza API o CDN runtime.
 
 > Nota `.xls`: questa build gestisce direttamente `.xlsx`, `.csv` e `.json`. Il vecchio formato binario `.xls` viene rifiutato con un messaggio esplicito; basta salvarlo come `.xlsx` o `.csv` prima dell’importazione.
@@ -27,7 +27,7 @@ PWA mobile-first e offline-first per usare l’iPhone come unico strumento duran
 
 IndexedDB usa store separati:
 
-- `playersBase`: nome, squadra, ruolo, ruolo Mantra, quotazione, FVM;
+- `playersBase`: nome, squadra, ruolo, ruolo Mantra, quotazione attuale, quotazione iniziale, FVM;
 - `playersPersonal`: slot, Range Target, dati legacy dei prezzi, commento, preferito;
 - `auctionState`: preso, prezzo acquisto, manager;
 - `settings`: ruolo corrente, lettera, filtri, slider, compatta, tema;
@@ -45,7 +45,8 @@ Il mapping riconosce automaticamente varianti comuni:
 - Squadra / Team / Club;
 - R / Ruolo;
 - RM / Mantra / Ruolo Mantra;
-- Qt.A / Qt / Quotazione;
+- Qt.A / Quotazione attuale;
+- Qt.I / Quotazione iniziale / QI;
 - FVM / FVM M.
 
 Prima della conferma puoi correggere manualmente qualunque associazione.
@@ -249,3 +250,36 @@ Ogni partecipante dispone inoltre di un recap rosa espandibile, raggruppato per 
 Un giocatore già assegnato non può più essere liberato con un singolo tocco accidentale: il secondo tap sulla checkbox apre una conferma esplicita. L'Undo immediato dopo una nuova assegnazione resta disponibile.
 
 Il Service Worker usa la cache `v8` e il backup corrente è in formato v4; i backup v1–v3 restano importabili.
+
+
+## Novità v9 — Asta Live Manager
+
+La v9 rifinisce soprattutto la lettura live da iPhone.
+
+### Fantallenatori
+
+La sezione **FANTA** usa ora una sola vista unificata. Ogni card mostra soltanto:
+
+- budget residuo;
+- max offerta;
+- slot rimasti del ruolo correntemente selezionato.
+
+L'ordinamento `Slot rimasti` usa il ruolo corrente. La card include inoltre una tendina **Rosa** con riepilogo occupati/totali (`P 3/3 | D 4/8 | C 2/8 | A 1/6`) e, in espansione, i giocatori acquistati con prezzo.
+
+### Card giocatore
+
+Per i giocatori liberi la gerarchia è:
+
+1. nome e squadra;
+2. `Slot | Range Target`, ad esempio `S1 | 40–50`;
+3. `FVM · QI · Nota personale`, ad esempio `FVM 211 · QI 21 · Molto interessante sotto 50`.
+
+L'importatore riconosce separatamente `Qt.A` come quotazione attuale e `Qt.I` come **Quotazione Iniziale (QI)**.
+
+Le card libere hanno anche una scala di grigi molto leggera basata su S1–S5. Gli stati hanno priorità: **preso > preferito > slot**.
+
+### Tema e nome PWA
+
+Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Asta Live Manager** (`Asta Live` come short name PWA).
+
+Il Service Worker usa la cache `fantacalcio-checklist-v9`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.

@@ -101,6 +101,7 @@
       ruolo: String(raw.ruolo || '').trim().toUpperCase(),
       ruolo_mantra: String(raw.ruolo_mantra || '').trim(),
       quotazione: raw.quotazione === '' || raw.quotazione == null ? null : Number(raw.quotazione),
+      quotazione_iniziale: raw.quotazione_iniziale === '' || raw.quotazione_iniziale == null ? null : Number(raw.quotazione_iniziale),
       fvm: raw.fvm === '' || raw.fvm == null ? null : Number(raw.fvm)
     };
     const personal = {
