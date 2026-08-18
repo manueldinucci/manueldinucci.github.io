@@ -278,3 +278,67 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
   .player-edit-sheet .sheet-scroll { max-height: calc(94dvh - 70px); padding-top: 9px; }
   .player-edit-sheet .sheet-info-grid { margin-bottom: 10px; }
 }
+
+/* v5 — monitoraggio fantallenatori e assegnazioni live */
+.managers-open-btn { min-width: 52px; padding-inline: 8px; font-size: 11px; }
+.full-width-btn { width: 100%; margin: 8px 0 10px; }
+
+.competitors-section { margin-top: 10px; border-top: 1px solid var(--line); padding-top: 10px; }
+.competitors-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 8px; }
+.competition-pressure { font-size: 11px; font-weight: 760; color: var(--muted); margin-top: -4px; margin-bottom: 7px; }
+.competitors-list { display: grid; gap: 4px; }
+.competitor-row { display: grid; grid-template-columns: minmax(82px, .8fr) minmax(0, 1.8fr); gap: 8px; align-items: center; min-height: 35px; border-bottom: 1px solid color-mix(in srgb, var(--line) 70%, transparent); font-size: 11px; }
+.competitor-row strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.competitor-row span { color: var(--muted); text-align: right; }
+.competitor-empty { font-size: 11px; color: var(--muted); padding: 5px 0; }
+.purchase-save-btn { width: calc(100% - 18px); margin: 0 9px 9px; }
+
+.assignment-player-card { display: flex; justify-content: space-between; gap: 10px; align-items: baseline; border: 1px solid var(--line); background: var(--surface-2); border-radius: 10px; padding: 10px; margin-bottom: 10px; }
+.assignment-player-card strong { font-size: 17px; }
+.assignment-player-card span { font-size: 11px; color: var(--muted); text-align: right; }
+.assignment-fields { display: grid; grid-template-columns: 1.35fr .65fr; gap: 8px; }
+.assignment-fields label, .managers-toolbar label, .auction-config-grid label, .manager-editor-fields label { display: grid; gap: 4px; color: var(--muted); font-size: 11px; }
+.assignment-fields select, .assignment-fields input, .managers-toolbar select, .auction-config-grid input, .manager-editor-fields input { width: 100%; min-height: 44px; border-radius: 8px; padding: 8px 9px; font-size: 16px; color: var(--text); }
+.assignment-manager-info { margin-top: 9px; padding: 8px 9px; border-radius: 9px; background: var(--surface-2); font-size: 11px; line-height: 1.45; }
+.assignment-manager-info span { color: var(--muted); }
+.assignment-validation { min-height: 20px; margin-top: 7px; font-size: 11px; font-weight: 760; }
+.assignment-validation.invalid { color: var(--danger); }
+.force-assignment { margin-top: 4px; color: var(--danger); }
+
+.managers-toolbar { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: end; }
+.managers-toolbar .switch-line { align-self: stretch; min-height: 44px; }
+.auction-config-summary { margin-top: 9px; padding: 8px 9px; border: 1px solid var(--line); border-radius: 9px; background: var(--surface-2); color: var(--muted); font-size: 11px; line-height: 1.35; }
+.manager-cards { display: grid; gap: 6px; }
+.manager-card { border: 1px solid var(--line); border-radius: 9px; padding: 8px 9px; background: var(--surface); }
+.manager-card-head { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.manager-card-head > div { min-width: 0; }
+.manager-card-head strong { font-size: 14px; }
+.manager-card-head span { display: block; color: var(--muted); font-size: 10px; margin-top: 1px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.manager-card-head b { white-space: nowrap; font-size: 13px; }
+.manager-card-main, .manager-role-row, .manager-card-foot { font-size: 10.5px; margin-top: 5px; color: var(--muted); }
+.manager-role-row { font-weight: 740; color: color-mix(in srgb, var(--text) 72%, var(--muted)); }
+.manager-card-foot { display: flex; justify-content: space-between; gap: 8px; }
+.manager-card-foot strong { color: var(--text); }
+.manager-card.compact-manager { min-height: 36px; display: grid; grid-template-columns: minmax(80px,.8fr) minmax(0,1.6fr); gap: 8px; align-items: center; padding-top: 5px; padding-bottom: 5px; }
+.compact-manager strong { font-size: 12px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.compact-manager span { font-size: 10.5px; text-align: right; color: var(--muted); white-space: nowrap; }
+.manager-empty { color: var(--muted); text-align: center; padding: 28px 10px; font-size: 12px; }
+
+.auction-config-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.manager-editor-head { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; margin-bottom: 7px; }
+.manager-editor-head strong { font-size: 12px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+.manager-editor-rows { display: grid; gap: 7px; }
+.manager-editor-row { display: grid; grid-template-columns: minmax(0,1fr) 38px; gap: 6px; border: 1px solid var(--line); border-radius: 9px; padding: 7px; background: var(--surface-2); }
+.manager-editor-fields { display: grid; grid-template-columns: 1.05fr 1fr .7fr; gap: 6px; }
+.manager-editor-fields label span { font-size: 9px; }
+.manager-remove-btn { border: 0; background: transparent; color: var(--danger); font-size: 22px; min-height: 44px; }
+
+.auction-live .managers-open-btn { display: inline-flex; }
+
+@media (max-width: 430px) {
+  .control-row.compact-row { gap: 5px; }
+  .managers-open-btn { min-width: 48px; padding-inline: 6px; }
+  .manager-editor-fields { grid-template-columns: 1fr 1fr; }
+  .manager-editor-fields label:last-child { grid-column: 1 / -1; }
+  .assignment-fields { grid-template-columns: 1fr 92px; }
+}

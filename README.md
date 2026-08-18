@@ -168,3 +168,53 @@ Prima di una sostituzione resta consigliato esportare un backup JSON.
 - **Scarsità evoluta**: visualizza `S1 rimasti/totali`, `S2 rimasti/totali`, ecc.; se gli slot non sono compilati usa fasce FVM TOP/SEMITOP con rapporto rimasti/totali.
 
 Per distribuire questa versione su GitHub Pages, sostituisci i file della repository con il contenuto di questa cartella, esegui commit/push e apri una volta il sito con Internet attivo per consentire al Service Worker `v3` di aggiornare la cache offline.
+
+## Novità v5 — Fantallenatori e budget live
+
+La v5 aggiunge un modulo completamente offline per monitorare i partecipanti durante l'asta.
+
+### Configurazione
+
+Da **Strumenti → Gestione fantallenatori → Configura asta e partecipanti** puoi impostare:
+
+- budget iniziale globale;
+- prezzo minimo;
+- composizione della rosa P/D/C/A;
+- partecipanti, nome squadra opzionale e budget iniziale individuale opzionale.
+
+Il numero dei partecipanti coincide con le righe configurate: usa **+ Aggiungi** o **×** per modificarlo.
+
+### Assegnazione rapida
+
+Quando sono presenti fantallenatori configurati, il tap sulla checkbox di un giocatore libero apre il foglio rapido di assegnazione:
+
+1. scegli il fantallenatore;
+2. inserisci il prezzo;
+3. conferma.
+
+La PWA valida budget, prezzo minimo, slot del ruolo, rosa completa e massima offerta teorica. È disponibile **Forza assegnazione** solo dopo un avviso esplicito.
+
+Le statistiche non sono incrementate/decrementate in modo fragile: vengono sempre ricalcolate dalle assegnazioni presenti nel database.
+
+### Pannello Fantallenatori
+
+Il pulsante **FANTA** apre il riepilogo con:
+
+- budget residuo / iniziale;
+- spesa totale;
+- giocatori acquistati e slot rimasti;
+- slot P/D/C/A ancora disponibili;
+- max offerta teorica;
+- budget medio per slot.
+
+Sono disponibili ordinamento per budget, max offerta, slot o nome e una vista ultra compatta.
+
+### Competitori
+
+Nel dettaglio di un giocatore libero compare **Possibili competitori**. Sono mostrati solo i partecipanti che hanno ancora uno slot del ruolo e capacità economica. Se il giocatore ha un Price Cap, la pressione economica usa quel valore come riferimento.
+
+### Backup e reset
+
+Il backup JSON v2 comprende anche configurazione asta e fantallenatori. I vecchi backup v1 restano importabili.
+
+**Reset asta** azzera assegnazioni, prezzi di acquisto e acquirenti. Budget e slot tornano automaticamente ai valori iniziali perché sono statistiche derivate. Commenti, target, slot personali e preferiti non vengono cancellati.

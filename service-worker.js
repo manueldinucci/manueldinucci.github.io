@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fantacalcio-checklist-v4';
+const CACHE_NAME = 'fantacalcio-checklist-v5';
 const APP_SHELL = [
   './',
   './index.html',
@@ -6,6 +6,7 @@ const APP_SHELL = [
   './players.js',
   './db.js',
   './xlsx-import.js',
+  './auction-logic.js',
   './app.js',
   './manifest.json',
   './vendor/xlsx-local-reader.js',

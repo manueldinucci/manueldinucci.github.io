@@ -1,12 +1,13 @@
 (() => {
   const DB_NAME = 'fantacalcio-checklist-db';
-  const DB_VERSION = 1;
+  const DB_VERSION = 2;
   const STORES = {
     base: 'playersBase',
     personal: 'playersPersonal',
     auction: 'auctionState',
     settings: 'settings',
-    meta: 'meta'
+    meta: 'meta',
+    managers: 'managers'
   };
 
   let dbPromise;
@@ -36,6 +37,7 @@
         if (!db.objectStoreNames.contains(STORES.auction)) db.createObjectStore(STORES.auction, { keyPath: 'key' });
         if (!db.objectStoreNames.contains(STORES.settings)) db.createObjectStore(STORES.settings, { keyPath: 'key' });
         if (!db.objectStoreNames.contains(STORES.meta)) db.createObjectStore(STORES.meta, { keyPath: 'key' });
+        if (!db.objectStoreNames.contains(STORES.managers)) db.createObjectStore(STORES.managers, { keyPath: 'id' });
       };
       req.onsuccess = () => resolve(req.result);
       req.onerror = () => reject(req.error);
@@ -115,6 +117,7 @@
       key,
       preso: Boolean(raw.preso),
       prezzo_acquisto: numOrNull(raw.prezzo_acquisto),
+      manager_id: String(raw.manager_id || ''),
       manager_acquirente: String(raw.manager_acquirente || '')
     };
     return { base, personal, auction };
@@ -158,7 +161,7 @@
     return { key, slot: '', prezzo_affare: null, prezzo_ideale_min: null, prezzo_ideale_max: null, price_cap: null, commento: '', preferito: false };
   }
   function defaultAuction(key) {
-    return { key, preso: false, prezzo_acquisto: null, manager_acquirente: '' };
+    return { key, preso: false, prezzo_acquisto: null, manager_id: '', manager_acquirente: '' };
   }
 
   async function updatePersonal(key, patch) {
@@ -261,6 +264,45 @@
     return { imported: prepared.length, duplicates, matched, newPlayers, migrated: migrations.length };
   }
 
+  function makeManagerId() {
+    if (globalThis.crypto?.randomUUID) return globalThis.crypto.randomUUID();
+    return `m-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,9)}`;
+  }
+
+  function sanitizeManager(raw = {}) {
+    const budget = raw.budgetInitial === '' || raw.budgetInitial == null || Number.isNaN(Number(raw.budgetInitial)) ? null : Math.max(0, Number(raw.budgetInitial));
+    return {
+      id: String(raw.id || makeManagerId()),
+      nome: String(raw.nome || '').trim(),
+      squadra: String(raw.squadra || '').trim(),
+      budgetInitial: budget
+    };
+  }
+
+  async function getManagers() {
+    return getAll(STORES.managers);
+  }
+
+  async function putManager(raw) {
+    const manager = sanitizeManager(raw);
+    if (!manager.nome) throw new Error('Il nome del fantallenatore è obbligatorio.');
+    await put(STORES.managers, manager);
+    return manager;
+  }
+
+  async function deleteManager(id) {
+    await del(STORES.managers, id);
+  }
+
+  async function replaceManagers(rows = []) {
+    const prepared = rows.map(sanitizeManager).filter(m => m.nome);
+    await tx([STORES.managers], 'readwrite', stores => {
+      stores[STORES.managers].clear();
+      for (const manager of prepared) stores[STORES.managers].put(manager);
+    });
+    return prepared;
+  }
+
   async function getSetting(key, fallback = null) {
     const row = await get(STORES.settings, key);
     return row ? row.value : fallback;
@@ -286,23 +328,24 @@
   }
 
   async function exportBackupObject() {
-    const [base, personal, auction, settings, meta] = await Promise.all([
-      getAll(STORES.base), getAll(STORES.personal), getAll(STORES.auction), getAll(STORES.settings), getAll(STORES.meta)
+    const [base, personal, auction, settings, meta, managers] = await Promise.all([
+      getAll(STORES.base), getAll(STORES.personal), getAll(STORES.auction), getAll(STORES.settings), getAll(STORES.meta), getAll(STORES.managers)
     ]);
     return {
       format: 'fantacalcio-checklist-backup',
-      version: 1,
+      version: 2,
       exportedAt: new Date().toISOString(),
       playersBase: base,
       playersPersonal: personal,
       auctionState: auction,
+      managers,
       settings,
       meta
     };
   }
 
   async function importBackupObject(data) {
-    if (!data || data.format !== 'fantacalcio-checklist-backup' || data.version !== 1) {
+    if (!data || data.format !== 'fantacalcio-checklist-backup' || ![1,2].includes(data.version)) {
       throw new Error('Backup non riconosciuto o versione non supportata.');
     }
     const groups = [
@@ -310,7 +353,8 @@
       [STORES.personal, data.playersPersonal],
       [STORES.auction, data.auctionState],
       [STORES.settings, data.settings],
-      [STORES.meta, data.meta]
+      [STORES.meta, data.meta],
+      [STORES.managers, data.managers || []]
     ];
     await tx(Object.values(STORES), 'readwrite', stores => {
       for (const [name, rows] of groups) {
@@ -333,6 +377,10 @@
     addFullPlayer,
     removePlayer,
     importBasePlayers,
+    getManagers,
+    putManager,
+    deleteManager,
+    replaceManagers,
     getSetting,
     setSetting,
     resetAuction,
