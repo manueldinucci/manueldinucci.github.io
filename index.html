@@ -53,7 +53,7 @@
           <label>Squadra<select id="teamFilter"><option value="">Tutte</option></select></label>
           <label>Slot<select id="slotFilter"><option value="">Tutti</option></select></label>
           <label>FVM minimo<input id="minFvmFilter" type="number" inputmode="numeric" min="0" placeholder="0" /></label>
-          <label>Prezzo max<input id="priceMaxFilter" type="number" inputmode="numeric" min="0" placeholder="—" /></label>
+          <label>Target max ≤<input id="priceMaxFilter" type="number" inputmode="numeric" min="0" placeholder="—" /></label>
         </div>
         <div class="toggle-grid">
           <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
@@ -108,10 +108,9 @@
               <option value="S5">S5</option>
             </select>
           </label>
-          <label>Affare ≤<input id="editDeal" type="number" inputmode="numeric" min="0" /></label>
-          <label>Ideale min<input id="editIdealMin" type="number" inputmode="numeric" min="0" /></label>
-          <label>Ideale max<input id="editIdealMax" type="number" inputmode="numeric" min="0" /></label>
-          <label class="cap-field">Price cap<input id="editCap" type="number" inputmode="numeric" min="0" /></label>
+          <label>Target min<input id="editTargetMin" type="number" inputmode="numeric" min="0" /></label>
+          <label>Target max<input id="editTargetMax" type="number" inputmode="numeric" min="0" /></label>
+          <label class="cap-field">Cap massimo <span class="field-hint">opzionale</span><input id="editCap" type="number" inputmode="numeric" min="0" /></label>
         </div>
         <label class="full-field comment-field">Commento<textarea id="editComment" rows="4" placeholder="Nota personale..."></textarea></label>
       </div>

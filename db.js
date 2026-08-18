@@ -106,6 +106,9 @@
     const personal = {
       key,
       slot: String(raw.slot || '').trim(),
+      target_min: numOrNull(raw.target_min != null ? raw.target_min : raw.prezzo_ideale_min),
+      target_max: numOrNull(raw.target_max != null ? raw.target_max : raw.prezzo_ideale_max),
+      // Campi legacy mantenuti per compatibilità con backup/versioni precedenti.
       prezzo_affare: numOrNull(raw.prezzo_affare),
       prezzo_ideale_min: numOrNull(raw.prezzo_ideale_min),
       prezzo_ideale_max: numOrNull(raw.prezzo_ideale_max),
@@ -148,7 +151,17 @@
     const [base, personal, auction] = await Promise.all([
       getAll(STORES.base), getAll(STORES.personal), getAll(STORES.auction)
     ]);
-    const pMap = new Map(personal.map(x => [x.key, x]));
+    const migrated = [];
+    const normalizedPersonal = personal.map(row => {
+      const next = { ...defaultPersonal(row.key), ...row };
+      if (next.target_min == null && next.prezzo_ideale_min != null) { next.target_min = numOrNull(next.prezzo_ideale_min); migrated.push(next); }
+      if (next.target_max == null && next.prezzo_ideale_max != null) { next.target_max = numOrNull(next.prezzo_ideale_max); if (!migrated.includes(next)) migrated.push(next); }
+      return next;
+    });
+    if (migrated.length) {
+      await tx([STORES.personal], 'readwrite', stores => { for (const row of migrated) stores[STORES.personal].put(row); });
+    }
+    const pMap = new Map(normalizedPersonal.map(x => [x.key, x]));
     const aMap = new Map(auction.map(x => [x.key, x]));
     return base.map(b => ({
       ...b,
@@ -158,7 +171,7 @@
   }
 
   function defaultPersonal(key) {
-    return { key, slot: '', prezzo_affare: null, prezzo_ideale_min: null, prezzo_ideale_max: null, price_cap: null, commento: '', preferito: false };
+    return { key, slot: '', target_min: null, target_max: null, prezzo_affare: null, prezzo_ideale_min: null, prezzo_ideale_max: null, price_cap: null, commento: '', preferito: false };
   }
   function defaultAuction(key) {
     return { key, preso: false, prezzo_acquisto: null, manager_id: '', manager_acquirente: '' };
@@ -334,7 +347,7 @@
     ]);
     return {
       format: 'fantacalcio-checklist-backup',
-      version: 2,
+      version: 3,
       exportedAt: new Date().toISOString(),
       playersBase: base,
       playersPersonal: personal,
@@ -346,12 +359,18 @@
   }
 
   async function importBackupObject(data) {
-    if (!data || data.format !== 'fantacalcio-checklist-backup' || ![1,2].includes(data.version)) {
+    if (!data || data.format !== 'fantacalcio-checklist-backup' || ![1,2,3].includes(data.version)) {
       throw new Error('Backup non riconosciuto o versione non supportata.');
     }
+    const migratedPersonal = (data.playersPersonal || []).map(row => ({
+      ...defaultPersonal(row.key),
+      ...row,
+      target_min: numOrNull(row.target_min != null ? row.target_min : row.prezzo_ideale_min),
+      target_max: numOrNull(row.target_max != null ? row.target_max : row.prezzo_ideale_max)
+    }));
     const groups = [
       [STORES.base, data.playersBase],
-      [STORES.personal, data.playersPersonal],
+      [STORES.personal, migratedPersonal],
       [STORES.auction, data.auctionState],
       [STORES.settings, data.settings],
       [STORES.meta, data.meta],

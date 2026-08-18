@@ -226,3 +226,11 @@ La v6 aggiunge una lettura strategica del ruolo corrente senza introdurre dipend
 Dopo un'assegnazione compare per circa 5,6 secondi una mini-card con fantallenatore, giocatore, prezzo, slot rimasti nel ruolo appena occupato, budget residuo, max bid e slot totali. Se il reparto viene completato compare `RUOLO COMPLETO ✓`. `ANNULLA` continua a ripristinare assegnazione, budget e slot.
 
 Il pannello Fantallenatori dispone della vista **Occhi sugli avversari**, riferita al ruolo selezionato nell'app. Mostra domanda residua, avversari attivi, giocatori di interesse ancora disponibili, rapporto domanda/offerta, pressione del ruolo e indicatori di bisogno/minaccia. Tutti i valori vengono ricalcolati dalle assegnazioni reali e non da contatori incrementali.
+
+## Novità v7 — Range target e prezzo reale in card
+
+La valutazione personale è ora semplificata in `Target min`, `Target max` e `Cap massimo` opzionale. I vecchi campi `prezzo_ideale_min` e `prezzo_ideale_max` vengono migrati automaticamente verso `target_min` e `target_max`; `prezzo_affare` resta conservato come dato legacy ma non viene più mostrato nella UI principale.
+
+Per i giocatori liberi la card mostra il range target (`45–55 · Cap 62`). Dopo l'assegnazione il range scompare dalla card e viene sostituito da acquirente e prezzo reale (`Luca · 58 cr`). Se è disponibile solo uno dei due dati viene mostrato solo quello, senza separatori o valori vuoti. Undo e Reset asta riportano automaticamente la card allo stato libero e quindi al range target.
+
+I backup v3 includono i nuovi campi target e l'importazione continua ad accettare backup v1/v2, migrando i vecchi valori ideali senza perdita di dati.

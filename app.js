@@ -211,7 +211,7 @@
       .filter(p => !state.team || p.squadra === state.team)
       .filter(p => !state.slot || p.slot === state.slot)
       .filter(p => minFvm == null || (num(p.fvm) ?? -Infinity) >= minFvm)
-      .filter(p => maxPrice == null || (num(p.price_cap) ?? num(p.prezzo_ideale_max) ?? num(p.prezzo_affare) ?? Infinity) <= maxPrice)
+      .filter(p => maxPrice == null || (num(p.target_max) ?? num(p.prezzo_ideale_max) ?? Infinity) <= maxPrice)
       .filter(p => !state.onlyAvailable || !p.preso)
       .filter(p => !state.onlyFavorites || p.preferito)
       .filter(p => !state.onlyComments || String(p.commento || '').trim())
@@ -240,16 +240,27 @@
     return 16 + (state.emphasis / 100) * 15 * n;
   }
 
-  function pricesText(p) {
-    const a = p.prezzo_affare;
-    const min = p.prezzo_ideale_min;
-    const max = p.prezzo_ideale_max;
-    const cap = p.price_cap;
+  function targetText(p, { includeCap = true } = {}) {
+    const min = num(p.target_min) ?? num(p.prezzo_ideale_min);
+    const max = num(p.target_max) ?? num(p.prezzo_ideale_max);
+    const cap = num(p.price_cap);
+    let range = '';
+    if (min != null && max != null) range = `${displayNum(min)}–${displayNum(max)}`;
+    else if (min != null) range = `da ${displayNum(min)}`;
+    else if (max != null) range = `≤${displayNum(max)}`;
     const parts = [];
-    if (a != null) parts.push(`≤${displayNum(a)}`);
-    if (min != null || max != null) parts.push(`${displayNum(min)}–${displayNum(max)}`);
-    if (cap != null) parts.push(displayNum(cap));
-    return parts.length ? parts.join(' · ') : 'Prezzi non impostati';
+    if (range) parts.push(range);
+    if (includeCap && cap != null) parts.push(`Cap ${displayNum(cap)}`);
+    return parts.length ? parts.join(' · ') : 'Range non impostato';
+  }
+
+  function purchaseText(p) {
+    const manager = String(p.manager_acquirente || '').trim();
+    const price = num(p.prezzo_acquisto);
+    if (manager && price != null) return `${manager} · ${displayNum(price)} cr`;
+    if (manager) return manager;
+    if (price != null) return `${displayNum(price)} cr`;
+    return '';
   }
 
   function renderPlayers() {
@@ -268,8 +279,8 @@
         <button class="fav-btn" aria-label="${p.preferito?'Rimuovi preferito':'Aggiungi preferito'}">${p.preferito?'★':'☆'}</button>
         <div class="player-main" tabindex="0" role="button" aria-label="Apri ${esc(p.nome)}">
           <div class="player-line"><span class="player-name" style="font-size:${size}px">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
-          <div class="player-prices">${esc(pricesText(p))}</div>
-          ${(state.compact && !state.liveMode) ? '' : `<div class="player-comment">${esc(p.commento || (state.liveMode ? '' : `FVM ${displayNum(p.fvm)} · ${p.slot || 'slot —'}`))}</div>`}
+          ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : `<div class="player-prices">${esc(targetText(p))}</div>`}
+          ${p.preso || (state.compact && !state.liveMode) ? '' : `<div class="player-comment">${esc(p.commento || (state.liveMode ? '' : `FVM ${displayNum(p.fvm)} · ${p.slot || 'slot —'}`))}</div>`}
         </div>`;
       card.querySelector('.take-btn').addEventListener('click', () => toggleTaken(p.key));
       card.querySelector('.fav-btn').addEventListener('click', () => toggleFavorite(p.key));
@@ -473,7 +484,7 @@
     }));
     $('confirmImportBtn').addEventListener('click', confirmImport);
 
-    ['editDeal','editIdealMin','editIdealMax','editCap','editComment'].forEach(id => {
+    ['editTargetMin','editTargetMax','editCap','editComment'].forEach(id => {
       $(id).addEventListener('input', scheduleSelectedPlayerSave);
       $(id).addEventListener('focus', () => setTimeout(() => $(id).scrollIntoView({block:'center',behavior:'smooth'}), 250));
     });
@@ -545,9 +556,8 @@
       slotSelect.appendChild(custom);
     }
     slotSelect.value = currentSlot;
-    $('editDeal').value = p.prezzo_affare ?? '';
-    $('editIdealMin').value = p.prezzo_ideale_min ?? '';
-    $('editIdealMax').value = p.prezzo_ideale_max ?? '';
+    $('editTargetMin').value = p.target_min ?? p.prezzo_ideale_min ?? '';
+    $('editTargetMax').value = p.target_max ?? p.prezzo_ideale_max ?? '';
     $('editCap').value = p.price_cap ?? '';
     $('editComment').value = p.commento || '';
     $('editPurchase').value = p.prezzo_acquisto ?? '';
@@ -573,9 +583,8 @@
     const p = state.players.find(x => x.key === state.selectedKey); if (!p) return;
     const personal = {
       slot: $('editSlot').value.trim(),
-      prezzo_affare: num($('editDeal').value),
-      prezzo_ideale_min: num($('editIdealMin').value),
-      prezzo_ideale_max: num($('editIdealMax').value),
+      target_min: num($('editTargetMin').value),
+      target_max: num($('editTargetMax').value),
       price_cap: num($('editCap').value),
       commento: $('editComment').value,
       preferito: p.preferito
@@ -614,7 +623,7 @@
     populateManagerSelects();
     $('assignmentTitle').textContent = `Assegna ${p.nome}`;
     $('assignmentMeta').textContent = `${p.squadra || '—'} · ${p.ruolo} · FVM ${displayNum(p.fvm)}`;
-    $('assignmentPlayerCard').innerHTML = `<strong>${esc(p.nome)}</strong><span>${esc(pricesText(p))}${p.price_cap != null ? ` · Cap ${displayNum(p.price_cap)}` : ''}</span>`;
+    $('assignmentPlayerCard').innerHTML = `<strong>${esc(p.nome)}</strong><span>${esc(targetText(p))}</span>`;
     const eligible = FantaAuction.getCompetitors(p, state.managers, state.players.filter(x => x.key !== p.key), state.auctionConfig);
     const preferred = p.manager_id || eligible[0]?.manager.id || state.managers[0]?.id || '';
     $('assignmentManager').value = preferred;
@@ -947,16 +956,15 @@
         <label>FVM<input name="fvm" type="number" inputmode="numeric"></label>
         <label>Quotazione<input name="quotazione" type="number" inputmode="numeric"></label>
         <label>Slot<input name="slot" placeholder="S1"></label>
-        <label>Affare ≤<input name="prezzo_affare" type="number" inputmode="numeric"></label>
-        <label>Ideale min<input name="prezzo_ideale_min" type="number" inputmode="numeric"></label>
-        <label>Ideale max<input name="prezzo_ideale_max" type="number" inputmode="numeric"></label>
-        <label>Price cap<input name="price_cap" type="number" inputmode="numeric"></label>
+        <label>Target min<input name="target_min" type="number" inputmode="numeric"></label>
+        <label>Target max<input name="target_max" type="number" inputmode="numeric"></label>
+        <label>Cap massimo<input name="price_cap" type="number" inputmode="numeric"></label>
         <label class="span-2">Commento<textarea name="commento" rows="4"></textarea></label>
         <button class="primary-btn span-2" type="submit">Aggiungi</button>
       </form>`;
     $('addPlayerForm').addEventListener('submit', async e => {
       e.preventDefault(); const fd = new FormData(e.currentTarget); const raw = Object.fromEntries(fd.entries());
-      ['fvm','quotazione','prezzo_affare','prezzo_ideale_min','prezzo_ideale_max','price_cap'].forEach(k => raw[k] = num(raw[k]));
+      ['fvm','quotazione','target_min','target_max','price_cap'].forEach(k => raw[k] = num(raw[k]));
       try { await FantaDB.addFullPlayer(raw); await refreshPlayers(); closeAllSheets(); toast('Giocatore aggiunto'); }
       catch (err) { toast(err.message); }
     });
