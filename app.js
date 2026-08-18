@@ -27,10 +27,12 @@
     managers: [],
     auctionConfig: FantaAuction.makeDefaultConfig(),
     managerSort: 'budget',
-    managerCompact: false,
     managerView: 'overview',
     slotDisplayMode: 'remaining',
-    pendingAssignmentKey: null
+    interestConfig: { mode:'slot123', fvmMin:30, percentile:30 },
+    pendingAssignmentKey: null,
+    pendingUnassignKey: null,
+    filtersScrollY: 0
   };
 
   let uiSaveTimer = null;
@@ -86,10 +88,13 @@
     state.auctionConfig = FantaAuction.makeDefaultConfig(await FantaDB.getSetting('auctionConfig', null) || {});
     const managerUI = await FantaDB.getSetting('managerUI', null);
     if (managerUI && typeof managerUI === 'object') {
-      state.managerSort = managerUI.sort || state.managerSort;
-      state.managerCompact = Boolean(managerUI.compact);
+      state.managerSort = ['slots','maxBid','budget'].includes(managerUI.sort) ? managerUI.sort : state.managerSort;
       state.managerView = managerUI.view || state.managerView;
       state.slotDisplayMode = managerUI.slotDisplayMode || state.slotDisplayMode;
+    }
+    const savedInterest = await FantaDB.getSetting('interestConfig', null);
+    if (savedInterest && typeof savedInterest === 'object') {
+      state.interestConfig = { ...state.interestConfig, ...savedInterest };
     }
   }
 
@@ -133,7 +138,8 @@
     document.body.classList.toggle('auction-live', state.liveMode);
     $('liveModeBtn').classList.toggle('active', state.liveMode);
     $('liveModeBtn').setAttribute('aria-pressed', String(state.liveMode));
-    $('liveModeBtn').textContent = state.liveMode ? 'LIVE' : 'ASTA';
+    $('liveModeBtn').textContent = 'ASTA';
+    renderFilterButton();
     if ($('liveModeCheck')) $('liveModeCheck').checked = state.liveMode;
     renderRoleTabs();
     renderPlayers();
@@ -240,18 +246,13 @@
     return 16 + (state.emphasis / 100) * 15 * n;
   }
 
-  function targetText(p, { includeCap = true } = {}) {
+  function targetText(p) {
     const min = num(p.target_min) ?? num(p.prezzo_ideale_min);
     const max = num(p.target_max) ?? num(p.prezzo_ideale_max);
-    const cap = num(p.price_cap);
-    let range = '';
-    if (min != null && max != null) range = `${displayNum(min)}–${displayNum(max)}`;
-    else if (min != null) range = `da ${displayNum(min)}`;
-    else if (max != null) range = `≤${displayNum(max)}`;
-    const parts = [];
-    if (range) parts.push(range);
-    if (includeCap && cap != null) parts.push(`Cap ${displayNum(cap)}`);
-    return parts.length ? parts.join(' · ') : 'Range non impostato';
+    if (min != null && max != null) return `${displayNum(min)}–${displayNum(max)}`;
+    if (min != null) return `da ${displayNum(min)}`;
+    if (max != null) return `≤${displayNum(max)}`;
+    return '';
   }
 
   function purchaseText(p) {
@@ -279,7 +280,7 @@
         <button class="fav-btn" aria-label="${p.preferito?'Rimuovi preferito':'Aggiungi preferito'}">${p.preferito?'★':'☆'}</button>
         <div class="player-main" tabindex="0" role="button" aria-label="Apri ${esc(p.nome)}">
           <div class="player-line"><span class="player-name" style="font-size:${size}px">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
-          ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : `<div class="player-prices">${esc(targetText(p))}</div>`}
+          ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : (targetText(p) ? `<div class="player-prices">${esc(targetText(p))}</div>` : '')}
           ${p.preso || (state.compact && !state.liveMode) ? '' : `<div class="player-comment">${esc(p.commento || (state.liveMode ? '' : `FVM ${displayNum(p.fvm)} · ${p.slot || 'slot —'}`))}</div>`}
         </div>`;
       card.querySelector('.take-btn').addEventListener('click', () => toggleTaken(p.key));
@@ -296,6 +297,11 @@
   async function toggleTaken(key, { allowUndo = true } = {}) {
     const p = state.players.find(x => x.key === key); if (!p) return;
 
+    if (p.preso) {
+      openUnassignSheet(key);
+      return;
+    }
+
     if (!p.preso && state.managers.length) {
       openAssignmentSheet(key);
       return;
@@ -307,12 +313,7 @@
       manager_id: p.manager_id || '',
       manager_acquirente: p.manager_acquirente
     };
-    p.preso = !p.preso;
-    if (!p.preso) {
-      p.prezzo_acquisto = null;
-      p.manager_id = '';
-      p.manager_acquirente = '';
-    }
+    p.preso = true;
     await FantaDB.updateAuction(key, {
       preso: p.preso,
       prezzo_acquisto: p.prezzo_acquisto,
@@ -332,6 +333,30 @@
         toast('Modifica annullata');
       }, 4800);
     }
+  }
+
+  function openUnassignSheet(key) {
+    const p = state.players.find(x => x.key === key); if (!p || !p.preso) return;
+    state.pendingUnassignKey = key;
+    const purchase = purchaseText(p);
+    $('unassignPlayerInfo').innerHTML = `<strong>${esc(p.nome)}</strong><span>${esc([p.squadra, purchase].filter(Boolean).join(' · '))}</span>`;
+    openOnly('unassignSheet');
+  }
+
+  async function confirmUnassign() {
+    const p = state.players.find(x => x.key === state.pendingUnassignKey); if (!p || !p.preso) { closeAllSheets(); return; }
+    const before = { preso:true, prezzo_acquisto:p.prezzo_acquisto, manager_id:p.manager_id || '', manager_acquirente:p.manager_acquirente || '' };
+    const after = { preso:false, prezzo_acquisto:null, manager_id:'', manager_acquirente:'' };
+    Object.assign(p, after);
+    await FantaDB.updateAuction(p.key, after);
+    closeAllSheets();
+    renderPlayers(); renderCountsAndScarcity();
+    toast(`${p.nome} nuovamente libero`, 'Annulla', async () => {
+      Object.assign(p, before);
+      await FantaDB.updateAuction(p.key, before);
+      renderPlayers(); renderCountsAndScarcity();
+      if (!$('managersSheet').classList.contains('hidden')) renderManagersPanel();
+    }, 4800);
   }
 
   async function toggleFavorite(key) {
@@ -355,19 +380,30 @@
     renderOpponentRoleSummary(rolePlayers, scarcity);
   }
 
-  function interestingAvailableCount(rolePlayers) {
+  function interestingAvailableInfo(rolePlayers) {
     const available = rolePlayers.filter(p => !p.preso);
-    const withSlot = rolePlayers.filter(p => String(p.slot || '').trim());
-    if (withSlot.length) return available.filter(p => ['S1','S2','S3'].includes(String(p.slot || '').toUpperCase())).length;
-    const vals = rolePlayers.map(p => num(p.fvm)).filter(v => v != null).sort((a,b)=>a-b);
-    if (!vals.length) return available.length;
-    const cut = percentile(vals, .65);
-    return available.filter(p => (num(p.fvm) ?? -Infinity) >= cut).length;
+    const mode = state.interestConfig?.mode || 'slot123';
+    if (mode === 'slot12') {
+      return { count: available.filter(p => ['S1','S2'].includes(String(p.slot || '').toUpperCase())).length, label:'S1–S2' };
+    }
+    if (mode === 'fvmMin') {
+      const min = Math.max(0, num(state.interestConfig?.fvmMin) ?? 30);
+      return { count: available.filter(p => (num(p.fvm) ?? -Infinity) >= min).length, label:`FVM ≥ ${displayNum(min)}` };
+    }
+    if (mode === 'fvmPercentile') {
+      const topPct = Math.min(100, Math.max(1, num(state.interestConfig?.percentile) ?? 30));
+      const vals = rolePlayers.map(p => num(p.fvm)).filter(v => v != null).sort((a,b)=>a-b);
+      if (!vals.length) return { count:available.length, label:`top ${displayNum(topPct)}% FVM` };
+      const cut = percentile(vals, 1 - topPct/100);
+      return { count: available.filter(p => (num(p.fvm) ?? -Infinity) >= cut).length, label:`top ${displayNum(topPct)}% FVM` };
+    }
+    return { count: available.filter(p => ['S1','S2','S3'].includes(String(p.slot || '').toUpperCase())).length, label:'S1–S3' };
   }
 
   function opponentRoleModel(rolePlayers) {
     const demand = FantaAuction.computeRoleDemand(state.managers, state.players, state.auctionConfig, state.role);
-    const interesting = interestingAvailableCount(rolePlayers);
+    const interest = interestingAvailableInfo(rolePlayers);
+    const interesting = interest.count;
     const premiumAvailable = rolePlayers.filter(p => !p.preso && ['S1','S2'].includes(String(p.slot || '').toUpperCase())).length;
     const premiumTotal = rolePlayers.filter(p => ['S1','S2'].includes(String(p.slot || '').toUpperCase())).length;
     const demandSupply = demand.demand / Math.max(1, interesting);
@@ -376,7 +412,7 @@
     const econ = demand.active.length ? demand.active.reduce((sum,x)=>sum + (x.stats.budgetInitial ? x.stats.maxBid/x.stats.budgetInitial : 0),0) / demand.active.length : 0;
     const score = Math.min(2,demandSupply)/2 * .55 + activeRatio*.15 + premiumScarcity*.15 + Math.min(1,econ)*.15;
     const pressure = score >= .78 ? 'CRITICA' : score >= .58 ? 'ALTA' : score >= .34 ? 'NORMALE' : 'BASSA';
-    return {...demand, interesting, demandSupply, pressure};
+    return {...demand, interesting, interestLabel:interest.label, demandSupply, pressure};
   }
 
   function renderOpponentRoleSummary(rolePlayers) {
@@ -385,7 +421,7 @@
     const m = opponentRoleModel(rolePlayers);
     el.classList.remove('hidden');
     const relation = m.demand > m.interesting ? 'DOMANDA > OFFERTA' : m.demand < m.interesting ? 'OFFERTA > DOMANDA' : 'DOMANDA = OFFERTA';
-    el.textContent = `${state.role} · Avversari ${m.activeCount}/${m.totalOpponents} · Slot ${m.demand} · ${relation} · Pressione ${m.pressure}`;
+    el.textContent = `${state.role} · Avversari ${m.activeCount}/${m.totalOpponents} · Slot ${m.demand} · ${m.interestLabel} ${m.interesting} · ${relation} · Pressione ${m.pressure}`;
   }
 
   function getScarcityModel(rolePlayers) {
@@ -437,7 +473,8 @@
   function bindStaticEvents() {
     $('startLetter').addEventListener('change', e => { state.startLetter = e.target.value; scheduleUISave(); renderPlayers(); });
     $('searchInput').addEventListener('input', e => { state.search = e.target.value; scheduleUISave(); renderPlayers(); });
-    $('filtersBtn').addEventListener('click', () => $('filtersPanel').classList.toggle('hidden'));
+    $('filtersBtn').addEventListener('click', openFiltersSheet);
+    $('closeFiltersBtn').addEventListener('click', closeAllSheets);
     $('liveModeBtn').addEventListener('click', () => setLiveMode(!state.liveMode));
     $('managersBtn').addEventListener('click', openManagersPanel);
     bindFilter('teamFilter','team','change');
@@ -484,7 +521,7 @@
     }));
     $('confirmImportBtn').addEventListener('click', confirmImport);
 
-    ['editTargetMin','editTargetMax','editCap','editComment'].forEach(id => {
+    ['editTargetMin','editTargetMax','editComment'].forEach(id => {
       $(id).addEventListener('input', scheduleSelectedPlayerSave);
       $(id).addEventListener('focus', () => setTimeout(() => $(id).scrollIntoView({block:'center',behavior:'smooth'}), 250));
     });
@@ -505,37 +542,54 @@
     $('assignmentPrice').addEventListener('input', updateAssignmentPreview);
     $('confirmAssignmentBtn').addEventListener('click', confirmAssignment);
     $('managerSort').addEventListener('change', async e => { state.managerSort = e.target.value; await saveManagerUI(); renderManagersPanel(); });
-    $('managerCompact').addEventListener('change', async e => { state.managerCompact = e.target.checked; await saveManagerUI(); renderManagersPanel(); });
     $('slotDisplayMode').addEventListener('change', async e => { state.slotDisplayMode = e.target.value; await saveManagerUI(); renderManagersPanel(); });
-    $('managerViewSegment').querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', async () => { state.managerView = btn.dataset.view; if (state.managerView === 'eyes' && !['roleMore','roleLess','need','strategic','budget','maxBid','name'].includes(state.managerSort)) state.managerSort='strategic'; await saveManagerUI(); renderManagersPanel(); }));
+    $('managerViewSegment').querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', async () => { state.managerView = btn.dataset.view; await saveManagerUI(); renderManagersPanel(); }));
     $('toastClose').addEventListener('click', () => { clearTimeout(toastTimer); $('toast').classList.add('hidden'); });
     $('openManagerConfigBtn').addEventListener('click', openManagerConfig);
     $('addManagerRowBtn').addEventListener('click', () => addManagerEditorRow({}));
     $('managerConfigForm').addEventListener('submit', saveManagerConfig);
+    $('closeUnassignBtn').addEventListener('click', closeAllSheets);
+    $('keepAssignmentBtn').addEventListener('click', closeAllSheets);
+    $('confirmUnassignBtn').addEventListener('click', confirmUnassign);
+    $('interestMode').addEventListener('change', updateInterestConfigVisibility);
   }
 
   function bindFilter(id, key, evt) {
-    $(id).addEventListener(evt, e => { state[key] = e.target.value; scheduleUISave(); renderPlayers(); });
+    $(id).addEventListener(evt, e => { state[key] = e.target.value; scheduleUISave(); renderPlayers(); renderFilterButton(); });
   }
   function bindCheck(id, key) {
-    $(id).addEventListener('change', e => { state[key] = e.target.checked; scheduleUISave(); renderPlayers(); });
+    $(id).addEventListener('change', e => { state[key] = e.target.checked; scheduleUISave(); renderPlayers(); renderFilterButton(); });
+  }
+
+  function activeFilterCount() {
+    return [state.team, state.slot, state.minFvm, state.priceMax, state.onlyAvailable, state.onlyFavorites, state.onlyComments].filter(v => v !== '' && v !== false && v != null).length;
+  }
+
+  function renderFilterButton() {
+    const count = activeFilterCount();
+    $('filtersBtn').textContent = count ? `Filtri · ${count}` : 'Filtri';
   }
 
   function setLiveMode(enabled) {
     state.liveMode = Boolean(enabled);
-    if (state.liveMode) $('filtersPanel').classList.add('hidden');
     scheduleUISave();
     renderAll();
   }
 
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
   function openOnly(id) {
-    ['playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet'].forEach(x => $(x).classList.add('hidden'));
     $(id).classList.remove('hidden'); showBackdrop(); document.body.style.overflow = 'hidden';
   }
   function closeAllSheets() {
-    ['playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet'].forEach(x => $(x).classList.add('hidden'));
-    $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null;
+    const restoreFilters = !$('filtersPanel').classList.contains('hidden');
+    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet'].forEach(x => $(x).classList.add('hidden'));
+    $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null;
+    if (restoreFilters) requestAnimationFrame(() => window.scrollTo(0, state.filtersScrollY || 0));
+  }
+  function openFiltersSheet() {
+    state.filtersScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    openOnly('filtersPanel');
   }
   function openTools() { openOnly('toolsSheet'); }
 
@@ -558,7 +612,6 @@
     slotSelect.value = currentSlot;
     $('editTargetMin').value = p.target_min ?? p.prezzo_ideale_min ?? '';
     $('editTargetMax').value = p.target_max ?? p.prezzo_ideale_max ?? '';
-    $('editCap').value = p.price_cap ?? '';
     $('editComment').value = p.commento || '';
     $('editPurchase').value = p.prezzo_acquisto ?? '';
     populateManagerSelects();
@@ -585,7 +638,6 @@
       slot: $('editSlot').value.trim(),
       target_min: num($('editTargetMin').value),
       target_max: num($('editTargetMax').value),
-      price_cap: num($('editCap').value),
       commento: $('editComment').value,
       preferito: p.preferito
     };
@@ -600,19 +652,20 @@
   function renderCompetitors(p) {
     const section = $('competitorsSection');
     if (!section) return;
-    if (!state.managers.length || p.preso) {
-      section.classList.add('hidden');
-      return;
-    }
+    if (!state.managers.length || p.preso) { section.classList.add('hidden'); return; }
     const competitors = FantaAuction.getCompetitors(p, FantaAuction.opponentManagers(state.managers), state.players, state.auctionConfig);
     const pressure = FantaAuction.competitionLevel(p, competitors);
     section.classList.remove('hidden');
-    const cap = num(p.price_cap);
-    $('competitionPressure').textContent = cap != null
-      ? `Concorrenza ${pressure.label} · ${pressure.count} possono superare il cap ${displayNum(cap)}`
+    const targetMax = num(p.target_max) ?? num(p.prezzo_ideale_max);
+    $('competitionPressure').textContent = targetMax != null
+      ? `Concorrenza ${pressure.label} · ${pressure.count} sopra Target ${displayNum(targetMax)}`
       : `Concorrenza ${pressure.label} · ${competitors.length} con slot ${p.ruolo}`;
     $('competitorsList').innerHTML = competitors.length
-      ? competitors.map(({manager,stats}) => { const threat = FantaAuction.threatLevel(stats, p.ruolo, state.auctionConfig, p.price_cap); const cap = num(p.price_cap); const capText = cap == null ? '' : (stats.maxBid > cap ? ' · può superare Cap' : ' · sotto Cap'); return `<div class="competitor-row"><strong>${esc(manager.nome)}</strong><span>${displayNum(stats.budgetRemaining)} cr · Max ${displayNum(Math.floor(stats.maxBid))} · ${esc(p.ruolo)} ${stats.roleRemaining[p.ruolo]} · Minaccia ${threat.label}${capText}</span></div>`; }).join('')
+      ? competitors.map(({manager,stats}) => {
+          const threat = FantaAuction.threatLevel(stats, p.ruolo, state.auctionConfig, targetMax);
+          const targetText = targetMax == null ? '' : (stats.maxBid > targetMax ? ` · sopra Target ${displayNum(targetMax)}` : ` · sotto Target ${displayNum(targetMax)}`);
+          return `<div class="competitor-row"><strong>${esc(manager.nome)}</strong><span>${displayNum(stats.budgetRemaining)} cr · Max ${displayNum(Math.floor(stats.maxBid))} · ${esc(p.ruolo)} ${stats.roleRemaining[p.ruolo]} · Minaccia ${threat.label}${targetText}</span></div>`;
+        }).join('')
       : '<div class="competitor-empty">Nessun fantallenatore con slot e capacità economica disponibili.</div>';
   }
 
@@ -706,7 +759,7 @@
   }
 
   async function saveManagerUI() {
-    await FantaDB.setSetting('managerUI', {sort:state.managerSort, compact:state.managerCompact, view:state.managerView, slotDisplayMode:state.slotDisplayMode});
+    await FantaDB.setSetting('managerUI', {sort:state.managerSort, view:state.managerView, slotDisplayMode:state.slotDisplayMode});
   }
 
   function openManagersPanel() {
@@ -714,47 +767,44 @@
     openOnly('managersSheet');
   }
 
+  function managerRosterDetails(manager, stats) {
+    const roleSummary = FantaAuction.ROLES.map(r => `${r} ${stats.roleBought[r]}/${state.auctionConfig.roster[r]}`).join(' · ');
+    const sections = FantaAuction.ROLES.map(role => {
+      const players = state.players.filter(p => p.preso && p.ruolo === role && FantaAuction.assignmentBelongsToManager(p, manager));
+      const spent = players.reduce((sum,p)=>sum + (num(p.prezzo_acquisto) || 0), 0);
+      const items = players.length ? players.map(p => `<div class="roster-player"><span>${esc(p.nome)}</span><b>${num(p.prezzo_acquisto) != null ? `${displayNum(p.prezzo_acquisto)} cr` : '—'}</b></div>`).join('') : '<div class="roster-empty">Nessun acquisto</div>';
+      return `<div class="roster-role"><div class="roster-role-head"><strong>${role} ${stats.roleBought[role]}/${state.auctionConfig.roster[role]}</strong><span>${displayNum(spent)} cr</span></div>${items}</div>`;
+    }).join('');
+    return `<details class="manager-roster"><summary>${esc(roleSummary)}</summary><div class="manager-roster-body">${sections}</div></details>`;
+  }
+
   function renderManagersPanel() {
+    if (!['slots','maxBid','budget'].includes(state.managerSort)) state.managerSort = 'budget';
     $('managerSort').value = state.managerSort;
-    $('managerCompact').checked = state.managerCompact;
     $('slotDisplayMode').value = state.slotDisplayMode;
     $('managerViewSegment').querySelectorAll('[data-view]').forEach(b => b.classList.toggle('active', b.dataset.view === state.managerView));
     const c = state.auctionConfig;
-    $('auctionConfigSummary').textContent = `${state.managers.length} partecipanti · ${c.budgetInitial} crediti · min ${c.minPrice} · rosa P${c.roster.P} D${c.roster.D} C${c.roster.C} A${c.roster.A}`;
-    $('managersMeta').textContent = state.managerView === 'eyes' ? `Occhi sugli avversari · ruolo ${state.role}` : (state.managers.length ? 'Budget e slot ricalcolati dalle assegnazioni' : 'Configura partecipanti e regole dell’asta');
-    const sourceManagers = state.managerView === 'eyes' ? FantaAuction.opponentManagers(state.managers) : state.managers;
-    let rows = FantaAuction.computeAllManagerStats(sourceManagers, state.players, c);
+    $('managersMeta').textContent = state.managerView === 'eyes' ? `Confronto partecipanti · ruolo ${state.role}` : (state.managers.length ? 'Budget, slot e rose in tempo reale' : 'Configura partecipanti e regole dell’asta');
+    let rows = FantaAuction.computeAllManagerStats(state.managers, state.players, c);
     const role = state.role;
     const sorters = {
       budget:(a,b)=>b.stats.budgetRemaining-a.stats.budgetRemaining,
       maxBid:(a,b)=>b.stats.maxBid-a.stats.maxBid,
-      slots:(a,b)=>b.stats.slotsRemaining-a.stats.slotsRemaining,
-      roleMore:(a,b)=>b.stats.roleRemaining[role]-a.stats.roleRemaining[role],
-      roleLess:(a,b)=>a.stats.roleRemaining[role]-b.stats.roleRemaining[role],
-      need:(a,b)=>FantaAuction.roleNeedLevel(b.stats.roleRemaining[role],c.roster[role]).ratio-FantaAuction.roleNeedLevel(a.stats.roleRemaining[role],c.roster[role]).ratio,
-      strategic:(a,b)=>FantaAuction.strategicScore(b.stats,role,c)-FantaAuction.strategicScore(a.stats,role,c),
-      name:(a,b)=>a.manager.nome.localeCompare(b.manager.nome,'it',{sensitivity:'base'})
+      slots:(a,b)=>b.stats.slotsRemaining-a.stats.slotsRemaining
     };
-    rows.sort(sorters[state.managerSort] || (state.managerView==='eyes'?sorters.strategic:sorters.budget));
-    $('managerCards').classList.toggle('ultra-compact', state.managerCompact);
-    const rolePlayers = state.players.filter(p=>p.ruolo===role);
-    const model = opponentRoleModel(rolePlayers);
-    const relation = model.demand > model.interesting ? 'DOMANDA > OFFERTA' : model.demand < model.interesting ? 'OFFERTA > DOMANDA' : 'DOMANDA = OFFERTA';
-    $('opponentRoleSummary').classList.toggle('hidden', state.managerView !== 'eyes');
-    $('opponentRoleSummary').innerHTML = state.managerView === 'eyes' ? `<strong>${role}</strong> · attivi ${model.activeCount}/${model.totalOpponents} · domanda ${model.demand} slot · interessanti ${model.interesting} · <b>${relation}</b> · pressione ${model.pressure}<br><span>${model.groups.hungry} affamati · ${model.groups.medium} medi · ${model.groups.almost} quasi pieni · ${model.groups.complete} completi</span>` : '';
+    rows.sort(sorters[state.managerSort] || sorters.budget);
     $('managerCards').innerHTML = rows.length ? rows.map(({manager,stats}) => {
+      const selfBadge = manager.isMe ? '<span class="self-badge">TU</span>' : '';
       if (state.managerView === 'eyes') {
         const remaining = stats.roleRemaining[role];
         const bought = stats.roleBought[role];
         const need = FantaAuction.roleNeedLevel(remaining,c.roster[role]);
-        const threat = FantaAuction.threatLevel(stats,role,c,null);
+        const threat = manager.isMe ? null : FantaAuction.threatLevel(stats,role,c,null);
         const roleText = remaining === 0 ? `${role} COMPLETO` : (state.slotDisplayMode === 'bought' ? `${role} ${bought}/${c.roster[role]} acquistati` : `${role} ${remaining} rimasti`);
-        if (state.managerCompact) return `<div class="manager-card compact-manager eyes-manager"><strong>${esc(manager.nome)}</strong><span>${displayNum(stats.budgetRemaining)} cr · ${roleText} · max ${displayNum(Math.floor(stats.maxBid))}</span></div>`;
-        return `<article class="manager-card eyes-manager"><div class="manager-card-head"><div><strong>${esc(manager.nome)}</strong>${manager.squadra?`<span>${esc(manager.squadra)}</span>`:''}</div><b>${displayNum(stats.budgetRemaining)} cr</b></div><div class="eyes-role-line ${remaining===0?'complete':''}">${esc(roleText)}</div><div class="manager-card-main">Bisogno ${need.need} · Minaccia ${threat.label}</div><div class="manager-card-foot"><span>Max <strong>${displayNum(Math.floor(stats.maxBid))}</strong></span><span>${stats.slotsRemaining} slot totali</span></div></article>`;
+        return `<article class="manager-card eyes-manager${manager.isMe?' self-manager':''}"><div class="manager-card-head"><div><strong>${esc(manager.nome)}</strong>${selfBadge}${manager.squadra?`<span>${esc(manager.squadra)}</span>`:''}</div><b>${displayNum(stats.budgetRemaining)} cr</b></div><div class="eyes-role-line ${remaining===0?'complete':''}">${esc(roleText)}</div><div class="manager-card-main">${manager.isMe ? 'Il tuo riferimento' : `Bisogno ${need.need} · Minaccia ${threat.label}`}</div><div class="manager-card-foot"><span>Max <strong>${displayNum(Math.floor(stats.maxBid))}</strong></span><span>${stats.slotsRemaining} slot totali</span></div>${managerRosterDetails(manager,stats)}</article>`;
       }
-      if (state.managerCompact) return `<div class="manager-card compact-manager"><strong>${esc(manager.nome)}</strong><span>${displayNum(stats.budgetRemaining)} cr · ${stats.slotsRemaining} slot · max ${displayNum(Math.floor(stats.maxBid))}</span></div>`;
       const roleText = FantaAuction.ROLES.map(r => `${r} ${stats.roleRemaining[r] ? stats.roleRemaining[r] : '✓'}`).join(' · ');
-      return `<article class="manager-card"><div class="manager-card-head"><div><strong>${esc(manager.nome)}</strong>${manager.squadra?`<span>${esc(manager.squadra)}</span>`:''}${manager.isMe?'<span>IO</span>':''}</div><b>${displayNum(stats.budgetRemaining)} / ${displayNum(stats.budgetInitial)} cr</b></div><div class="manager-card-main">${stats.bought} giocatori · ${stats.slotsRemaining} slot liberi · spesi ${displayNum(stats.spent)}</div><div class="manager-role-row">${esc(roleText)}</div><div class="manager-card-foot"><span>Max <strong>${displayNum(Math.floor(stats.maxBid))}</strong></span><span>Media ${displayNum(Math.round(stats.avgPerSlot*10)/10)}/slot</span></div></article>`;
+      return `<article class="manager-card${manager.isMe?' self-manager':''}"><div class="manager-card-head"><div><strong>${esc(manager.nome)}</strong>${selfBadge}${manager.squadra?`<span>${esc(manager.squadra)}</span>`:''}</div><b>${displayNum(stats.budgetRemaining)} / ${displayNum(stats.budgetInitial)} cr</b></div><div class="manager-card-main">${stats.bought} giocatori · ${stats.slotsRemaining} slot liberi · spesi ${displayNum(stats.spent)}</div><div class="manager-role-row">${esc(roleText)}</div><div class="manager-card-foot"><span>Max <strong>${displayNum(Math.floor(stats.maxBid))}</strong></span><span>Media ${displayNum(Math.round(stats.avgPerSlot*10)/10)}/slot</span></div>${managerRosterDetails(manager,stats)}</article>`;
     }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>';
   }
 
@@ -766,9 +816,19 @@
     $('configD').value = c.roster.D;
     $('configC').value = c.roster.C;
     $('configA').value = c.roster.A;
+    $('interestMode').value = state.interestConfig.mode || 'slot123';
+    $('interestFvmMin').value = state.interestConfig.fvmMin ?? 30;
+    $('interestPercentile').value = state.interestConfig.percentile ?? 30;
+    updateInterestConfigVisibility();
     $('managerEditorRows').innerHTML = '';
     state.managers.slice().sort((a,b)=>a.nome.localeCompare(b.nome,'it')).forEach(m => addManagerEditorRow(m));
     openOnly('managerConfigSheet');
+  }
+
+  function updateInterestConfigVisibility() {
+    const mode = $('interestMode')?.value || state.interestConfig.mode;
+    $('interestFvmMinWrap')?.classList.toggle('hidden', mode !== 'fvmMin');
+    $('interestPercentileWrap')?.classList.toggle('hidden', mode !== 'fvmPercentile');
   }
 
   function addManagerEditorRow(manager = {}) {
@@ -801,6 +861,8 @@
     if (removedAssigned.length) { toast(`Non puoi rimuovere ${removedAssigned[0].nome}: ha giocatori assegnati.`); return; }
     state.auctionConfig = config;
     await FantaDB.setSetting('auctionConfig', config);
+    state.interestConfig = { mode:$('interestMode').value, fvmMin:Math.max(0, num($('interestFvmMin').value) ?? 30), percentile:Math.min(100, Math.max(1, num($('interestPercentile').value) ?? 30)) };
+    await FantaDB.setSetting('interestConfig', state.interestConfig);
     state.managers = await FantaDB.replaceManagers(rows);
     const managerMap = new Map(state.managers.map(m => [String(m.id), m]));
     for (const p of state.players) {
@@ -958,13 +1020,12 @@
         <label>Slot<input name="slot" placeholder="S1"></label>
         <label>Target min<input name="target_min" type="number" inputmode="numeric"></label>
         <label>Target max<input name="target_max" type="number" inputmode="numeric"></label>
-        <label>Cap massimo<input name="price_cap" type="number" inputmode="numeric"></label>
         <label class="span-2">Commento<textarea name="commento" rows="4"></textarea></label>
         <button class="primary-btn span-2" type="submit">Aggiungi</button>
       </form>`;
     $('addPlayerForm').addEventListener('submit', async e => {
       e.preventDefault(); const fd = new FormData(e.currentTarget); const raw = Object.fromEntries(fd.entries());
-      ['fvm','quotazione','target_min','target_max','price_cap'].forEach(k => raw[k] = num(raw[k]));
+      ['fvm','quotazione','target_min','target_max'].forEach(k => raw[k] = num(raw[k]));
       try { await FantaDB.addFullPlayer(raw); await refreshPlayers(); closeAllSheets(); toast('Giocatore aggiunto'); }
       catch (err) { toast(err.message); }
     });
@@ -998,7 +1059,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',priceMax:'',onlyAvailable:false,onlyFavorites:false,onlyComments:false,compact:false,liveMode:false,emphasis:65,theme:'system',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'budget',managerCompact:false,managerView:'overview',slotDisplayMode:'remaining'});
+    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',priceMax:'',onlyAvailable:false,onlyFavorites:false,onlyComments:false,compact:false,liveMode:false,emphasis:65,theme:'system',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'budget',managerView:'overview',slotDisplayMode:'remaining',interestConfig:{mode:'slot123',fvmMin:30,percentile:30}});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','system'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 

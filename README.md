@@ -10,7 +10,7 @@ PWA mobile-first e offline-first per usare l’iPhone come unico strumento duran
 - preso/libero, preferiti, contatori e indicatore di scarsità;
 - filtri live per nome, squadra, slot, FVM, prezzo, preferiti, liberi e commenti;
 - modalità compatta;
-- bottom sheet mobile per slot, Affare, Ideale min/max, Price Cap, commento, prezzo acquisto e manager;
+- bottom sheet mobile per slot, Range Target, commento, prezzo acquisto e manager;
 - salvataggio automatico in IndexedDB;
 - separazione tra dati listone, dati personali e stato asta;
 - import `.xlsx`, `.csv`, `.json` con mapping correggibile e riconoscimento euristico intestazioni;
@@ -28,7 +28,7 @@ PWA mobile-first e offline-first per usare l’iPhone come unico strumento duran
 IndexedDB usa store separati:
 
 - `playersBase`: nome, squadra, ruolo, ruolo Mantra, quotazione, FVM;
-- `playersPersonal`: slot, Affare, Ideale min/max, Cap, commento, preferito;
+- `playersPersonal`: slot, Range Target, dati legacy dei prezzi, commento, preferito;
 - `auctionState`: preso, prezzo acquisto, manager;
 - `settings`: ruolo corrente, lettera, filtri, slider, compatta, tema;
 - `meta`: informazioni di seed/import.
@@ -147,7 +147,7 @@ La build v2 riconosce automaticamente righe introduttive prima della tabella. Ne
 L'importatore usa anche la colonna `Id` del listone come identificatore sorgente stabile. I dati sono separati in tre livelli:
 
 - dati listone: squadra, ruolo, Mantra, quotazione, FVM, ID sorgente;
-- dati personali: slot, Affare, Ideale min/max, Price cap, commento, preferito;
+- dati personali: slot, Range Target, campi prezzo legacy, commento, preferito;
 - stato asta: preso, prezzo acquisto, manager.
 
 Perciò un nuovo XLSX può aggiornare quotazioni/FVM/squadra/ruolo senza sovrascrivere commenti, prezzi personali, preferiti o stato asta. Se un calciatore cambia squadra, l'ID stabile permette di riallineare i dati personali alla nuova chiave.
@@ -207,11 +207,11 @@ Il pulsante **FANTA** apre il riepilogo con:
 - max offerta teorica;
 - budget medio per slot.
 
-Sono disponibili ordinamento per budget, max offerta, slot o nome e una vista ultra compatta.
+Sono disponibili solo tre ordinamenti operativi, tutti decrescenti: slot rimasti, max offerta e budget residuo.
 
 ### Competitori
 
-Nel dettaglio di un giocatore libero compare **Possibili competitori**. Sono mostrati solo i partecipanti che hanno ancora uno slot del ruolo e capacità economica. Se il giocatore ha un Price Cap, la pressione economica usa quel valore come riferimento.
+Nel dettaglio di un giocatore libero compare **Possibili competitori**. Sono mostrati solo i partecipanti che hanno ancora uno slot del ruolo e capacità economica. Se è presente `Target max`, il confronto economico usa quel valore come riferimento.
 
 ### Backup e reset
 
@@ -229,8 +229,23 @@ Il pannello Fantallenatori dispone della vista **Occhi sugli avversari**, riferi
 
 ## Novità v7 — Range target e prezzo reale in card
 
-La valutazione personale è ora semplificata in `Target min`, `Target max` e `Cap massimo` opzionale. I vecchi campi `prezzo_ideale_min` e `prezzo_ideale_max` vengono migrati automaticamente verso `target_min` e `target_max`; `prezzo_affare` resta conservato come dato legacy ma non viene più mostrato nella UI principale.
+La valutazione personale è ora semplificata in `Target min` e `Target max`. I vecchi campi `prezzo_ideale_min` e `prezzo_ideale_max` vengono migrati automaticamente verso `target_min` e `target_max`; `prezzo_affare` resta conservato come dato legacy ma non viene più mostrato nella UI principale.
 
-Per i giocatori liberi la card mostra il range target (`45–55 · Cap 62`). Dopo l'assegnazione il range scompare dalla card e viene sostituito da acquirente e prezzo reale (`Luca · 58 cr`). Se è disponibile solo uno dei due dati viene mostrato solo quello, senza separatori o valori vuoti. Undo e Reset asta riportano automaticamente la card allo stato libero e quindi al range target.
+Per i giocatori liberi la card mostra il range target (`45–55`). Dopo l'assegnazione il range scompare dalla card e viene sostituito da acquirente e prezzo reale (`Luca · 58 cr`). Se è disponibile solo uno dei due dati viene mostrato solo quello, senza separatori o valori vuoti. Undo e Reset asta riportano automaticamente la card allo stato libero e quindi al range target.
 
 I backup v3 includono i nuovi campi target e l'importazione continua ad accettare backup v1/v2, migrando i vecchi valori ideali senza perdita di dati.
+
+
+## Novità v8 — Rifiniture UX
+
+La v8 è una revisione chirurgica della v7. I filtri sono ora un bottom sheet indipendente dalla posizione di scroll e il pulsante mostra il numero di filtri attivi. Le card senza Range Target non mostrano più placeholder. Il Price Cap è rimosso dall'interfaccia e dalla logica operativa; eventuali vecchi valori restano solo come dati legacy compatibili con i backup precedenti.
+
+La definizione dei giocatori di interesse usata nel rapporto domanda/offerta è configurabile: `S1–S3`, `S1–S2`, soglia FVM minima o percentile FVM. La schermata principale esplicita sempre il criterio in uso.
+
+Il pannello Fantallenatori è stato alleggerito: niente modalità ultra compatta, niente riepilogo pressione duplicato e niente riepilogo statico della configurazione. Gli ordinamenti disponibili sono solo `Slot rimasti`, `Max offerta` e `Budget residuo`, tutti decrescenti. La vista **Occhi sugli avversari** include anche il proprio profilo con badge `TU`, ma il profilo `TU` resta escluso dai calcoli sugli avversari.
+
+Ogni partecipante dispone inoltre di un recap rosa espandibile, raggruppato per P/D/C/A, con nome, prezzo di acquisto e spesa per reparto.
+
+Un giocatore già assegnato non può più essere liberato con un singolo tocco accidentale: il secondo tap sulla checkbox apre una conferma esplicita. L'Undo immediato dopo una nuova assegnazione resta disponibile.
+
+Il Service Worker usa la cache `v8` e il backup corrente è in formato v4; i backup v1–v3 restano importabili.

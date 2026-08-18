@@ -109,17 +109,17 @@
   function getCompetitors(player, managers, players, config) {
     const role = normalizeRole(player?.ruolo);
     if (!role) return [];
-    const reference = Number.isFinite(Number(player?.price_cap)) ? Number(player.price_cap) : null;
+    const reference = Number.isFinite(Number(player?.target_max)) ? Number(player.target_max) : (Number.isFinite(Number(player?.prezzo_ideale_max)) ? Number(player.prezzo_ideale_max) : null);
     return computeAllManagerStats(managers, players, config)
       .filter(({stats}) => !stats.rosterComplete && stats.roleRemaining[role] > 0 && stats.maxBid >= (config?.minPrice ?? 1))
-      .map(({manager,stats}) => ({ manager, stats, canBeatCap: reference == null ? null : stats.maxBid > reference }))
+      .map(({manager,stats}) => ({ manager, stats, canBeatTarget: reference == null ? null : stats.maxBid > reference }))
       .sort((a,b) => b.stats.maxBid - a.stats.maxBid || b.stats.budgetRemaining - a.stats.budgetRemaining || String(a.manager.nome).localeCompare(String(b.manager.nome),'it'));
   }
 
   function competitionLevel(player, competitors) {
     if (!competitors?.length) return { label:'BASSA', count:0 };
-    const cap = Number(player?.price_cap);
-    const relevant = Number.isFinite(cap) ? competitors.filter(x => x.stats.maxBid > cap).length : competitors.length;
+    const targetMax = Number(player?.target_max ?? player?.prezzo_ideale_max);
+    const relevant = Number.isFinite(targetMax) ? competitors.filter(x => x.stats.maxBid > targetMax).length : competitors.length;
     if (relevant >= 5) return { label:'ALTA', count:relevant };
     if (relevant >= 2) return { label:'MEDIA', count:relevant };
     return { label:'BASSA', count:relevant };
@@ -136,16 +136,16 @@
     return { label:'BASSA', need:'BASSO', ratio };
   }
 
-  function threatLevel(stats, role, config, priceCap = null) {
+  function threatLevel(stats, role, config, targetMax = null) {
     const c = makeDefaultConfig(config);
     const total = c.roster[role] || 0;
     const remaining = stats?.roleRemaining?.[role] || 0;
     if (remaining <= 0 || stats?.rosterComplete) return { label:'FUORI', score:0 };
     const need = roleNeedLevel(remaining, total);
     const economicRatio = stats.budgetInitial > 0 ? Math.min(1, stats.maxBid / stats.budgetInitial) : 0;
-    const cap = Number(priceCap);
-    const capPower = Number.isFinite(cap) && cap > 0 ? Math.min(1.25, stats.maxBid / cap) : economicRatio;
-    const score = need.ratio * .55 + Math.min(1, capPower) * .3 + economicRatio * .15;
+    const target = Number(targetMax);
+    const targetPower = Number.isFinite(target) && target > 0 ? Math.min(1.25, stats.maxBid / target) : economicRatio;
+    const score = need.ratio * .55 + Math.min(1, targetPower) * .3 + economicRatio * .15;
     if (score >= .68) return { label:'ALTA', score };
     if (score >= .38) return { label:'MEDIA', score };
     return { label:'BASSA', score };
@@ -185,6 +185,7 @@
     ROLES,
     makeDefaultConfig,
     totalRosterSlots,
+    assignmentBelongsToManager,
     computeManagerStats,
     computeAllManagerStats,
     validateAssignment,

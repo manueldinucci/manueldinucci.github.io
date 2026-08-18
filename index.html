@@ -48,23 +48,30 @@
     </header>
 
     <main class="main-content">
-      <section id="filtersPanel" class="panel filters-panel hidden" aria-label="Filtri avanzati">
-        <div class="filter-grid">
-          <label>Squadra<select id="teamFilter"><option value="">Tutte</option></select></label>
-          <label>Slot<select id="slotFilter"><option value="">Tutti</option></select></label>
-          <label>FVM minimo<input id="minFvmFilter" type="number" inputmode="numeric" min="0" placeholder="0" /></label>
-          <label>Target max ≤<input id="priceMaxFilter" type="number" inputmode="numeric" min="0" placeholder="—" /></label>
+      <section id="filtersPanel" class="bottom-sheet filters-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="filtersTitle">
+        <div class="sheet-handle"></div>
+        <div class="sheet-header">
+          <div><h2 id="filtersTitle">Filtri</h2><div class="sheet-meta">Affina la lista senza perdere la posizione</div></div>
+          <button id="closeFiltersBtn" class="icon-btn" aria-label="Chiudi">×</button>
         </div>
-        <div class="toggle-grid">
-          <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
-          <label class="switch-line"><input id="onlyFavorites" type="checkbox" /><span>Solo preferiti</span></label>
-          <label class="switch-line"><input id="onlyComments" type="checkbox" /><span>Solo con commento</span></label>
-          <label class="switch-line"><input id="compactMode" type="checkbox" /><span>Modalità compatta</span></label>
-          <label class="switch-line"><input id="liveModeCheck" type="checkbox" /><span>Modalità asta live</span></label>
+        <div class="sheet-scroll">
+          <div class="filter-grid">
+            <label>Squadra<select id="teamFilter"><option value="">Tutte</option></select></label>
+            <label>Slot<select id="slotFilter"><option value="">Tutti</option></select></label>
+            <label>FVM minimo<input id="minFvmFilter" type="number" inputmode="numeric" min="0" placeholder="0" /></label>
+            <label>Target max ≤<input id="priceMaxFilter" type="number" inputmode="numeric" min="0" placeholder="—" /></label>
+          </div>
+          <div class="toggle-grid">
+            <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
+            <label class="switch-line"><input id="onlyFavorites" type="checkbox" /><span>Solo preferiti</span></label>
+            <label class="switch-line"><input id="onlyComments" type="checkbox" /><span>Solo con commento</span></label>
+            <label class="switch-line"><input id="compactMode" type="checkbox" /><span>Modalità compatta</span></label>
+            <label class="switch-line"><input id="liveModeCheck" type="checkbox" /><span>Modalità asta</span></label>
+          </div>
+          <label class="slider-field">Enfasi dimensione <span id="emphasisValue">65%</span>
+            <input id="emphasisSlider" type="range" min="0" max="100" step="1" value="65" />
+          </label>
         </div>
-        <label class="slider-field">Enfasi dimensione <span id="emphasisValue">65%</span>
-          <input id="emphasisSlider" type="range" min="0" max="100" step="1" value="65" />
-        </label>
       </section>
 
       <section class="market-strip">
@@ -110,7 +117,6 @@
           </label>
           <label>Target min<input id="editTargetMin" type="number" inputmode="numeric" min="0" /></label>
           <label>Target max<input id="editTargetMax" type="number" inputmode="numeric" min="0" /></label>
-          <label class="cap-field">Cap massimo <span class="field-hint">opzionale</span><input id="editCap" type="number" inputmode="numeric" min="0" /></label>
         </div>
         <label class="full-field comment-field">Commento<textarea id="editComment" rows="4" placeholder="Nota personale..."></textarea></label>
       </div>
@@ -223,15 +229,14 @@
         <button type="button" data-view="overview" class="active">Panoramica</button>
         <button type="button" data-view="eyes">Occhi sugli avversari</button>
       </div>
-      <div class="managers-toolbar">
+      <div class="managers-toolbar simplified-toolbar">
         <label>Ordina<select id="managerSort">
-          <option value="budget">Budget residuo</option><option value="maxBid">Max offerta</option><option value="slots">Slot rimasti</option><option value="roleMore">Più slot nel ruolo</option><option value="roleLess">Meno slot nel ruolo</option><option value="need">Bisogno del ruolo</option><option value="strategic">Strategico</option><option value="name">Nome</option>
+          <option value="slots">Slot rimasti</option>
+          <option value="maxBid">Max offerta</option>
+          <option value="budget">Budget residuo</option>
         </select></label>
         <label>Mostra ruolo<select id="slotDisplayMode"><option value="remaining">Rimasti</option><option value="bought">Acquistati</option></select></label>
-        <label class="switch-line"><input id="managerCompact" type="checkbox" /><span>Ultra compatta</span></label>
       </div>
-      <div id="opponentRoleSummary" class="opponent-role-summary"></div>
-      <div id="auctionConfigSummary" class="auction-config-summary"></div>
       <button id="openManagerConfigBtn" class="secondary-btn full-width-btn">Configura asta e partecipanti</button>
       <div id="managerCards" class="manager-cards"></div>
     </div>
@@ -253,10 +258,39 @@
           <label>Centrocampisti<input id="configC" type="number" inputmode="numeric" min="0" required></label>
           <label>Attaccanti<input id="configA" type="number" inputmode="numeric" min="0" required></label>
         </div>
+        <div class="interest-config">
+          <div class="edit-section-title">Definizione giocatori interessanti</div>
+          <label class="full-field">Criterio
+            <select id="interestMode">
+              <option value="slot123">Slot S1–S3</option>
+              <option value="slot12">Slot S1–S2</option>
+              <option value="fvmMin">FVM minimo</option>
+              <option value="fvmPercentile">Percentile FVM</option>
+            </select>
+          </label>
+          <label id="interestFvmMinWrap" class="full-field hidden">FVM minimo interessante<input id="interestFvmMin" type="number" inputmode="numeric" min="0" value="30"></label>
+          <label id="interestPercentileWrap" class="full-field hidden">Fascia FVM superiore (%)<input id="interestPercentile" type="number" inputmode="numeric" min="1" max="100" value="30"></label>
+        </div>
         <div class="manager-editor-head"><strong>Partecipanti</strong><button id="addManagerRowBtn" type="button" class="secondary-btn">+ Aggiungi</button></div>
         <div id="managerEditorRows" class="manager-editor-rows"></div>
         <div class="sheet-actions sticky-actions"><button type="submit" class="primary-btn">Salva configurazione</button></div>
       </form>
+    </div>
+  </section>
+
+  <section id="unassignSheet" class="bottom-sheet confirm-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="unassignTitle">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div><h2 id="unassignTitle">Annullare assegnazione?</h2><div class="sheet-meta">Conferma necessaria</div></div>
+      <button id="closeUnassignBtn" class="icon-btn" aria-label="Chiudi">×</button>
+    </div>
+    <div class="sheet-scroll">
+      <div id="unassignPlayerInfo" class="assignment-player-card"></div>
+      <p class="confirm-copy">Vuoi rendere nuovamente libero questo giocatore? Budget, slot e statistiche verranno ricalcolati automaticamente.</p>
+      <div class="sheet-actions">
+        <button id="keepAssignmentBtn" class="secondary-btn">Mantieni assegnazione</button>
+        <button id="confirmUnassignBtn" class="secondary-btn danger">Annulla assegnazione</button>
+      </div>
     </div>
   </section>
 

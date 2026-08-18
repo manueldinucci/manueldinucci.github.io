@@ -435,3 +435,31 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
   .manager-editor-fields { grid-template-columns: 1fr 1fr; }
   .manager-self-field { grid-column: auto !important; }
 }
+
+/* v8 — rifiniture chirurgiche */
+.filters-sheet { max-height: min(82dvh, 720px); }
+.filters-sheet .sheet-scroll { max-height: calc(82dvh - 70px); }
+.simplified-toolbar { grid-template-columns: 1fr 1fr; }
+.interest-config { margin-top: 14px; padding-top: 12px; border-top: 1px solid var(--line); }
+.interest-config .full-field { margin-top: 8px; }
+.confirm-copy { margin: 4px 2px 0; color: var(--muted); font-size: 12px; line-height: 1.4; }
+.self-badge { display: inline-flex !important; margin-left: 6px !important; padding: 2px 5px; border: 1px solid var(--line); border-radius: 999px; font-size: 8px !important; line-height: 1; font-weight: 850; color: var(--text) !important; vertical-align: middle; background: var(--surface-2); }
+.self-manager { border-color: color-mix(in srgb, var(--text) 28%, var(--line)); }
+.manager-roster { margin-top: 7px; border-top: 1px solid var(--line); padding-top: 6px; }
+.manager-roster summary { cursor: pointer; list-style: none; min-height: 30px; display: flex; align-items: center; color: var(--muted); font-size: 10px; font-weight: 720; }
+.manager-roster summary::-webkit-details-marker { display: none; }
+.manager-roster summary::after { content: '⌄'; margin-left: auto; font-size: 14px; }
+.manager-roster[open] summary::after { content: '⌃'; }
+.manager-roster-body { display: grid; gap: 7px; padding: 5px 0 2px; }
+.roster-role { background: var(--surface-2); border-radius: 7px; padding: 6px 7px; }
+.roster-role-head, .roster-player { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; }
+.roster-role-head { font-size: 10px; margin-bottom: 3px; }
+.roster-role-head span { color: var(--muted); }
+.roster-player { min-height: 22px; font-size: 10.5px; padding: 2px 0; border-top: 1px solid color-mix(in srgb, var(--line) 65%, transparent); }
+.roster-player span { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.roster-player b { white-space: nowrap; }
+.roster-empty { color: var(--muted); font-size: 10px; padding: 2px 0; }
+
+@media (max-width: 390px) {
+  .simplified-toolbar { grid-template-columns: 1fr; }
+}

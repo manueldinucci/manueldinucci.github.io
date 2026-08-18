@@ -347,7 +347,7 @@
     ]);
     return {
       format: 'fantacalcio-checklist-backup',
-      version: 3,
+      version: 4,
       exportedAt: new Date().toISOString(),
       playersBase: base,
       playersPersonal: personal,
@@ -359,7 +359,7 @@
   }
 
   async function importBackupObject(data) {
-    if (!data || data.format !== 'fantacalcio-checklist-backup' || ![1,2,3].includes(data.version)) {
+    if (!data || data.format !== 'fantacalcio-checklist-backup' || ![1,2,3,4].includes(data.version)) {
       throw new Error('Backup non riconosciuto o versione non supportata.');
     }
     const migratedPersonal = (data.playersPersonal || []).map(row => ({

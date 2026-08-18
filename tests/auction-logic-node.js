@@ -8,7 +8,7 @@ vm.runInThisContext(fs.readFileSync(path.join(root, 'auction-logic.js'), 'utf8')
 const config = { budgetInitial:500, minPrice:1, roster:{P:3,D:8,C:8,A:6} };
 const luca = {id:'luca', nome:'Luca', budgetInitial:500};
 const marco = {id:'marco', nome:'Marco', budgetInitial:500};
-const mc = {key:'mct', nome:'McTominay', ruolo:'C', preso:false, prezzo_acquisto:null, manager_id:'', manager_acquirente:'', price_cap:65};
+const mc = {key:'mct', nome:'McTominay', ruolo:'C', preso:false, prezzo_acquisto:null, manager_id:'', manager_acquirente:'', target_max:65};
 let players = [mc];
 
 function assert(cond, msg){ if(!cond) throw new Error(msg); }
@@ -49,7 +49,7 @@ assert(approx(s.avgPerSlot,20), 'TEST6 avg');
 // TEST 7 completed C must not be competitor for a midfielder
 const cfull = [];
 for(let i=0;i<8;i++) cfull.push({key:'c'+i, ruolo:'C', preso:true, prezzo_acquisto:1, manager_id:'luca', manager_acquirente:'Luca'});
-const target={key:'target',ruolo:'C',preso:false,price_cap:10};
+const target={key:'target',ruolo:'C',preso:false,target_max:10};
 const comps=FantaAuction.getCompetitors(target,[luca,marco],[...cfull,target],config);
 assert(!comps.some(x=>x.manager.id==='luca'), 'TEST7 full C excluded');
 assert(comps.some(x=>x.manager.id==='marco'), 'TEST7 eligible Marco present');

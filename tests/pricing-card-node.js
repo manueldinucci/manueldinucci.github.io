@@ -2,16 +2,13 @@
 const assert = require('assert');
 const num = v => (v === '' || v == null || Number.isNaN(Number(v))) ? null : Number(v);
 const displayNum = v => num(v) == null ? '—' : String(num(v));
-function targetText(p, {includeCap=true}={}) {
+function targetText(p) {
   const min = num(p.target_min) ?? num(p.prezzo_ideale_min);
   const max = num(p.target_max) ?? num(p.prezzo_ideale_max);
-  const cap = num(p.price_cap);
-  let range='';
-  if (min != null && max != null) range=`${displayNum(min)}–${displayNum(max)}`;
-  else if (min != null) range=`da ${displayNum(min)}`;
-  else if (max != null) range=`≤${displayNum(max)}`;
-  const parts=[]; if (range) parts.push(range); if (includeCap && cap != null) parts.push(`Cap ${displayNum(cap)}`);
-  return parts.length ? parts.join(' · ') : 'Range non impostato';
+  if (min != null && max != null) return `${displayNum(min)}–${displayNum(max)}`;
+  if (min != null) return `da ${displayNum(min)}`;
+  if (max != null) return `≤${displayNum(max)}`;
+  return '';
 }
 function purchaseText(p) {
   const manager=String(p.manager_acquirente||'').trim(); const price=num(p.prezzo_acquisto);
@@ -21,10 +18,11 @@ function purchaseText(p) {
   return '';
 }
 assert.equal(targetText({target_min:45,target_max:55}), '45–55');
-assert.equal(targetText({target_min:45,target_max:55,price_cap:62}), '45–55 · Cap 62');
+assert.equal(targetText({target_min:45,target_max:55,price_cap:62}), '45–55');
 assert.equal(targetText({prezzo_ideale_min:12,prezzo_ideale_max:24}), '12–24');
+assert.equal(targetText({}), '');
 assert.equal(purchaseText({manager_acquirente:'Luca',prezzo_acquisto:58}), 'Luca · 58 cr');
 assert.equal(purchaseText({manager_acquirente:'Luca'}), 'Luca');
 assert.equal(purchaseText({prezzo_acquisto:7}), '7 cr');
 assert.equal(purchaseText({}), '');
-console.log('Pricing/card tests: OK');
+console.log('Pricing/card v8 tests: OK');
