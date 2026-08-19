@@ -1,5 +1,12 @@
-# Fantacalcio Checklist PWA v22
+# Fantacalcio Checklist PWA v23
 
+
+
+## v23
+
+- Correzione specifica Safari/PWA iPhone: il campo Commento viene mantenuto sopra la action bar durante l'apertura della tastiera e della toolbar accessoria iOS.
+- Lo spazio scrollabile della scheda giocatore riserva dinamicamente l'altezza reale della barra `Assegna giocatore | ☆/★ | ×` più safe area e margine tastiera.
+- Nelle sole card principali gli slot vengono mostrati come `1° slot`, `2° slot`, `3° slot`…; valori e nomenclatura interna restano `S1`, `S2`, `S3`… .
 
 ## v22
 

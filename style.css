@@ -1090,3 +1090,28 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
 @media (max-width: 390px) {
   .player-target-pill { padding-inline: 6px; }
 }
+
+
+/* v23 — Commento sempre visibile su iPhone + label slot estesa solo nelle card */
+.player-edit-sheet .sheet-scroll {
+  /* La barra sticky è dentro lo scroller: riserviamo spazio reale perché non
+     possa coprire l'ultimo campo utile durante la digitazione. */
+  padding-bottom: calc(var(--player-action-bar-height, 64px) + var(--safe-bottom) + var(--keyboard-safe-gap, 18px) + 12px);
+  scroll-padding-bottom: calc(var(--player-action-bar-height, 64px) + var(--safe-bottom) + var(--keyboard-safe-gap, 18px) + 14px);
+}
+.player-edit-sheet.keyboard-open {
+  height: calc(var(--visual-viewport-height, 100dvh) - 6px);
+  max-height: calc(var(--visual-viewport-height, 100dvh) - 6px);
+}
+.player-edit-sheet.keyboard-open .sheet-scroll {
+  padding-bottom: calc(var(--player-action-bar-height, 64px) + var(--safe-bottom) + var(--keyboard-safe-gap, 28px) + 18px);
+  scroll-padding-bottom: calc(var(--player-action-bar-height, 64px) + var(--safe-bottom) + var(--keyboard-safe-gap, 28px) + 18px);
+}
+.player-edit-sheet.keyboard-open .comment-field textarea {
+  scroll-margin-bottom: calc(var(--player-action-bar-height, 64px) + var(--keyboard-safe-gap, 28px) + 18px);
+}
+.player-slot-badge { max-width: 100%; }
+@media (max-width: 390px) {
+  .player-slot-badge { padding-inline: 6px; font-size: 9.5px; }
+  .player-card.compact .player-slot-badge { padding-inline: 5px; font-size: 8.7px; }
+}

@@ -365,9 +365,15 @@
     return '';
   }
 
+  function cardSlotLabel(slotValue) {
+    const slot = String(slotValue || '').trim();
+    const match = /^S(\d+)$/i.exec(slot);
+    return match ? `${Number(match[1])}° slot` : slot;
+  }
+
   function playerPrimaryMetaMarkup(p) {
     const parts = [];
-    const slot = String(p.slot || '').trim();
+    const slot = cardSlotLabel(p.slot);
     const target = targetText(p);
     if (slot) parts.push(`<span class="player-slot-badge">${esc(slot)}</span>`);
     if (target) parts.push(`<span class="player-target-pill">${esc(target)} cr</span>`);
@@ -604,7 +610,10 @@
       $(id).addEventListener('change', scheduleSelectedPlayerSave);
       $(id).addEventListener('focus', () => schedulePlayerFieldVisibility($(id)));
     });
-    $('editComment').addEventListener('input', scheduleSelectedPlayerSave);
+    $('editComment').addEventListener('input', () => {
+      scheduleSelectedPlayerSave();
+      schedulePlayerFieldVisibility($('editComment'));
+    });
     $('editComment').addEventListener('focus', () => schedulePlayerFieldVisibility($('editComment')));
     $('editSlot').addEventListener('change', scheduleSelectedPlayerSave);
     $('editSlot').addEventListener('focus', () => schedulePlayerFieldVisibility($('editSlot')));
@@ -1288,35 +1297,64 @@
     });
   }
 
+  function playerActionBarHeight() {
+    const bar = $('playerSheet')?.querySelector('.player-bottom-actions');
+    if (!bar) return 0;
+    const rect = bar.getBoundingClientRect();
+    return Math.max(0, Math.round(rect.height));
+  }
+
+  function syncPlayerActionBarHeight() {
+    const height = playerActionBarHeight();
+    if (height > 0) document.documentElement.style.setProperty('--player-action-bar-height', `${height}px`);
+  }
+
   function ensurePlayerFieldVisible(field) {
     const sheet = $('playerSheet');
     if (!field || !sheet || sheet.classList.contains('hidden')) return;
     const scroller = sheet.querySelector('.sheet-scroll');
     if (!scroller) return;
+
+    syncPlayerActionBarHeight();
     const fieldRect = field.getBoundingClientRect();
     const scrollRect = scroller.getBoundingClientRect();
+    const actionBar = sheet.querySelector('.player-bottom-actions');
+    const actionRect = actionBar?.getBoundingClientRect();
     const topGap = 12;
-    const bottomGap = 18;
-    if (fieldRect.bottom > scrollRect.bottom - bottomGap) {
-      scroller.scrollBy({ top: fieldRect.bottom - (scrollRect.bottom - bottomGap), behavior: 'smooth' });
-    } else if (fieldRect.top < scrollRect.top + topGap) {
-      scroller.scrollBy({ top: fieldRect.top - (scrollRect.top + topGap), behavior: 'smooth' });
-    }
+    const bottomGap = sheet.classList.contains('keyboard-open') ? 14 : 10;
+    // La sticky action bar occupa una parte reale della viewport del contenuto.
+    // Il limite visibile inferiore è quindi il suo bordo superiore, non il fondo
+    // dello scroller. Questo evita che Commento risulti "visibile" al browser
+    // pur essendo coperto dai pulsanti.
+    const visibleBottom = actionRect && actionRect.top > scrollRect.top
+      ? Math.min(scrollRect.bottom, actionRect.top) - bottomGap
+      : scrollRect.bottom - bottomGap;
+    const visibleTop = scrollRect.top + topGap;
+
+    let delta = 0;
+    if (fieldRect.bottom > visibleBottom) delta = fieldRect.bottom - visibleBottom;
+    else if (fieldRect.top < visibleTop) delta = fieldRect.top - visibleTop;
+    if (Math.abs(delta) > 1) scroller.scrollBy({ top: delta, behavior: 'smooth' });
   }
 
   function schedulePlayerFieldVisibility(field) {
-    // iOS completa l'animazione della tastiera in più step: due controlli brevi
-    // mantengono il campo nel viewport senza usare scrollIntoView sul documento.
-    setTimeout(() => ensurePlayerFieldVisible(field), 90);
-    setTimeout(() => ensurePlayerFieldVisible(field), 280);
+    // Safari/iOS modifica la Visual Viewport in più passaggi (tastiera + barra
+    // accessoria). Ripetiamo il controllo durante l'animazione senza mai
+    // scrollare il documento sottostante.
+    requestAnimationFrame(() => ensurePlayerFieldVisible(field));
+    setTimeout(() => ensurePlayerFieldVisible(field), 80);
+    setTimeout(() => ensurePlayerFieldVisible(field), 220);
+    setTimeout(() => ensurePlayerFieldVisible(field), 420);
   }
 
   function setupViewportHandling() {
     const root = document.documentElement;
     const fallback = () => {
       root.style.setProperty('--visual-viewport-height', `${window.innerHeight}px`);
+      root.style.setProperty('--visual-viewport-top', '0px');
       root.style.setProperty('--keyboard-offset', '0px');
       root.style.setProperty('--keyboard-safe-gap', '18px');
+      syncPlayerActionBarHeight();
     };
     if (!window.visualViewport) {
       fallback();
@@ -1330,17 +1368,29 @@
       root.style.setProperty('--visual-viewport-height', `${Math.max(240, vv.height)}px`);
       root.style.setProperty('--visual-viewport-top', `${Math.max(0, vv.offsetTop)}px`);
       root.style.setProperty('--keyboard-offset', `${keyboardOffset}px`);
-      root.style.setProperty('--keyboard-safe-gap', keyboardOpen ? '20px' : '18px');
+      // Margine extra deliberato: la toolbar accessoria iOS non è sempre
+      // rappresentata separatamente dalle metriche della Visual Viewport.
+      root.style.setProperty('--keyboard-safe-gap', keyboardOpen ? '28px' : '18px');
       const playerSheet = $('playerSheet');
-      if (playerSheet) playerSheet.classList.toggle('keyboard-open', keyboardOpen);
+      if (playerSheet) {
+        playerSheet.classList.toggle('keyboard-open', keyboardOpen);
+        syncPlayerActionBarHeight();
+      }
       if (keyboardOpen && playerSheet && !playerSheet.classList.contains('hidden')) {
         const active = document.activeElement;
         if (active && playerSheet.contains(active)) schedulePlayerFieldVisibility(active);
       }
     };
-    visualViewport.addEventListener('resize', update, {passive:true});
-    visualViewport.addEventListener('scroll', update, {passive:true});
+    window.visualViewport.addEventListener('resize', update, {passive:true});
+    window.visualViewport.addEventListener('scroll', update, {passive:true});
     window.addEventListener('orientationchange', () => setTimeout(update, 120), {passive:true});
+    window.addEventListener('resize', () => { syncPlayerActionBarHeight(); }, {passive:true});
+
+    const actionBar = $('playerSheet')?.querySelector('.player-bottom-actions');
+    if (actionBar && 'ResizeObserver' in window) {
+      const ro = new ResizeObserver(() => syncPlayerActionBarHeight());
+      ro.observe(actionBar);
+    }
     update();
   }
 
