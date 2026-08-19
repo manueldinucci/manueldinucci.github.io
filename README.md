@@ -1,4 +1,7 @@
-# Fantacalcio Checklist PWA v18
+# Fantacalcio Checklist PWA v19
+
+## v19
+Live e Rose sono ora bottom sheet mobile-first con ripristino dello stato sottostante; Configura asta ha righe Partecipanti più pulite con toggle Io compatto.
 
 — Asta Live Manager
 

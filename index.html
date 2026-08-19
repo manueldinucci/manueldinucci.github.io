@@ -81,6 +81,15 @@
 
   <div id="sheetBackdrop" class="backdrop hidden"></div>
 
+  <section id="viewSheet" class="bottom-sheet tall-sheet dashboard-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="viewSheetTitle">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header dashboard-sheet-header">
+      <div class="dashboard-sheet-title-row"><h2 id="viewSheetTitle">Live</h2><div id="viewSheetToolbar"></div></div>
+      <button id="closeViewSheetBtn" class="icon-btn" aria-label="Chiudi">×</button>
+    </div>
+    <div id="viewSheetContent" class="sheet-scroll manager-dashboard dashboard-sheet-scroll" aria-live="polite"></div>
+  </section>
+
   <section id="playerSheet" class="bottom-sheet player-edit-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="sheetPlayerName">
     <div class="sheet-handle"></div>
     <div class="sheet-header">

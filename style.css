@@ -832,3 +832,105 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
   .manager-live-name { max-width: 60px; }
   .live-sort-control select { max-width: 108px; font-size: 8.5px; }
 }
+
+/* v19 — Live/Rose come bottom sheet e partecipanti più puliti */
+.dashboard-sheet {
+  max-height: 94dvh;
+  height: min(94dvh, 900px);
+}
+.dashboard-sheet-header {
+  padding-top: 5px;
+  padding-bottom: 5px;
+}
+.dashboard-sheet-header h2 { font-size: 15px; }
+.dashboard-sheet-scroll {
+  max-height: calc(94dvh - 58px);
+  padding: 8px 10px calc(var(--safe-bottom) + 14px);
+  gap: 6px;
+}
+.dashboard-sheet .live-dashboard-head {
+  padding: 0 1px 2px;
+  align-items: center;
+}
+.dashboard-sheet .live-dashboard-head h2 { font-size: 13px; }
+.dashboard-sheet .live-sort-control { display: flex; align-items: center; gap: 5px; }
+.dashboard-sheet .live-sort-control > span { font-size: 8px; }
+.dashboard-sheet .live-sort-control select { min-height: 29px; }
+.dashboard-sheet .live-chevron {
+  font-size: 16px;
+  color: color-mix(in srgb, var(--text) 72%, var(--muted));
+  font-weight: 800;
+}
+
+.manager-editor-head #addManagerRowBtn {
+  min-height: 34px;
+  padding: 5px 10px;
+  font-size: 11px;
+}
+.manager-editor-row {
+  grid-template-columns: minmax(0,1fr) 24px;
+  gap: 3px;
+  padding: 5px;
+}
+.manager-editor-fields {
+  grid-template-columns: minmax(0,1.18fr) minmax(0,1fr) 48px;
+  gap: 4px;
+}
+.manager-self-field {
+  position: relative;
+  align-self: end;
+  display: block !important;
+}
+.manager-self-input {
+  position: absolute;
+  inset: 0;
+  width: 100% !important;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
+}
+.manager-self-toggle {
+  min-height: 36px;
+  padding: 4px 7px;
+  gap: 3px;
+  font-size: 10px;
+  transition: background .14s ease, color .14s ease, border-color .14s ease;
+}
+.manager-self-toggle .self-check { display: none; font-size: 10px !important; }
+.manager-self-input:checked + .manager-self-toggle {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.manager-self-input:checked + .manager-self-toggle .self-check { display: inline; }
+.manager-remove-btn {
+  width: 24px;
+  min-width: 24px;
+  min-height: 36px;
+  font-size: 17px;
+  opacity: .82;
+}
+
+@media (max-width: 430px) {
+  .dashboard-sheet { height: 94dvh; }
+  .dashboard-sheet-scroll { padding-inline: 8px; }
+  .dashboard-sheet .live-dashboard-head { gap: 4px; }
+  .dashboard-sheet .live-dashboard-head h2 { font-size: 12.5px; }
+  .dashboard-sheet .live-sort-control > span { display: none; }
+  .dashboard-sheet .live-sort-control select { max-width: 124px; font-size: 9px; }
+  .dashboard-sheet .live-chevron { font-size: 15px; }
+  .manager-editor-fields { grid-template-columns: minmax(0,1.15fr) minmax(0,1fr) 46px; }
+  .manager-self-field { grid-row: auto; }
+  .manager-self-toggle { min-height: 34px; padding-inline: 5px; }
+}
+.dashboard-sheet-title-row { display: flex; align-items: center; gap: 10px; min-width: 0; flex: 1; }
+.dashboard-sheet-title-row h2 { flex: none; white-space: nowrap; }
+#viewSheetToolbar { margin-left: auto; min-width: 0; }
+.sheet-live-sort { display: flex; align-items: center; gap: 5px; }
+.sheet-live-sort select { max-width: 135px; }
+@media (max-width: 430px) {
+  .dashboard-sheet-title-row { gap: 6px; }
+  .sheet-live-sort > span { display: none; }
+  .sheet-live-sort select { max-width: 122px; min-height: 30px; font-size: 9px; }
+}

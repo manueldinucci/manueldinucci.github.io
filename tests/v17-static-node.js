@@ -25,7 +25,7 @@ ok(app.includes('function managerRolePurchases'), 'Live role-only purchase list 
 ok(app.includes('live-role-player'), 'Live expanded players must use compact rows');
 ok(app.includes('${esc(p.nome)}</span><b>${num(p.prezzo_acquisto)') || app.includes('twoColumnPlayers(players'), 'Live expanded rows must include name and acquisition price');
 ok(app.includes('function managerFullRosterDetails'), 'Rose full-roster view must exist');
-ok(app.includes('state.mainView === \'rose\''), 'Rose mode must be distinct');
+ok(app.includes("view === 'rose'") || app.includes("state.mainView === 'rose'"), 'Rose mode must be distinct');
 ok(app.includes('(max bid ${displayNum(Math.floor(stats.maxBid))})'), 'Live must retain max bid format');
 ok(app.includes('roleText = `${role} rimasti ${stats.roleRemaining[role]}`') || app.includes('`${role} - ${remaining} SLOT ${remaining === 1 ? \'RIMASTO\' : \'RIMASTI\'}`'), 'Live remaining badge must be manager-specific and role-specific');
 const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);

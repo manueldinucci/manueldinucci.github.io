@@ -30,7 +30,9 @@
     slotDisplayMode: 'remaining',
     pendingAssignmentKey: null,
     pendingUnassignKey: null,
-    filtersScrollY: 0
+    filtersScrollY: 0,
+    overlayView: '',
+    overlayScrollY: 0
   };
 
   let uiSaveTimer = null;
@@ -103,6 +105,8 @@
       await FantaDB.setSetting('theme', state.theme);
     }
     if (!['light','dark'].includes(state.theme)) state.theme = 'light';
+    // v19: Live e Rose sono overlay temporanei, la vista principale resta la lista giocatori.
+    state.mainView = 'players';
   }
 
 
@@ -163,7 +167,7 @@
       <button class="role-tab role-short ${state.mainView==='players' && state.role===r?'active':''}" data-role="${r}" aria-label="${roleName(r)}">${({P:'Por',D:'Dif',C:'Cen',A:'Att'})[r]}<span class="tab-count">${counts[r]}</span></button>
     `).join('');
     const viewButtons = ['live','rose'].map(view => `
-      <button class="role-tab view-tab ${state.mainView===view?'active':''}" data-view="${view}">${view === 'live' ? 'Live' : 'Rose'}</button>
+      <button class="role-tab view-tab ${state.overlayView===view?'active':''}" data-view="${view}">${view === 'live' ? 'Live' : 'Rose'}</button>
     `).join('');
     $('roleTabs').innerHTML = roleButtons + viewButtons;
     $('roleTabs').querySelectorAll('[data-role]').forEach(btn => btn.addEventListener('click', () => {
@@ -178,9 +182,7 @@
       renderAll();
     }));
     $('roleTabs').querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => {
-      state.mainView = btn.dataset.view;
-      scheduleUISave();
-      renderAll();
+      openDashboardSheet(btn.dataset.view);
     }));
   }
 
@@ -455,7 +457,7 @@
     renderDemandSummary(rolePlayers);
     if (state.mainView !== 'players') {
       $('demandSummary').classList.add('hidden');
-      renderManagerDashboard();
+      renderManagerDashboard(state.overlayView ? 'viewSheetContent' : 'managerDashboard', state.overlayView || state.mainView);
     }
   }
 
@@ -523,6 +525,7 @@
     $('closeAssignmentBtn').addEventListener('click', closeAllSheets);
     $('cancelAssignmentBtn').addEventListener('click', closeAllSheets);
     $('closeManagersBtn').addEventListener('click', closeAllSheets);
+    $('closeViewSheetBtn').addEventListener('click', closeAllSheets);
     $('closeManagerConfigBtn').addEventListener('click', openManagersPanel);
     $('sheetBackdrop').addEventListener('click', closeAllSheets);
 
@@ -597,13 +600,15 @@
 
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
   function openOnly(id) {
-    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $(id).classList.remove('hidden'); showBackdrop(); document.body.style.overflow = 'hidden';
   }
   function closeAllSheets() {
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
-    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null;
+    const hadOverlayView = Boolean(state.overlayView); const overlayScrollY = state.overlayScrollY || 0; state.overlayView = '';
+    if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
     if (restoreFilters) requestAnimationFrame(() => window.scrollTo(0, state.filtersScrollY || 0));
   }
   function openFiltersSheet() {
@@ -794,9 +799,19 @@
   }
 
   function openManagersPanel() {
-    state.mainView = 'live';
     closeAllSheets();
-    renderAll();
+    openDashboardSheet('live');
+  }
+
+  function openDashboardSheet(view) {
+    state.overlayView = view === 'rose' ? 'rose' : 'live';
+    state.overlayScrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    state.mainView = 'players';
+    renderManagerDashboard('viewSheetContent', state.overlayView);
+    openOnly('viewSheet');
+    // openOnly non deve azzerare lo stato temporaneo della vista.
+    state.overlayView = view === 'rose' ? 'rose' : 'live';
+    renderRoleTabs();
   }
 
   function twoColumnPlayers(players, itemClass) {
@@ -835,27 +850,43 @@
     select.addEventListener('change', async e => {
       state.managerSort = e.target.value === 'maxBid' ? 'maxBid' : 'slots';
       await saveManagerUI();
-      renderManagerDashboard();
+      renderManagerDashboard(state.overlayView ? 'viewSheetContent' : 'managerDashboard', state.overlayView || state.mainView);
     });
   }
 
-  function renderManagerDashboard() {
-    const dashboard = $('managerDashboard');
-    $('playerList').classList.add('hidden');
-    $('emptyState').classList.add('hidden');
-    dashboard.classList.remove('hidden');
+  function renderManagerDashboard(targetId = 'managerDashboard', view = state.mainView) {
+    const dashboard = $(targetId);
+    if (!dashboard) return;
+    if (targetId === 'managerDashboard') {
+      $('playerList').classList.add('hidden');
+      $('emptyState').classList.add('hidden');
+      dashboard.classList.remove('hidden');
+    }
     const role = state.role;
+    const roleShort = ({P:'Por',D:'Dif',C:'Cen',A:'Att'})[role];
+    const inSheet = targetId === 'viewSheetContent';
     const baseRows = FantaAuction.computeAllManagerStats(state.managers, state.players, state.auctionConfig);
-    if (state.mainView === 'rose') {
+
+    if (inSheet) {
+      $('viewSheetTitle').textContent = view === 'rose' ? `Rose · ${roleShort}` : `Live · ${roleShort}`;
+      $('viewSheetToolbar').innerHTML = view === 'live'
+        ? `<label class="live-sort-control sheet-live-sort"><span>Ordina</span><select id="liveManagerSort"><option value="slots" ${state.managerSort==='slots'?'selected':''}>Slot rimasti</option><option value="maxBid" ${state.managerSort==='maxBid'?'selected':''}>Max bid possibile</option></select></label>`
+        : '';
+    }
+
+    if (view === 'rose') {
       const rows = baseRows.slice().sort((a,b) => String(a.manager.nome).localeCompare(String(b.manager.nome), 'it', {sensitivity:'base'}));
-      dashboard.innerHTML = `<div class="dashboard-head"><h2>Rose</h2><span>Situazione completa delle squadre</span></div><div class="manager-cards rose-cards">${rows.length ? rows.map(({manager,stats}) => {
+      const head = inSheet ? '' : `<div class="dashboard-head"><h2>Rose</h2><span>Situazione completa delle squadre</span></div>`;
+      dashboard.innerHTML = `${head}<div class="manager-cards rose-cards">${rows.length ? rows.map(({manager,stats}) => {
         const selfBadge = manager.isMe ? '<span class="self-badge">TU</span>' : '';
         return `<article class="manager-card rose-manager${manager.isMe?' self-manager':''}"><div class="rose-manager-head"><div><strong>${esc(manager.nome)}</strong>${selfBadge}${manager.squadra ? `<span>${esc(manager.squadra)}</span>` : ''}</div><b>${displayNum(stats.budgetRemaining)} cr</b></div>${managerFullRosterDetails(manager,stats)}</article>`;
       }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>'}</div>`;
       return;
     }
+
     const rows = sortLiveRows(baseRows.slice(), role);
-    dashboard.innerHTML = `<div class="dashboard-head live-dashboard-head"><div><h2>Live</h2><span>Ruolo ${esc(role)} · situazione in tempo reale</span></div><label class="live-sort-control"><span>Ordina</span><select id="liveManagerSort"><option value="slots" ${state.managerSort==='slots'?'selected':''}>Slot rimasti</option><option value="maxBid" ${state.managerSort==='maxBid'?'selected':''}>Max bid possibile</option></select></label></div><div class="manager-cards live-cards">${rows.length ? rows.map(({manager,stats}) => {
+    const head = inSheet ? '' : `<div class="dashboard-head live-dashboard-head"><div><h2>Live · ${roleShort}</h2></div><label class="live-sort-control"><span>Ordina</span><select id="liveManagerSort"><option value="slots" ${state.managerSort==='slots'?'selected':''}>Slot rimasti</option><option value="maxBid" ${state.managerSort==='maxBid'?'selected':''}>Max bid possibile</option></select></label></div>`;
+    dashboard.innerHTML = `${head}<div class="manager-cards live-cards">${rows.length ? rows.map(({manager,stats}) => {
       const remaining = Number(stats.roleRemaining[role] || 0);
       const roleText = remaining === 0 ? 'AL COMPLETO' : `${role} - ${remaining} SLOT ${remaining === 1 ? 'RIMASTO' : 'RIMASTI'}`;
       const selfBadge = manager.isMe ? '<span class="self-badge">TU</span>' : '';
@@ -886,7 +917,7 @@
     const row = document.createElement('div');
     row.className = 'manager-editor-row';
     row.dataset.id = manager.id || '';
-    row.innerHTML = `<div class="manager-editor-fields"><label class="manager-name-field"><span class="manager-field-title">Nome</span><input data-field="nome" value="${esc(manager.nome || '')}" autocomplete="off" required></label><label class="manager-team-field"><span class="manager-field-title">Squadra <small>opz.</small></span><input data-field="squadra" value="${esc(manager.squadra || '')}" autocomplete="off"></label><label class="manager-self-field"><span class="manager-field-title">Io</span><span class="manager-self-toggle"><input data-field="isMe" type="checkbox" ${manager.isMe?'checked':''}><span>Profilo</span></span></label></div><button type="button" class="manager-remove-btn" aria-label="Rimuovi fantallenatore">×</button>`;
+    row.innerHTML = `<div class="manager-editor-fields"><label class="manager-name-field"><span class="manager-field-title">Nome</span><input data-field="nome" value="${esc(manager.nome || '')}" autocomplete="off" required></label><label class="manager-team-field"><span class="manager-field-title">Squadra</span><input data-field="squadra" value="${esc(manager.squadra || '')}" autocomplete="off"></label><label class="manager-self-field"><input class="manager-self-input" data-field="isMe" aria-label="Io" type="checkbox" ${manager.isMe?'checked':''}><span class="manager-self-toggle" aria-hidden="true"><span class="self-check">✓</span><span>Io</span></span></label></div><button type="button" class="manager-remove-btn" aria-label="Rimuovi fantallenatore">×</button>`;
     row.querySelector('[data-field="isMe"]').addEventListener('change', e => { if (e.target.checked) $('managerEditorRows').querySelectorAll('[data-field="isMe"]').forEach(x => { if (x !== e.target) x.checked = false; }); });
     row.querySelector('.manager-remove-btn').addEventListener('click', () => row.remove());
     $('managerEditorRows').appendChild(row);
@@ -925,7 +956,7 @@
       }
     }
     populateManagerSelects();
-    state.mainView = 'live';
+    state.mainView = 'players';
     closeAllSheets();
     renderAll();
     toast('Configurazione asta salvata');
