@@ -20,5 +20,6 @@ ok(/\.manager-live-row\s*\{[\s\S]*?display:\s*flex;[\s\S]*?white-space:\s*nowrap
 ok(/\.manager-role-badge\s*\{[\s\S]*?background:\s*var\(--surface-2\);/m.test(css), 'remaining slots must be visually badged');
 ok(/\.assign-btn\s*\{[\s\S]*?width:\s*36px;[\s\S]*?height:\s*36px;/m.test(css), 'assign/unassign buttons must be 36x36 visually');
 ok(/\.assign-btn::after\s*\{[^}]*inset:\s*-4px;/m.test(css), 'assign/unassign touch target must remain approximately 44px');
-ok(sw.includes('fantacalcio-checklist-v15'), 'service worker cache must be v15');
+const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);
+ok(version >= 15, 'service worker cache must be at least v15');
 console.log('v15 static tests: OK');

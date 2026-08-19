@@ -14,9 +14,14 @@
 
   function makeDefaultConfig(config = {}) {
     const roster = config.roster || {};
+    const requestedBase = String(config.basePriceMode || '1').toLowerCase();
+    const basePriceMode = ['1','qti','qta','fvm'].includes(requestedBase) ? requestedBase : '1';
     return {
       budgetInitial: Math.max(0, numberOr(config.budgetInitial, 500)),
-      minPrice: Math.max(0, numberOr(config.minPrice, 1)),
+      // v16: il minimo regolamentare reale resta sempre 1 credito.
+      // basePriceMode influenza solo la proposta iniziale nella finestra di assegnazione.
+      minPrice: 1,
+      basePriceMode,
       roster: {
         P: Math.max(0, Math.floor(numberOr(roster.P, 3))),
         D: Math.max(0, Math.floor(numberOr(roster.D, 8))),

@@ -3,6 +3,17 @@
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
 
+## Novità v16
+
+- gerarchia dei nomi affinata: dimensione dinamica FVM confermata e peso dinamico moderato circa 650–800;
+- nelle card e nella scheda giocatore la quotazione di riferimento visibile è la Quotazione attuale, abbreviata `Qt.A`;
+- Filtri semplificati, con nuovi intervalli cumulativi `S1-S2` / `S1-S3` e filtro `Qt.A minima` 1–30;
+- quattro filtri principali disposti sulla stessa riga;
+- Live riorganizzata in due blocchi: `Nome [ruolo rimasti]` e `crediti · (max bid ...)`;
+- `Gestione fantallenatori` rinominato `Configura asta`; parametri generali e Partecipanti resi più compatti;
+- `Prezzo minimo` sostituito da `Prezzo base` (`1`, `Qt.I`, `Qt.A`, `FVM`), usato solo come proposta iniziale: il minimo regolamentare resta 1 credito;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v16`.
+
 ## Novità v15
 
 - rimosso dalla testata Live il conteggio globale dei giocatori liberi del ruolo;
@@ -226,7 +237,7 @@ La v5 aggiunge un modulo completamente offline per monitorare i partecipanti dur
 
 ### Configurazione
 
-Da **Strumenti → Gestione fantallenatori → Configura asta e partecipanti** puoi impostare:
+Da **Strumenti → Configura asta** puoi impostare:
 
 - budget iniziale globale;
 - prezzo minimo;
@@ -322,7 +333,7 @@ Per i giocatori liberi la gerarchia è:
 
 1. nome e squadra;
 2. `Slot | Range Target`, ad esempio `S1 | 40–50`;
-3. `FVM · QI · Nota personale`, ad esempio `FVM 211 · QI 21 · Molto interessante sotto 50`.
+3. `FVM · Qt.A · Nota personale`, ad esempio `FVM 211 · Qt.A 21 · Molto interessante sotto 50`.
 
 L'importatore riconosce separatamente `Qt.A` come quotazione attuale e `Qt.I` come **Quotazione Iniziale (QI)**.
 
@@ -332,7 +343,7 @@ Le card libere hanno anche una scala di grigi molto leggera basata su S1–S5. G
 
 Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Asta Live Manager** (`Asta Live` come short name PWA).
 
-Il Service Worker usa la cache `fantacalcio-checklist-v15`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
+Il Service Worker usa la cache `fantacalcio-checklist-v16`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
 
 ## Novità v11 — schermata principale più operativa
 

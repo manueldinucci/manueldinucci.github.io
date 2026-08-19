@@ -54,7 +54,7 @@
       <section id="filtersPanel" class="bottom-sheet filters-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="filtersTitle">
         <div class="sheet-handle"></div>
         <div class="sheet-header">
-          <div><h2 id="filtersTitle">Filtri</h2><div class="sheet-meta">Affina la lista senza perdere la posizione</div></div>
+          <div><h2 id="filtersTitle">Filtri</h2></div>
           <button id="closeFiltersBtn" class="icon-btn" aria-label="Chiudi">×</button>
         </div>
         <div class="sheet-scroll">
@@ -62,6 +62,7 @@
             <label>Squadra<select id="teamFilter"><option value="">Tutte</option></select></label>
             <label>Slot<select id="slotFilter"><option value="">Tutti</option></select></label>
             <label>FVM minimo<select id="minFvmFilter" aria-label="FVM minimo"><option value="">—</option></select></label>
+            <label>Qt.A minima<select id="minQtaFilter" aria-label="Quotazione attuale minima"><option value="">—</option></select></label>
           </div>
           <div class="toggle-grid">
             <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
@@ -142,7 +143,7 @@
     <div class="sheet-scroll tool-list">
       <button id="importListBtn" class="primary-btn import-list-btn">Importa listone .xlsx</button>
       <input id="listFileInput" type="file" accept=".xlsx,.xls,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/json" hidden />
-      <button id="manageManagersBtn" class="secondary-btn manager-settings-btn">Gestione fantallenatori</button>
+      <button id="manageManagersBtn" class="secondary-btn manager-settings-btn">Configura asta</button>
       <button id="exportBackupBtn" class="secondary-btn">Esporta backup</button>
       <button id="importBackupBtn" class="secondary-btn">Importa backup</button>
       <input id="backupFileInput" type="file" accept=".json,application/json" hidden />
@@ -229,7 +230,7 @@
       <form id="managerConfigForm">
         <div class="auction-config-grid">
           <label>Budget iniziale<input id="configBudget" type="number" inputmode="numeric" min="0" required></label>
-          <label>Prezzo minimo<input id="configMinPrice" type="number" inputmode="numeric" min="0" required></label>
+          <label>Prezzo base<select id="configBasePrice" aria-label="Prezzo base"><option value="1">1</option><option value="qti">Qt.I</option><option value="qta">Qt.A</option><option value="fvm">FVM</option></select></label>
           <label>Portieri<input id="configP" type="number" inputmode="numeric" min="0" required></label>
           <label>Difensori<input id="configD" type="number" inputmode="numeric" min="0" required></label>
           <label>Centrocampisti<input id="configC" type="number" inputmode="numeric" min="0" required></label>

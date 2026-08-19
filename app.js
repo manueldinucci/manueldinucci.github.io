@@ -13,6 +13,7 @@
     team: '',
     slot: '',
     minFvm: '',
+    minQta: '',
     onlyAvailable: false,
     onlyFavorites: false,
     compact: false,
@@ -78,6 +79,7 @@
     bindStaticEvents();
     initLetterSelect();
     initFvmSelect();
+    initQtaSelect();
     initAssignmentPriceSelect();
     initTargetSelects();
     applyStateToControls();
@@ -126,6 +128,7 @@
       team: state.team,
       slot: state.slot,
       minFvm: state.minFvm,
+      minQta: state.minQta,
       onlyAvailable: state.onlyAvailable,
       onlyFavorites: state.onlyFavorites,
       compact: state.compact,
@@ -178,6 +181,11 @@
       .map(v => `<option value="${v}">${v}</option>`).join('');
   }
 
+  function initQtaSelect() {
+    $('minQtaFilter').innerHTML = '<option value="">—</option>' + Array.from({length:30}, (_, i) => i + 1)
+      .map(v => `<option value="${v}">${v}</option>`).join('');
+  }
+
   function populateDynamicFilters() {
     const rolePlayers = state.players.filter(p => p.ruolo === state.role);
     const teams = [...new Set(rolePlayers.map(p => p.squadra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
@@ -185,9 +193,10 @@
     const teamValue = state.team;
     const slotValue = state.slot;
     $('teamFilter').innerHTML = '<option value="">Tutte</option>' + teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
-    $('slotFilter').innerHTML = '<option value="">Tutti</option>' + slots.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    const cumulativeSlots = '<option value="S1-S2">S1-S2</option><option value="S1-S3">S1-S3</option>';
+    $('slotFilter').innerHTML = '<option value="">Tutti</option>' + cumulativeSlots + slots.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
     if (teams.includes(teamValue)) $('teamFilter').value = teamValue; else state.team = '';
-    if (slots.includes(slotValue)) $('slotFilter').value = slotValue; else state.slot = '';
+    if (slots.includes(slotValue) || ['S1-S2','S1-S3'].includes(slotValue)) $('slotFilter').value = slotValue; else state.slot = '';
   }
 
   function applyStateToControls() {
@@ -200,6 +209,9 @@
     const minFvm = Number(state.minFvm);
     state.minFvm = Number.isInteger(minFvm) && minFvm >= 1 && minFvm <= 100 ? String(minFvm) : '';
     $('minFvmFilter').value = state.minFvm;
+    const minQta = Number(state.minQta);
+    state.minQta = Number.isInteger(minQta) && minQta >= 1 && minQta <= 30 ? String(minQta) : '';
+    $('minQtaFilter').value = state.minQta;
     updateCompactButton();
     updateThemeButton();
   }
@@ -217,15 +229,25 @@
     return (letters.indexOf(ch) - start + 26) % 26;
   }
 
+  function slotMatchesFilter(playerSlot, filter) {
+    if (!filter) return true;
+    const slot = String(playerSlot || '').trim().toUpperCase();
+    if (filter === 'S1-S2') return ['S1','S2'].includes(slot);
+    if (filter === 'S1-S3') return ['S1','S2','S3'].includes(slot);
+    return slot === String(filter).trim().toUpperCase();
+  }
+
   function getFilteredPlayers() {
     const q = FantaDB.normalizeText(state.search);
     const minFvm = num(state.minFvm);
+    const minQta = num(state.minQta);
     return state.players
       .filter(p => p.ruolo === state.role)
       .filter(p => !q || FantaDB.normalizeText(`${p.nome} ${p.squadra}`).includes(q))
       .filter(p => !state.team || p.squadra === state.team)
-      .filter(p => !state.slot || p.slot === state.slot)
+      .filter(p => slotMatchesFilter(p.slot, state.slot))
       .filter(p => minFvm == null || (num(p.fvm) ?? -Infinity) >= minFvm)
+      .filter(p => minQta == null || (num(p.quotazione) ?? -Infinity) >= minQta)
       .filter(p => !state.onlyAvailable || !p.preso)
       .filter(p => !state.onlyFavorites || p.preferito)
       .sort((a,b) => circularRank(a.nome) - circularRank(b.nome) || a.nome.localeCompare(b.nome,'it',{sensitivity:'base'}));
@@ -244,13 +266,22 @@
     return { low: percentile(values, .05), high: percentile(values, .95) };
   }
 
-  function nameFontSize(fvm, scale) {
+  function fvmVisualRank(fvm, scale) {
     const value = num(fvm);
-    if (value == null || scale.high <= scale.low) return 16;
+    if (value == null || scale.high <= scale.low) return 0.2;
     const clamped = Math.min(scale.high, Math.max(scale.low, value));
     let n = (clamped - scale.low) / (scale.high - scale.low);
-    n = Math.log1p(4 * n) / Math.log(5);
+    return Math.log1p(4 * n) / Math.log(5);
+  }
+
+  function nameFontSize(fvm, scale) {
+    const n = fvmVisualRank(fvm, scale);
     return 16 + (state.emphasis / 100) * 15 * n;
+  }
+
+  function nameFontWeight(fvm, scale) {
+    const n = fvmVisualRank(fvm, scale);
+    return Math.round(650 + 150 * n);
   }
 
   function targetText(p) {
@@ -282,10 +313,10 @@
   function playerSecondaryMeta(p) {
     const parts = [];
     const fvm = num(p.fvm);
-    const qi = num(p.quotazione_iniziale);
+    const qta = num(p.quotazione);
     const note = String(p.commento || '').trim();
     if (fvm != null) parts.push(`FVM ${displayNum(fvm)}`);
-    if (qi != null) parts.push(`QI ${displayNum(qi)}`);
+    if (qta != null) parts.push(`Qt.A ${displayNum(qta)}`);
     if (note) parts.push(note);
     return parts.join(' · ');
   }
@@ -306,10 +337,11 @@
       card.className = `player-card${p.preso?' taken':''}${p.preferito?' favorite':''}${state.compact?' compact':''}${slotClass(p)}`;
       card.dataset.key = p.key;
       const size = nameFontSize(p.fvm, scale).toFixed(1);
+      const weight = nameFontWeight(p.fvm, scale);
       card.innerHTML = `
         <button class="fav-btn" aria-label="${p.preferito?'Rimuovi preferito':'Aggiungi preferito'}">${p.preferito?'★':'☆'}</button>
         <div class="player-main" tabindex="0" role="button" aria-label="Apri ${esc(p.nome)}">
-          <div class="player-line"><span class="player-name" style="font-size:${size}px">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
+          <div class="player-line"><span class="player-name" style="font-size:${size}px;font-weight:${weight}">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
           ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : (playerPrimaryMeta(p) ? `<div class="player-primary-meta">${esc(playerPrimaryMeta(p))}</div>` : '')}
           ${p.preso ? '' : (playerSecondaryMeta(p) ? `<div class="player-secondary-meta">${esc(playerSecondaryMeta(p))}</div>` : '')}
         </div>
@@ -453,6 +485,7 @@
     bindFilter('teamFilter','team','change');
     bindFilter('slotFilter','slot','change');
     bindFilter('minFvmFilter','minFvm','change');
+    bindFilter('minQtaFilter','minQta','change');
     bindCheck('onlyAvailable','onlyAvailable');
     bindCheck('onlyFavorites','onlyFavorites');
     $('emphasisSlider').addEventListener('input', e => {
@@ -530,7 +563,7 @@
   }
 
   function activeFilterCount() {
-    return [state.team, state.slot, state.minFvm, state.onlyAvailable, state.onlyFavorites].filter(v => v !== '' && v !== false && v != null).length;
+    return [state.team, state.slot, state.minFvm, state.minQta, state.onlyAvailable, state.onlyFavorites].filter(v => v !== '' && v !== false && v != null).length;
   }
 
   function renderFilterButton() {
@@ -562,7 +595,7 @@
     $('sheetPlayerName').textContent = p.nome;
     $('sheetPlayerMeta').textContent = `${p.squadra || '—'} · ${p.ruolo}${p.ruolo_mantra ? ` · ${p.ruolo_mantra}` : ''}`;
     $('sheetInfoGrid').innerHTML = [
-      ['FVM',displayNum(p.fvm)], ['QI',displayNum(p.quotazione_iniziale)], ['Quotazione attuale',displayNum(p.quotazione)]
+      ['FVM',displayNum(p.fvm)], ['Qt.A',displayNum(p.quotazione)]
     ].map(([a,b]) => `<div class="info-chip"><span>${esc(a)}</span><strong>${esc(b)}</strong></div>`).join('');
     const slotSelect = $('editSlot');
     slotSelect.querySelectorAll('option[data-custom]').forEach(o => o.remove());
@@ -632,6 +665,18 @@
       : '<div class="competitor-empty">Nessun fantallenatore con slot e capacità economica disponibili.</div>';
   }
 
+  function basePriceForPlayer(player) {
+    const mode = String(state.auctionConfig.basePriceMode || '1').toLowerCase();
+    const candidates = {
+      '1': 1,
+      qti: num(player?.quotazione_iniziale),
+      qta: num(player?.quotazione),
+      fvm: num(player?.fvm)
+    };
+    const raw = candidates[mode] ?? 1;
+    return Math.min(300, Math.max(1, Math.round(Number(raw) || 1)));
+  }
+
   function openAssignmentSheet(key) {
     const p = state.players.find(x => x.key === key); if (!p) return;
     if (!state.managers.length) { toast('Configura prima i fantallenatori.'); openManagersPanel(); return; }
@@ -644,7 +689,7 @@
     const preferred = p.manager_id || eligible[0]?.manager.id || state.managers[0]?.id || '';
     $('assignmentManager').value = preferred;
     const savedPrice = num(p.prezzo_acquisto);
-    const defaultPrice = Math.min(300, Math.max(1, savedPrice ?? num(state.auctionConfig.minPrice) ?? 1));
+    const defaultPrice = Math.min(300, Math.max(1, savedPrice ?? basePriceForPlayer(p)));
     $('assignmentPrice').value = String(defaultPrice);
     $('forceAssignment').checked = false;
     $('forceAssignmentWrap').classList.add('hidden');
@@ -758,14 +803,14 @@
       const remaining = stats.roleRemaining[role];
       const roleText = `${role} rimasti ${remaining}`;
       const teamText = manager.squadra ? `<span class="manager-live-team">${esc(manager.squadra)}</span>` : '';
-      return `<article class="manager-card v9-manager${manager.isMe?' self-manager':''}"><div class="manager-live-row"><div class="manager-live-identity"><strong class="manager-live-name">${esc(manager.nome)}</strong>${selfBadge}${teamText}</div><span class="manager-role-badge">${esc(roleText)}</span><span class="manager-live-max">Max ${displayNum(Math.floor(stats.maxBid))}</span><b class="manager-live-budget">${displayNum(stats.budgetRemaining)} cr</b></div>${managerRosterDetails(manager,stats)}</article>`;
+      return `<article class="manager-card v9-manager${manager.isMe?' self-manager':''}"><div class="manager-live-row"><div class="manager-live-left"><strong class="manager-live-name">${esc(manager.nome)}</strong>${selfBadge}${teamText}<span class="manager-role-badge">${esc(roleText)}</span></div><div class="manager-live-economy"><b class="manager-live-budget">${displayNum(stats.budgetRemaining)} cr</b><span class="manager-live-separator">·</span><span class="manager-live-max">(max bid ${displayNum(Math.floor(stats.maxBid))})</span></div></div>${managerRosterDetails(manager,stats)}</article>`;
     }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>';
   }
 
   function openManagerConfig() {
     const c = state.auctionConfig;
     $('configBudget').value = c.budgetInitial;
-    $('configMinPrice').value = c.minPrice;
+    $('configBasePrice').value = c.basePriceMode || '1';
     $('configP').value = c.roster.P;
     $('configD').value = c.roster.D;
     $('configC').value = c.roster.C;
@@ -780,7 +825,7 @@
     const row = document.createElement('div');
     row.className = 'manager-editor-row';
     row.dataset.id = manager.id || '';
-    row.innerHTML = `<div class="manager-editor-fields"><label>Nome<input data-field="nome" value="${esc(manager.nome || '')}" autocomplete="off" required></label><label>Squadra <span>opz.</span><input data-field="squadra" value="${esc(manager.squadra || '')}" autocomplete="off"></label><label>Budget <span>opz.</span><input data-field="budgetInitial" type="number" inputmode="numeric" min="0" value="${manager.budgetInitial ?? ''}" placeholder="Globale"></label><label class="manager-self-field"><span>Profilo</span><span class="switch-line"><input data-field="isMe" type="checkbox" ${manager.isMe?'checked':''}><span>Io</span></span></label></div><button type="button" class="manager-remove-btn" aria-label="Rimuovi fantallenatore">×</button>`;
+    row.innerHTML = `<div class="manager-editor-fields"><label class="manager-name-field"><span class="manager-field-title">Nome</span><input data-field="nome" value="${esc(manager.nome || '')}" autocomplete="off" required></label><label class="manager-team-field"><span class="manager-field-title">Squadra <small>opz.</small></span><input data-field="squadra" value="${esc(manager.squadra || '')}" autocomplete="off"></label><label class="manager-budget-field"><span class="manager-field-title">Budget <small>opz.</small></span><input data-field="budgetInitial" type="number" inputmode="numeric" min="0" value="${manager.budgetInitial ?? ''}" placeholder="Globale"></label><label class="manager-self-field"><span class="manager-field-title">Io</span><span class="manager-self-toggle"><input data-field="isMe" type="checkbox" ${manager.isMe?'checked':''}><span>Profilo</span></span></label></div><button type="button" class="manager-remove-btn" aria-label="Rimuovi fantallenatore">×</button>`;
     row.querySelector('[data-field="isMe"]').addEventListener('change', e => { if (e.target.checked) $('managerEditorRows').querySelectorAll('[data-field="isMe"]').forEach(x => { if (x !== e.target) x.checked = false; }); });
     row.querySelector('.manager-remove-btn').addEventListener('click', () => row.remove());
     $('managerEditorRows').appendChild(row);
@@ -789,7 +834,9 @@
   async function saveManagerConfig(e) {
     e.preventDefault();
     const config = FantaAuction.makeDefaultConfig({
-      budgetInitial:num($('configBudget').value), minPrice:num($('configMinPrice').value),
+      budgetInitial:num($('configBudget').value),
+      basePriceMode:$('configBasePrice').value,
+      minPrice:1,
       roster:{P:num($('configP').value),D:num($('configD').value),C:num($('configC').value),A:num($('configA').value)}
     });
     const rows = [...$('managerEditorRows').querySelectorAll('.manager-editor-row')].map(row => ({
@@ -1006,7 +1053,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'budget',managerView:'unified',slotDisplayMode:'remaining'});
+    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'budget',managerView:'unified',slotDisplayMode:'remaining'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 
