@@ -1115,3 +1115,29 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
   .player-slot-badge { padding-inline: 6px; font-size: 9.5px; }
   .player-card.compact .player-slot-badge { padding-inline: 5px; font-size: 8.7px; }
 }
+
+
+/* v24 · confronto intelligente listone */
+.import-changes.hidden { display: none; }
+.change-summary-line, .listone-news-summary { margin-top: 5px; font-size: 12px; color: var(--text); line-height: 1.35; }
+.change-summary-line strong, .listone-news-summary strong { font-weight: 800; }
+.change-none { margin-top: 8px; padding: 8px 9px; border-radius: 8px; background: var(--surface); border: 1px solid var(--line); font-size: 11px; color: var(--muted); }
+.change-secondary { margin-top: 8px; font-size: 10px; color: var(--muted); }
+.listone-change-section { margin-top: 7px; border: 1px solid var(--line); border-radius: 8px; background: var(--surface); overflow: hidden; }
+.listone-change-section summary { list-style: none; display: flex; align-items: center; justify-content: space-between; gap: 8px; min-height: 38px; padding: 8px 10px; cursor: pointer; font-size: 12px; font-weight: 700; color: var(--text); }
+.listone-change-section summary::-webkit-details-marker { display: none; }
+.listone-change-section summary::after { content: '⌄'; margin-left: auto; color: var(--muted); font-size: 14px; transform: translateY(-1px); }
+.listone-change-section[open] summary::after { content: '⌃'; }
+.listone-change-section summary strong { min-width: 24px; text-align: center; padding: 2px 6px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); font-size: 11px; }
+.listone-change-list { border-top: 1px solid var(--line); }
+.listone-change-row { display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 10px; border-bottom: 1px solid var(--line); }
+.listone-change-row:last-child { border-bottom: 0; }
+.listone-change-row strong { font-size: 12px; color: var(--text); overflow-wrap: anywhere; }
+.listone-change-row span { font-size: 10px; color: var(--muted); overflow-wrap: anywhere; }
+.listone-change-row.removed strong { text-decoration: line-through; text-decoration-thickness: 1px; }
+.listone-change-row.team-change span { font-weight: 650; color: var(--text); }
+.listone-change-empty { padding: 8px 10px; font-size: 10px; color: var(--muted); }
+.listone-news-sheet { height: min(78dvh, 720px); }
+.listone-news-summary { margin: 2px 0 10px; padding: 10px; border-radius: 9px; border: 1px solid var(--line); background: var(--surface-2); }
+.listone-news-body { padding-bottom: 4px; }
+@supports not (height: 1dvh) { .listone-news-sheet { height: min(78vh, 720px); } }

@@ -21,5 +21,5 @@ assert(js.includes("${esc(target)} cr"));
 assert(css.includes('/* v22 — card più immediate'));
 assert(css.includes('.player-slot-badge'));
 assert(css.includes('.player-target-pill'));
-assert(/fantacalcio-checklist-v2[23]/.test(sw));
+assert(/fantacalcio-checklist-v2[234]/.test(sw));
 console.log('v22 static tests: OK');

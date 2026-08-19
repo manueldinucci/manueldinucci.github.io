@@ -8,7 +8,8 @@
   <meta name="apple-mobile-web-app-capable" content="yes" />
   <meta name="apple-mobile-web-app-status-bar-style" content="default" />
   <meta name="apple-mobile-web-app-title" content="Asta Live" />
-  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="icons/apple-touch-icon.png" />
+  <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
   <title>Fantacalcio — Asta Live Manager</title>
@@ -206,6 +207,21 @@
       <div class="sheet-actions sticky-actions">
         <button id="backupBeforeImportBtn" class="secondary-btn">Esporta backup</button>
         <button id="confirmImportBtn" class="primary-btn">Conferma importazione</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="listoneNewsSheet" class="bottom-sheet listone-news-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="listoneNewsTitle">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div><h2 id="listoneNewsTitle">Novità listone</h2><div class="sheet-meta">Confronto con la versione precedente</div></div>
+      <button id="closeListoneNewsBtn" class="icon-btn" aria-label="Chiudi">×</button>
+    </div>
+    <div class="sheet-scroll">
+      <div id="listoneNewsSummary" class="listone-news-summary"></div>
+      <div id="listoneNewsBody" class="listone-news-body"></div>
+      <div class="sheet-actions sticky-actions">
+        <button id="closeListoneNewsBottomBtn" class="primary-btn">Chiudi</button>
       </div>
     </div>
   </section>

@@ -1,5 +1,14 @@
-# Fantacalcio Checklist PWA v23
+# Fantacalcio Checklist PWA v24
 
+
+
+## v24
+
+- Importazione listone con confronto intelligente rispetto alla versione precedente: aggiunti, rimossi e cambi squadra.
+- I dati personali dei giocatori riconosciuti restano separati e conservati; i giocatori rimossi vengono mantenuti in uno storico interno per consentire un eventuale ripristino futuro.
+- Nuovo bottom sheet `Novità listone` dopo una sincronizzazione con variazioni rilevanti.
+- Nuova icona PWA con pallone + martelletto d’asta, aggiornata per manifest, maskable, Apple Touch Icon e favicon.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v24`.
 
 
 ## v23

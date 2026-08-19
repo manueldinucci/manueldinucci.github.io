@@ -34,7 +34,8 @@
     pendingUnassignKey: null,
     filtersScrollY: 0,
     overlayView: '',
-    overlayScrollY: 0
+    overlayScrollY: 0,
+    lastImportChanges: null
   };
 
   let uiSaveTimer = null;
@@ -577,6 +578,8 @@
     $('closeSheetBtn').addEventListener('click', closeAllSheets);
     $('closeSheetBottomBtn').addEventListener('click', closeAllSheets);
     $('closeImportBtn').addEventListener('click', closeAllSheets);
+    $('closeListoneNewsBtn').addEventListener('click', closeAllSheets);
+    $('closeListoneNewsBottomBtn').addEventListener('click', closeAllSheets);
     $('closeSimpleFormBtn').addEventListener('click', closeAllSheets);
     $('closeAssignmentBtn').addEventListener('click', closeAllSheets);
     $('cancelAssignmentBtn').addEventListener('click', closeAllSheets);
@@ -663,12 +666,12 @@
 
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
   function openOnly(id) {
-    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $(id).classList.remove('hidden'); showBackdrop(); document.body.style.overflow = 'hidden';
   }
   function closeAllSheets() {
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
-    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null;
     const hadOverlayView = Boolean(state.overlayView); const overlayScrollY = state.overlayScrollY || 0; state.overlayView = '';
     if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
@@ -1073,7 +1076,9 @@
     const { players, issues } = FantaImport.buildPlayers(m.headers, m.rows, m.mapping);
     $('importStats').textContent = `Riconosciuti: ${players.length} · Problemi: ${issues.length}`;
     $('importIssues').innerHTML = issues.slice(0, 10).map(x=>`<div>${esc(x)}</div>`).join('') + (issues.length > 10 ? `<div>… altri ${issues.length-10}</div>` : '');
-    renderImportChanges(compareImportedPlayers(players));
+    const changes = compareImportedPlayers(players);
+    state.lastImportChanges = changes;
+    renderImportChanges(changes);
   }
 
   function compareImportedPlayers(players) {
@@ -1101,25 +1106,56 @@
     return changes;
   }
 
+  function changeRoleLabel(value) {
+    const r = String(value || '').toUpperCase();
+    return ['P','D','C','A'].includes(r) ? r : '—';
+  }
+
+  function importChangeSection(title, rows, emptyLabel) {
+    const count = rows.length;
+    return `
+      <details class="listone-change-section" ${count && count <= 6 ? 'open' : ''}>
+        <summary><span>${esc(title)}</span><strong>${count}</strong></summary>
+        <div class="listone-change-list">${count ? rows.join('') : `<div class="listone-change-empty">${esc(emptyLabel)}</div>`}</div>
+      </details>`;
+  }
+
+  function importChangeRows(c) {
+    const added = c.added.map(p => `<div class="listone-change-row"><strong>${esc(p.nome)}</strong><span>${esc(p.squadra || '—')} · ${esc(changeRoleLabel(p.ruolo))}${p.quotazione != null ? ` · Quot ${esc(displayNum(p.quotazione))}` : ''}${p.fvm != null ? ` · FVM ${esc(displayNum(p.fvm))}` : ''}</span></div>`);
+    const removed = c.removed.map(p => `<div class="listone-change-row removed"><strong>${esc(p.nome)}</strong><span>${esc(p.squadra || '—')} · ${esc(changeRoleLabel(p.ruolo))}${p.preso ? ` · Assegnato a ${esc(p.manager_acquirente || 'fantallenatore')}${p.prezzo_acquisto != null ? ` (${esc(displayNum(p.prezzo_acquisto))} cr)` : ''}` : ''}</span></div>`);
+    const team = c.team.map(x => `<div class="listone-change-row team-change"><strong>${esc(x.old.nome)}</strong><span>${esc(x.old.squadra || '—')} → ${esc(x.raw.squadra || '—')}</span></div>`);
+    return { added, removed, team };
+  }
+
   function renderImportChanges(c) {
-    const removedLabel = state.importMode === 'replace' ? 'rimossi' : 'non più nel file';
-    const chips = [
-      ['Nuovi', c.added.length],
-      [removedLabel, c.removed.length],
-      ['Cambio squadra', c.team.length],
-      ['Ruolo', c.role.length],
-      ['FVM', c.fvm.length],
-      ['Quotazione attuale', c.quote.length],
-      ['QI', c.qi?.length || 0]
-    ];
-    const details = [];
-    c.team.slice(0,3).forEach(x => details.push(`${x.old.nome}: ${x.old.squadra || '—'} → ${x.raw.squadra || '—'}`));
-    c.fvm.slice(0,3).forEach(x => details.push(`${x.old.nome}: FVM ${displayNum(x.old.fvm)} → ${displayNum(x.raw.fvm)}`));
-    $('importChanges').innerHTML = `
-      <div class="change-title">Confronto con il listone sul dispositivo</div>
-      <div class="change-chips">${chips.map(([label,n])=>`<span><strong>${n}</strong>${esc(label)}</span>`).join('')}</div>
-      ${details.length ? `<div class="change-details">${details.map(x=>`<div>${esc(x)}</div>`).join('')}</div>` : '<div class="change-details">Nessuna variazione significativa nei giocatori riconosciuti.</div>'}
+    const box = $('importChanges');
+    if (!state.players.length) {
+      box.classList.add('hidden');
+      box.innerHTML = '';
+      return;
+    }
+    box.classList.remove('hidden');
+    const removedLabel = state.importMode === 'replace' ? 'Rimossi' : 'Non più nel file';
+    const rows = importChangeRows(c);
+    const relevant = c.added.length + c.removed.length + c.team.length;
+    box.innerHTML = `
+      <div class="change-title">Novità listone</div>
+      <div class="change-summary-line"><strong>+ ${c.added.length}</strong> aggiunti · <strong>− ${c.removed.length}</strong> ${esc(removedLabel.toLowerCase())} · <strong>${c.team.length}</strong> cambi squadra</div>
+      ${relevant ? '' : '<div class="change-none">Nessuna variazione rilevata nel listone.</div>'}
+      ${importChangeSection('Aggiunti', rows.added, 'Nessun giocatore aggiunto')}
+      ${importChangeSection(removedLabel, rows.removed, state.importMode === 'replace' ? 'Nessun giocatore rimosso' : 'Nessun giocatore assente dal nuovo file')}
+      ${importChangeSection('Cambio squadra', rows.team, 'Nessun cambio squadra')}
+      ${(c.role.length || c.fvm.length || c.quote.length || c.qi.length) ? `<div class="change-secondary">Aggiornamenti ufficiali: ruolo ${c.role.length} · FVM ${c.fvm.length} · Quot ${c.quote.length} · Qt.I ${c.qi.length}</div>` : ''}
       ${state.importMode === 'update' && c.removed.length ? '<div class="change-note">Con “Aggiorna senza rimuovere” i giocatori assenti dal nuovo file resteranno nel database.</div>' : ''}`;
+  }
+
+  function renderListoneNewsSheet(c) {
+    const rows = importChangeRows(c);
+    $('listoneNewsSummary').innerHTML = `<strong>+ ${c.added.length}</strong> aggiunti · <strong>− ${c.removed.length}</strong> rimossi · <strong>${c.team.length}</strong> cambi squadra`;
+    $('listoneNewsBody').innerHTML = `
+      ${importChangeSection('Aggiunti', rows.added, 'Nessun giocatore aggiunto')}
+      ${importChangeSection('Rimossi', rows.removed, 'Nessun giocatore rimosso')}
+      ${importChangeSection('Cambio squadra', rows.team, 'Nessun cambio squadra')}`;
   }
 
   async function confirmImport() {
@@ -1127,12 +1163,23 @@
     if (m.mapping.nome == null || m.mapping.ruolo == null) { toast('Associa almeno Nome e Ruolo.'); return; }
     const { players, issues } = FantaImport.buildPlayers(m.headers, m.rows, m.mapping);
     if (!players.length) { toast('Nessun giocatore valido da importare.'); return; }
+    const hadPreviousList = state.players.length > 0;
+    const changes = compareImportedPlayers(players);
+    const relevantChanges = changes.added.length + changes.removed.length + changes.team.length;
     if (issues.length && !confirm(`Sono presenti ${issues.length} righe problematiche che verranno ignorate. Continuare?`)) return;
-    if (state.importMode === 'replace' && state.players.length && !confirm('Sincronizzare il database con questo listone? I giocatori non più presenti verranno rimossi dal listone, mentre commenti, prezzi personali, preferiti e stato dei giocatori riconosciuti verranno conservati.')) return;
+    if (state.importMode === 'replace' && hadPreviousList && !confirm('Sincronizzare il database con questo listone? I giocatori non più presenti verranno rimossi dal listone attivo ma conservati nello storico interno; commenti, prezzi personali, preferiti e stato dei giocatori riconosciuti verranno mantenuti.')) return;
     try {
       const result = await FantaDB.importBasePlayers(players, state.importMode);
-      await refreshPlayers(); closeAllSheets();
-      toast(`Importati ${result.imported} · riconosciuti ${result.matched} · nuovi ${result.newPlayers}${result.migrated ? ` · appunti riallineati ${result.migrated}` : ''}${result.duplicates.length ? ` · duplicati ${result.duplicates.length}` : ''}`);
+      await refreshPlayers();
+      closeAllSheets();
+      if (hadPreviousList && relevantChanges) {
+        renderListoneNewsSheet(changes);
+        openOnly('listoneNewsSheet');
+      } else if (hadPreviousList) {
+        toast('Nessuna variazione rilevata nel listone.');
+      } else {
+        toast(`Listone importato: ${result.imported} giocatori.`);
+      }
     } catch (err) { toast(err.message || 'Importazione non riuscita.'); }
   }
 

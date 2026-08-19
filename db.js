@@ -255,6 +255,9 @@
     const existingBase = await getAll(STORES.base);
     const existingPersonal = await getAll(STORES.personal);
     const existingAuction = await getAll(STORES.auction);
+    const archiveMeta = await get(STORES.meta, 'removedPlayersArchive');
+    const archiveEntries = Array.isArray(archiveMeta?.value) ? archiveMeta.value : [];
+    const archivedBase = archiveEntries.map(x => x?.base || x).filter(x => x && x.key && x.nome);
 
     const byKey = new Map(existingBase.map(x => [x.key, x]));
     const bySourceId = new Map(existingBase.filter(x => x.source_id).map(x => [String(x.source_id), x]));
@@ -264,6 +267,14 @@
       if (!byName.has(n)) byName.set(n, []);
       byName.get(n).push(x);
     }
+    const archivedByKey = new Map(archivedBase.map(x => [x.key, x]));
+    const archivedBySourceId = new Map(archivedBase.filter(x => x.source_id).map(x => [String(x.source_id), x]));
+    const archivedByName = new Map();
+    for (const x of archivedBase) {
+      const n = normalizeText(x.nome);
+      if (!archivedByName.has(n)) archivedByName.set(n, []);
+      archivedByName.get(n).push(x);
+    }
     const personalMap = new Map(existingPersonal.map(x => [x.key, x]));
     const auctionMap = new Map(existingAuction.map(x => [x.key, x]));
 
@@ -271,8 +282,11 @@
     const seen = new Set();
     const duplicates = [];
     const migrations = [];
+    const matchedCurrentKeys = new Set();
+    const restoredArchiveKeys = new Set();
     let matched = 0;
     let newPlayers = 0;
+    let restored = 0;
 
     for (const raw of players) {
       const { base } = splitPlayerRecord(raw);
@@ -281,15 +295,27 @@
       seen.add(base.key);
 
       let previous = null;
+      let fromArchive = false;
       if (base.source_id && bySourceId.has(String(base.source_id))) previous = bySourceId.get(String(base.source_id));
       if (!previous && byKey.has(base.key)) previous = byKey.get(base.key);
       if (!previous) {
         const sameName = byName.get(normalizeText(base.nome)) || [];
         if (sameName.length === 1) previous = sameName[0];
       }
+      if (!previous) {
+        if (base.source_id && archivedBySourceId.has(String(base.source_id))) previous = archivedBySourceId.get(String(base.source_id));
+        if (!previous && archivedByKey.has(base.key)) previous = archivedByKey.get(base.key);
+        if (!previous) {
+          const sameName = archivedByName.get(normalizeText(base.nome)) || [];
+          if (sameName.length === 1) previous = sameName[0];
+        }
+        fromArchive = Boolean(previous);
+      }
 
       if (previous) {
         matched++;
+        if (fromArchive) { restored++; restoredArchiveKeys.add(previous.key); }
+        else matchedCurrentKeys.add(previous.key);
         if (!base.source_id && previous.source_id) base.source_id = previous.source_id;
         if (previous.key !== base.key) migrations.push({ oldKey: previous.key, newKey: base.key });
       } else {
@@ -297,6 +323,18 @@
       }
       prepared.push(base);
     }
+
+    const newlyRemoved = mode === 'replace'
+      ? existingBase.filter(x => !matchedCurrentKeys.has(x.key))
+      : [];
+    const retainedArchive = archiveEntries.filter(entry => {
+      const base = entry?.base || entry;
+      return base?.key && !restoredArchiveKeys.has(base.key) && !newlyRemoved.some(x => x.key === base.key);
+    });
+    const nextArchive = [
+      ...retainedArchive,
+      ...newlyRemoved.map(base => ({ base, removedAt: Date.now() }))
+    ].slice(-2000);
 
     await tx([STORES.base, STORES.personal, STORES.auction, STORES.meta], 'readwrite', stores => {
       if (mode === 'replace') stores[STORES.base].clear();
@@ -310,9 +348,10 @@
       }
 
       for (const base of prepared) stores[STORES.base].put(base);
-      stores[STORES.meta].put({ key: 'lastImport', value: { at: Date.now(), mode, count: prepared.length, matched, newPlayers, migrated: migrations.length } });
+      stores[STORES.meta].put({ key: 'removedPlayersArchive', value: nextArchive });
+      stores[STORES.meta].put({ key: 'lastImport', value: { at: Date.now(), mode, count: prepared.length, matched, newPlayers, migrated: migrations.length, removed: newlyRemoved.length, restored } });
     });
-    return { imported: prepared.length, duplicates, matched, newPlayers, migrated: migrations.length };
+    return { imported: prepared.length, duplicates, matched, newPlayers, migrated: migrations.length, removed: newlyRemoved.length, restored };
   }
 
   function makeManagerId() {
