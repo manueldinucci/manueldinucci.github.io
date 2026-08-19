@@ -22,5 +22,5 @@ assert(js.includes("if (state.sortMode === 'team')"));
 assert(js.includes("openAssignmentSheet(key, true)"));
 assert(css.includes('.dashboard-sheet.live-height-80') && css.includes('height: 80dvh'));
 assert(css.includes('.player-bottom-actions'));
-assert(sw.includes('fantacalcio-checklist-v21'));
+assert(Number((sw.match(/fantacalcio-checklist-v(\d+)/)||[])[1]||0) >= 21);
 console.log('v21 static tests: OK');

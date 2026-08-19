@@ -1033,3 +1033,60 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
   .role-tab.role-short .tab-count { font-size: 9px; }
   .sort-trigger { flex-basis: 78px; width: 78px; font-size: 10.5px; }
 }
+
+
+/* v22 — card più immediate: slot e target separati, gerarchia secondaria pulita */
+.player-primary-meta {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 3px;
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+}
+.player-slot-badge,
+.player-target-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 21px;
+  border: 1px solid color-mix(in srgb, var(--line) 88%, var(--text));
+  border-radius: 999px;
+  padding: 2px 7px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.player-slot-badge {
+  flex: 0 0 auto;
+  font-size: 10px;
+  font-weight: 760;
+  color: color-mix(in srgb, var(--text) 76%, var(--muted));
+  background: color-mix(in srgb, var(--surface-2) 86%, transparent);
+}
+.player-target-pill {
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 11.5px;
+  font-weight: 850;
+  color: var(--text);
+  background: color-mix(in srgb, var(--surface) 78%, var(--surface-2));
+}
+.player-secondary-meta {
+  margin-top: 2px;
+  font-size: 9.8px;
+  font-weight: 520;
+  line-height: 1.22;
+}
+.player-card.compact .player-main { display: block; }
+.player-card.compact .player-primary-meta { display: flex; gap: 4px; margin-top: 2px; }
+.player-card.compact .player-slot-badge,
+.player-card.compact .player-target-pill { min-height: 18px; padding: 1px 6px; }
+.player-card.compact .player-slot-badge { font-size: 9px; }
+.player-card.compact .player-target-pill { font-size: 10px; }
+.player-card.compact .player-secondary-meta { font-size: 9px; margin-top: 1px; }
+
+@media (max-width: 390px) {
+  .player-target-pill { padding-inline: 6px; }
+}

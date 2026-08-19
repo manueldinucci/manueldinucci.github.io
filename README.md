@@ -1,5 +1,9 @@
-# Fantacalcio Checklist PWA v21
+# Fantacalcio Checklist PWA v22
 
+
+## v22
+
+- Nessun giocatore demo al primo avvio; migrazione prudente dei vecchi seed, cancellazione reale dei Target con `—` e card con badge Slot + pill Target più leggibile.
 
 ## v21
 
@@ -214,7 +218,7 @@ Da **⚙**:
 ## Reset
 
 - **Reset asta** azzera solo `preso`, `prezzo acquisto` e `manager`.
-- **Reset completo** richiede di digitare `RESET` e ripristina i dati dimostrativi cancellando listone e personalizzazioni correnti.
+- **Reset completo** richiede di digitare `RESET` e cancella listone e personalizzazioni correnti lasciando la lista giocatori vuota.
 
 ## Aggiornare una versione già installata
 

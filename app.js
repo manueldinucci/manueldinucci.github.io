@@ -78,7 +78,7 @@
 
   async function init() {
     await FantaDB.openDB();
-    await FantaDB.seedIfNeeded(window.SEED_PLAYERS || []);
+    await FantaDB.purgeLegacyDemoPlayers();
     await loadSettings();
     await loadAuctionContext();
     bindStaticEvents();
@@ -365,12 +365,13 @@
     return '';
   }
 
-  function playerPrimaryMeta(p) {
+  function playerPrimaryMetaMarkup(p) {
     const parts = [];
-    if (String(p.slot || '').trim()) parts.push(String(p.slot).trim());
+    const slot = String(p.slot || '').trim();
     const target = targetText(p);
-    if (target) parts.push(target);
-    return parts.join(' | ');
+    if (slot) parts.push(`<span class="player-slot-badge">${esc(slot)}</span>`);
+    if (target) parts.push(`<span class="player-target-pill">${esc(target)} cr</span>`);
+    return parts.join('');
   }
 
   function playerSecondaryMeta(p) {
@@ -405,7 +406,7 @@
         <button class="fav-btn" aria-label="${p.preferito?'Rimuovi preferito':'Aggiungi preferito'}">${p.preferito?'★':'☆'}</button>
         <div class="player-main" tabindex="0" role="button" aria-label="Apri ${esc(p.nome)}">
           <div class="player-line"><span class="player-name" style="font-size:${size}px;font-weight:${weight}">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
-          ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : (playerPrimaryMeta(p) ? `<div class="player-primary-meta">${esc(playerPrimaryMeta(p))}</div>` : '')}
+          ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : (playerPrimaryMetaMarkup(p) ? `<div class="player-primary-meta">${playerPrimaryMetaMarkup(p)}</div>` : '')}
           ${p.preso ? '' : (playerSecondaryMeta(p) ? `<div class="player-secondary-meta">${esc(playerSecondaryMeta(p))}</div>` : '')}
         </div>
         <button class="assign-btn ${p.preso?'assigned':''}" aria-label="${p.preso?'Rimuovi assegnazione':'Assegna giocatore'}">${p.preso?'−':'+'}</button>`;
@@ -417,7 +418,11 @@
       frag.appendChild(card);
     }
     container.replaceChildren(frag);
-    $('emptyState').classList.toggle('hidden', state.mainView !== 'players' || list.length !== 0);
+    const empty = $('emptyState');
+    empty.textContent = state.players.length === 0
+      ? 'Nessun giocatore nel listone. Importa un file .xlsx dalle Impostazioni.'
+      : 'Nessun giocatore corrisponde ai filtri.';
+    empty.classList.toggle('hidden', state.mainView !== 'players' || list.length !== 0);
   }
 
   async function toggleTaken(key, { allowUndo = true } = {}) {
@@ -712,6 +717,10 @@
       slot: $('editSlot').value.trim(),
       target_min: num($('editTargetMin').value),
       target_max: num($('editTargetMax').value),
+      // Se il valore neutro viene scelto, azzera anche i campi legacy: altrimenti
+      // la migrazione compatibilità li ripristinerebbe al successivo caricamento.
+      prezzo_ideale_min: num($('editTargetMin').value),
+      prezzo_ideale_max: num($('editTargetMax').value),
       commento: $('editComment').value,
       preferito: p.preferito
     };
@@ -1196,7 +1205,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 

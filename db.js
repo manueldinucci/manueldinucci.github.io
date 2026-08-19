@@ -148,6 +148,43 @@
     return true;
   }
 
+
+  // Record demo presenti nelle versioni precedenti. La migrazione v22 elimina
+  // soltanto i record ancora riconoscibili come seed originali (nessun source_id
+  // e valori ufficiali identici), evitando di toccare giocatori realmente importati.
+  const LEGACY_DEMO_SIGNATURES = [
+    ['mctominay|napoli',35,201],['mckennie|juventus',15,18],['modric|milan',22,82],
+    ['zaccagni|lazio',31,150],['ederson|atalanta',26,112],['pasalic|atalanta',18,67],
+    ['nico paz|como',29,138],['pulisic|milan',34,176],['vlasic|torino',19,74],
+    ['kone|roma',21,56],['bernabe|parma',13,36],['samardzic|atalanta',17,51],
+    ['alaibegovic|juventus',8,23],['svilar|roma',20,108],['di gregorio|juventus',18,84],
+    ['carnesecchi|atalanta',16,61],['bremer|juventus',22,96],['mancini|roma',18,72],
+    ['wesley|roma',19,81],['zappacosta|atalanta',14,49],['valeri|parma',10,31],
+    ['scamacca|atalanta',30,126],['dybala|roma',28,105],['simeone|torino',23,83],
+    ['malen|roma',31,115],['gedjemis|frosinone',7,14]
+  ];
+
+  async function purgeLegacyDemoPlayers() {
+    const done = await get(STORES.meta, 'legacyDemoPurgedV22');
+    if (done) return 0;
+    const signatures = new Map(LEGACY_DEMO_SIGNATURES.map(([key, q, fvm]) => [key, { q, fvm }]));
+    const base = await getAll(STORES.base);
+    const removable = base.filter(row => {
+      const sig = signatures.get(row.key);
+      if (!sig || String(row.source_id || '').trim()) return false;
+      return numOrNull(row.quotazione) === sig.q && numOrNull(row.fvm) === sig.fvm;
+    });
+    await tx([STORES.base, STORES.personal, STORES.auction, STORES.meta], 'readwrite', stores => {
+      for (const row of removable) {
+        stores[STORES.base].delete(row.key);
+        stores[STORES.personal].delete(row.key);
+        stores[STORES.auction].delete(row.key);
+      }
+      stores[STORES.meta].put({ key: 'legacyDemoPurgedV22', value: true, at: Date.now(), removed: removable.length });
+    });
+    return removable.length;
+  }
+
   async function getCombinedPlayers() {
     const [base, personal, auction] = await Promise.all([
       getAll(STORES.base), getAll(STORES.personal), getAll(STORES.auction)
@@ -391,6 +428,7 @@
     normalizeText,
     makePlayerKey,
     seedIfNeeded,
+    purgeLegacyDemoPlayers,
     getCombinedPlayers,
     updatePersonal,
     updateAuction,
