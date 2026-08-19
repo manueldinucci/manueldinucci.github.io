@@ -13,5 +13,6 @@ ok(css.includes('background: #3a3a3c'), 'light assign button must be graphite');
 ok(css.includes('background: #4a4a4d'), 'dark assign button must be lighter graphite');
 ok(/\.player-secondary-meta\s*\{[\s\S]*?white-space:\s*normal;[\s\S]*?overflow-wrap:\s*anywhere;/m.test(css), 'secondary metadata must wrap fully');
 ok(/\.demand-summary\s*\{[\s\S]*?font-size:\s*11\.5px;/m.test(css), 'demand line must be enlarged');
-ok(sw.includes("fantacalcio-checklist-v11"), 'service worker cache must be v11');
+const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);
+ok(version >= 11, 'service worker cache version must be at least v11');
 console.log('v11 static tests: OK');

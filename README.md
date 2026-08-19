@@ -3,6 +3,15 @@
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
 
+## Novità v15
+
+- rimosso dalla testata Live il conteggio globale dei giocatori liberi del ruolo;
+- evidenziati dentro ogni card i soli slot ancora da riempire del fantallenatore nel ruolo corrente, con badge `P/D/C/A rimasti X`;
+- nome, badge ruolo, `Max` e crediti residui compattati su un'unica riga principale;
+- pulsanti `+ / −` ridotti ulteriormente a 36×36 px, mantenendo un'area touch di circa 44 px;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v15`.
+
+
 ## Novità v14
 
 - riga rossa del fabbisogno riportata alle dimensioni della v11 per evitare tagli su Difensori e Centrocampisti;
@@ -323,7 +332,7 @@ Le card libere hanno anche una scala di grigi molto leggera basata su S1–S5. G
 
 Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Asta Live Manager** (`Asta Live` come short name PWA).
 
-Il Service Worker usa la cache `fantacalcio-checklist-v14`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
+Il Service Worker usa la cache `fantacalcio-checklist-v15`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
 
 ## Novità v11 — schermata principale più operativa
 

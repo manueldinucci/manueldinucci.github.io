@@ -746,8 +746,6 @@
     const c = state.auctionConfig;
     $('managersMeta').textContent = `Confronto live · ruolo ${state.role}`;
     const role = state.role;
-    const freeRolePlayers = state.players.filter(p => p.ruolo === role && !p.preso).length;
-    if ($('liveRemaining')) $('liveRemaining').textContent = `${role} rimasti: ${freeRolePlayers}`;
     let rows = FantaAuction.computeAllManagerStats(state.managers, state.players, c);
     const sorters = {
       budget:(a,b)=>b.stats.budgetRemaining-a.stats.budgetRemaining,
@@ -759,7 +757,8 @@
       const selfBadge = manager.isMe ? '<span class="self-badge">TU</span>' : '';
       const remaining = stats.roleRemaining[role];
       const roleText = `${role} rimasti ${remaining}`;
-      return `<article class="manager-card v9-manager${manager.isMe?' self-manager':''}"><div class="manager-card-head"><div><strong>${esc(manager.nome)}</strong>${selfBadge}${manager.squadra?`<span>${esc(manager.squadra)}</span>`:''}</div><b>${displayNum(stats.budgetRemaining)} cr</b></div><div class="manager-focus-line"><strong>${esc(roleText)}</strong><span>Max ${displayNum(Math.floor(stats.maxBid))}</span></div>${managerRosterDetails(manager,stats)}</article>`;
+      const teamText = manager.squadra ? `<span class="manager-live-team">${esc(manager.squadra)}</span>` : '';
+      return `<article class="manager-card v9-manager${manager.isMe?' self-manager':''}"><div class="manager-live-row"><div class="manager-live-identity"><strong class="manager-live-name">${esc(manager.nome)}</strong>${selfBadge}${teamText}</div><span class="manager-role-badge">${esc(roleText)}</span><span class="manager-live-max">Max ${displayNum(Math.floor(stats.maxBid))}</span><b class="manager-live-budget">${displayNum(stats.budgetRemaining)} cr</b></div>${managerRosterDetails(manager,stats)}</article>`;
     }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>';
   }
 

@@ -16,9 +16,14 @@ ok(!html.includes('id="editTargetMax" type="number"'), 'Target max numeric input
 ok(app.includes('Array.from({length:301}, (_, i) => i)'), 'target selects must generate 0..300');
 ok(app.includes("['editTargetMin','editTargetMax']"), 'both target selects must be initialized/bound');
 ok(html.includes('<h2 id="managersTitle">Live</h2>'), 'Live sheet title must be Live');
-ok(html.includes('id="liveRemaining"'), 'Live remaining chip must exist');
-ok(app.includes("`${role} rimasti: ${freeRolePlayers}`"), 'Live remaining format must use role rimasti: count');
-ok(app.includes('state.players.filter(p => p.ruolo === role && !p.preso).length'), 'Live remaining count must derive from free players in current role');
+const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);
+if (version === 14) {
+  ok(html.includes('id="liveRemaining"'), 'v14 Live remaining chip must exist');
+  ok(app.includes("`${role} rimasti: ${freeRolePlayers}`"), 'v14 Live remaining format must use role rimasti: count');
+} else {
+  ok(!html.includes('id="liveRemaining"'), 'v15+ must remove the superseded global Live remaining chip');
+  ok(app.includes('stats.roleRemaining[role]'), 'v15+ must retain per-manager role remaining data');
+}
 ok(html.includes('>Importa listone .xlsx</button>'), 'import label must be updated');
 ok(html.includes('class="primary-btn import-list-btn"'), 'import button must use green class');
 ok(css.includes('.import-list-btn {') && css.includes('background: #2f7d32'), 'import button must have green background');
@@ -26,5 +31,5 @@ ok(html.indexOf('id="manageManagersBtn"') > html.indexOf('id="importListBtn"'), 
 ok(html.indexOf('id="manageManagersBtn"') < html.indexOf('id="exportBackupBtn"'), 'manager settings must be second visible tool item');
 ok(html.includes('class="secondary-btn manager-settings-btn"'), 'manager settings must use dedicated gray class');
 ok(css.includes('.manager-settings-btn { background: var(--surface-2); }'), 'manager settings must have light-gray/equivalent background');
-ok(sw.includes("fantacalcio-checklist-v14"), 'service worker cache must be v14');
+ok(version >= 14, 'service worker cache version must be at least v14');
 console.log('v14 static tests: OK');

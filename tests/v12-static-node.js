@@ -16,8 +16,14 @@ ok(!app.includes('state.priceMax'), 'removed price filter state must not be used
 ok(!app.includes("bindCheck('compactMode'"), 'old compact checkbox binding must be removed');
 ok(app.includes("$('compactHeaderBtn').addEventListener('click', toggleCompact)"), 'compact header toggle must be bound');
 ok(app.includes("btn.setAttribute('aria-pressed', state.compact ? 'true' : 'false')"), 'compact state must be exposed');
-ok(/\.demand-summary\s*\{[\s\S]*?font-size:\s*13px;/m.test(css), 'demand line must be enlarged');
-ok(/\.assign-btn\s*\{[\s\S]*?width:\s*40px;\s*height:\s*40px;/m.test(css), 'assign button must be slightly smaller');
+const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);
+if (version === 12) {
+  ok(/\.demand-summary\s*\{[\s\S]*?font-size:\s*13px;/m.test(css), 'v12 demand line must be enlarged');
+  ok(/\.assign-btn\s*\{[\s\S]*?width:\s*40px;\s*height:\s*40px;/m.test(css), 'v12 assign button must be 40x40');
+} else {
+  const match = css.match(/\.assign-btn\s*\{[\s\S]*?width:\s*(\d+)px;\s*height:\s*(\d+)px;/m);
+  ok(match && Number(match[1]) <= 40 && Number(match[2]) <= 40, 'later assign button must not regress larger than v12');
+}
 ok(css.includes('.assign-btn::after'), 'assign button must preserve an extended touch target');
-ok(sw.includes("fantacalcio-checklist-v12"), 'service worker cache must be v12');
+ok(version >= 12, 'service worker cache version must be at least v12');
 console.log('v12 static tests: OK');

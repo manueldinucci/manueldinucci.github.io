@@ -147,14 +147,14 @@ h2 { margin: 0; font-size: 20px; }
 .player-card.favorite:not(.taken) .player-name { color: var(--favorite-star); }
 .player-card.favorite.taken .fav-btn { color: var(--favorite-star); opacity: .65; }
 .assign-btn {
-  position: relative; width: 38px; height: 38px; margin-right: 6px; border-radius: 9px; border: 1px solid #3a3a3c;
+  position: relative; width: 36px; height: 36px; margin-right: 6px; border-radius: 9px; border: 1px solid #3a3a3c;
   background: #3a3a3c; color: #fff; display: inline-flex; align-items: center; justify-content: center;
-  font-size: 25px; font-weight: 650; line-height: 1; padding: 0; flex: none;
+  font-size: 24px; font-weight: 650; line-height: 1; padding: 0; flex: none;
 }
-.assign-btn::after { content: ''; position: absolute; inset: -3px; }
+.assign-btn::after { content: ''; position: absolute; inset: -4px; }
 .assign-btn:active { transform: scale(.97); }
 .assign-btn.assigned {
-  background: #e8e8eb; color: #707076; border-color: #dedee2; font-size: 23px;
+  background: #e8e8eb; color: #707076; border-color: #dedee2; font-size: 22px;
 }
 html[data-theme="dark"] .assign-btn { background: #4a4a4d; color: #fff; border-color: #55555a; }
 html[data-theme="dark"] .assign-btn.assigned { background: #303035; color: #a5a5ac; border-color: #3b3b41; }
@@ -451,16 +451,6 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
 .v9-manager { padding: 8px 9px 7px; }
 .v9-manager .manager-card-head strong { font-size: 14px; }
 .v9-manager .manager-card-head b { font-size: 14px; }
-.manager-focus-line {
-  display: flex;
-  justify-content: space-between;
-  gap: 10px;
-  align-items: baseline;
-  margin-top: 5px;
-  font-size: 11px;
-}
-.manager-focus-line strong { color: var(--text); font-size: 12px; }
-.manager-focus-line span { color: var(--muted); font-weight: 760; white-space: nowrap; }
 .v9-manager .manager-roster { margin-top: 6px; padding-top: 5px; }
 .v9-manager .manager-roster summary {
   display: grid;
@@ -523,7 +513,6 @@ html[data-theme="dark"] .player-card.slot-s5:not(.taken) { background: var(--sur
 
 @media (max-width: 390px) {
   .v9-manager .manager-roster summary { gap: 5px; font-size: 9px; }
-  .manager-focus-line { font-size: 10px; }
 }
 
 /* v14 — rifiniture Live, impostazioni e controlli target */
@@ -534,21 +523,6 @@ html[data-theme="dark"] .player-card.slot-s5:not(.taken) { background: var(--sur
 }
 .import-list-btn:active { background: #286b2b; }
 .manager-settings-btn { background: var(--surface-2); }
-.live-remaining-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 26px;
-  margin-top: 6px;
-  padding: 4px 8px;
-  border: 1px solid var(--line);
-  border-radius: 7px;
-  background: var(--surface-2);
-  color: var(--text);
-  font-size: 12px;
-  line-height: 1;
-  font-weight: 820;
-  white-space: nowrap;
-}
 html[data-theme="dark"] .import-list-btn {
   background: #347f3b;
   border-color: #347f3b;
@@ -559,4 +533,80 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
 /* v10/v14 — fabbisogno compatto: ripristino resa v11 su smartphone */
 @media (max-width: 430px) {
   .demand-summary { font-size: 10.5px; letter-spacing: -.012em; }
+}
+
+
+/* v15 — Live compatta per fantallenatore e azioni giocatore più discrete */
+.manager-live-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  white-space: nowrap;
+}
+.manager-live-identity {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+  flex: 1 1 auto;
+}
+.manager-live-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+}
+.manager-live-team {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--muted);
+  font-size: 9px;
+  font-weight: 600;
+}
+.manager-role-badge {
+  flex: none;
+  display: inline-flex;
+  align-items: center;
+  min-height: 22px;
+  padding: 2px 5px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 820;
+}
+.manager-live-max {
+  flex: none;
+  color: var(--muted);
+  font-size: 10px;
+  font-weight: 760;
+}
+.manager-live-budget {
+  flex: none;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 850;
+}
+.v9-manager { padding-top: 7px; }
+.v9-manager .manager-roster { margin-top: 5px; padding-top: 4px; }
+
+@media (max-width: 430px) {
+  .manager-live-row { gap: 4px; }
+  .manager-live-team { display: none; }
+  .manager-role-badge { padding-inline: 4px; font-size: 9.5px; }
+  .manager-live-max { font-size: 9.5px; }
+  .manager-live-budget { font-size: 13px; }
+}
+
+@media (max-width: 360px) {
+  .manager-live-row { gap: 3px; }
+  .manager-role-badge { font-size: 9px; }
+  .manager-live-max { font-size: 9px; }
+  .manager-live-budget { font-size: 12.5px; }
 }
