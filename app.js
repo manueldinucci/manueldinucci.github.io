@@ -24,7 +24,7 @@
     importMode: 'replace',
     managers: [],
     auctionConfig: FantaAuction.makeDefaultConfig(),
-    managerSort: 'budget',
+    managerSort: 'slots',
     managerView: 'unified',
     mainView: 'players',
     slotDisplayMode: 'remaining',
@@ -111,7 +111,7 @@
     state.auctionConfig = FantaAuction.makeDefaultConfig(await FantaDB.getSetting('auctionConfig', null) || {});
     const managerUI = await FantaDB.getSetting('managerUI', null);
     if (managerUI && typeof managerUI === 'object') {
-      state.managerSort = ['slots','maxBid','budget'].includes(managerUI.sort) ? managerUI.sort : state.managerSort;
+      state.managerSort = ['slots','maxBid'].includes(managerUI.sort) ? managerUI.sort : 'slots';
     }
   }
 
@@ -160,7 +160,7 @@
   function renderRoleTabs() {
     const counts = Object.fromEntries(roles.map(([r]) => [r, state.players.filter(p => p.ruolo === r).length]));
     const roleButtons = roles.map(([r]) => `
-      <button class="role-tab role-short ${state.mainView==='players' && state.role===r?'active':''}" data-role="${r}" aria-label="${roleName(r)}">${r}<span class="tab-count">${counts[r]}</span></button>
+      <button class="role-tab role-short ${state.mainView==='players' && state.role===r?'active':''}" data-role="${r}" aria-label="${roleName(r)}">${({P:'Por',D:'Dif',C:'Cen',A:'Att'})[r]}<span class="tab-count">${counts[r]}</span></button>
     `).join('');
     const viewButtons = ['live','rose'].map(view => `
       <button class="role-tab view-tab ${state.mainView===view?'active':''}" data-view="${view}">${view === 'live' ? 'Live' : 'Rose'}</button>
@@ -799,20 +799,44 @@
     renderAll();
   }
 
+  function twoColumnPlayers(players, itemClass) {
+    if (!players.length) return '';
+    const split = Math.ceil(players.length / 2);
+    const columns = [players.slice(0, split), players.slice(split)];
+    return `<div class="purchase-columns">${columns.filter(col => col.length).map(col => `<div class="purchase-column">${col.map(p => `<div class="${itemClass}"><span>${esc(p.nome)}</span><b>${num(p.prezzo_acquisto) != null ? `${displayNum(p.prezzo_acquisto)} cr` : '—'}</b></div>`).join('')}</div>`).join('')}</div>`;
+  }
+
   function managerFullRosterDetails(manager, stats) {
     const roleSummary = FantaAuction.ROLES.map(r => `${r} ${stats.roleBought[r]}/${state.auctionConfig.roster[r]}`).join(' · ');
     const sections = FantaAuction.ROLES.map(role => {
       const players = state.players.filter(p => p.preso && p.ruolo === role && FantaAuction.assignmentBelongsToManager(p, manager));
-      const items = players.length ? players.map(p => `<div class="roster-player"><span>${esc(p.nome)}</span><b>${num(p.prezzo_acquisto) != null ? `${displayNum(p.prezzo_acquisto)} cr` : '—'}</b></div>`).join('') : '<div class="roster-empty">Nessun acquisto</div>';
+      const items = players.length ? twoColumnPlayers(players, 'roster-player') : '<div class="roster-empty">Nessun acquisto</div>';
       return `<div class="roster-role"><div class="roster-role-head"><strong>${role} ${stats.roleBought[role]}/${state.auctionConfig.roster[role]}</strong></div>${items}</div>`;
     }).join('');
-    return `<details class="manager-roster rose-roster"><summary><span>Rosa</span><b>${esc(roleSummary)}</b></summary><div class="manager-roster-body">${sections}</div></details>`;
+    return `<details class="manager-roster rose-roster"><summary><b>${esc(roleSummary)}</b></summary><div class="manager-roster-body">${sections}</div></details>`;
   }
 
   function managerRolePurchases(manager, role) {
     const players = state.players.filter(p => p.preso && p.ruolo === role && FantaAuction.assignmentBelongsToManager(p, manager));
     if (!players.length) return '<div class="live-role-empty">Nessun acquisto nel ruolo</div>';
-    return players.map(p => `<div class="live-role-player"><span>${esc(p.nome)}</span><b>${num(p.prezzo_acquisto) != null ? `${displayNum(p.prezzo_acquisto)} cr` : '—'}</b></div>`).join('');
+    return twoColumnPlayers(players, 'live-role-player');
+  }
+
+  function sortLiveRows(rows, role) {
+    return rows.sort((a,b) => {
+      if (state.managerSort === 'maxBid') return Number(b.stats.maxBid || 0) - Number(a.stats.maxBid || 0) || String(a.manager.nome).localeCompare(String(b.manager.nome), 'it', {sensitivity:'base'});
+      return Number(b.stats.roleRemaining?.[role] || 0) - Number(a.stats.roleRemaining?.[role] || 0) || String(a.manager.nome).localeCompare(String(b.manager.nome), 'it', {sensitivity:'base'});
+    });
+  }
+
+  function bindLiveSort() {
+    const select = $('liveManagerSort');
+    if (!select) return;
+    select.addEventListener('change', async e => {
+      state.managerSort = e.target.value === 'maxBid' ? 'maxBid' : 'slots';
+      await saveManagerUI();
+      renderManagerDashboard();
+    });
   }
 
   function renderManagerDashboard() {
@@ -821,20 +845,23 @@
     $('emptyState').classList.add('hidden');
     dashboard.classList.remove('hidden');
     const role = state.role;
-    const rows = FantaAuction.computeAllManagerStats(state.managers, state.players, state.auctionConfig)
-      .sort((a,b) => String(a.manager.nome).localeCompare(String(b.manager.nome), 'it', {sensitivity:'base'}));
+    const baseRows = FantaAuction.computeAllManagerStats(state.managers, state.players, state.auctionConfig);
     if (state.mainView === 'rose') {
+      const rows = baseRows.slice().sort((a,b) => String(a.manager.nome).localeCompare(String(b.manager.nome), 'it', {sensitivity:'base'}));
       dashboard.innerHTML = `<div class="dashboard-head"><h2>Rose</h2><span>Situazione completa delle squadre</span></div><div class="manager-cards rose-cards">${rows.length ? rows.map(({manager,stats}) => {
         const selfBadge = manager.isMe ? '<span class="self-badge">TU</span>' : '';
         return `<article class="manager-card rose-manager${manager.isMe?' self-manager':''}"><div class="rose-manager-head"><div><strong>${esc(manager.nome)}</strong>${selfBadge}${manager.squadra ? `<span>${esc(manager.squadra)}</span>` : ''}</div><b>${displayNum(stats.budgetRemaining)} cr</b></div>${managerFullRosterDetails(manager,stats)}</article>`;
       }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>'}</div>`;
       return;
     }
-    dashboard.innerHTML = `<div class="dashboard-head live-dashboard-head"><h2>Live</h2><span>Ruolo ${esc(role)} · situazione in tempo reale</span></div><div class="manager-cards live-cards">${rows.length ? rows.map(({manager,stats}) => {
-      const roleText = `${role} rimasti ${stats.roleRemaining[role]}`;
+    const rows = sortLiveRows(baseRows.slice(), role);
+    dashboard.innerHTML = `<div class="dashboard-head live-dashboard-head"><div><h2>Live</h2><span>Ruolo ${esc(role)} · situazione in tempo reale</span></div><label class="live-sort-control"><span>Ordina</span><select id="liveManagerSort"><option value="slots" ${state.managerSort==='slots'?'selected':''}>Slot rimasti</option><option value="maxBid" ${state.managerSort==='maxBid'?'selected':''}>Max bid possibile</option></select></label></div><div class="manager-cards live-cards">${rows.length ? rows.map(({manager,stats}) => {
+      const remaining = Number(stats.roleRemaining[role] || 0);
+      const roleText = remaining === 0 ? 'AL COMPLETO' : `${role} - ${remaining} SLOT ${remaining === 1 ? 'RIMASTO' : 'RIMASTI'}`;
       const selfBadge = manager.isMe ? '<span class="self-badge">TU</span>' : '';
-      return `<details class="manager-card live-manager${manager.isMe?' self-manager':''}"><summary class="manager-live-summary"><div class="manager-live-row"><div class="manager-live-left"><strong class="manager-live-name">${esc(manager.nome)}</strong>${selfBadge}<span class="manager-role-badge">${esc(roleText)}</span></div><div class="manager-live-economy"><b class="manager-live-budget">${displayNum(stats.budgetRemaining)} cr</b><span class="manager-live-separator">·</span><span class="manager-live-max">(max bid ${displayNum(Math.floor(stats.maxBid))})</span><span class="live-chevron" aria-hidden="true">⌄</span></div></div></summary><div class="live-role-list">${managerRolePurchases(manager, role)}</div></details>`;
+      return `<details class="manager-card live-manager${manager.isMe?' self-manager':''}${remaining===0?' role-complete':''}"><summary class="manager-live-summary"><div class="manager-live-row"><div class="manager-live-left"><strong class="manager-live-name">${esc(manager.nome)}</strong>${selfBadge}<span class="manager-role-badge">${esc(roleText)}</span></div><div class="manager-live-economy"><b class="manager-live-budget">${displayNum(stats.budgetRemaining)} cr</b><span class="manager-live-separator">·</span><span class="manager-live-max">(max bid ${displayNum(Math.floor(stats.maxBid))})</span><span class="live-chevron" aria-hidden="true">⌄</span></div></div></summary><div class="live-role-list">${managerRolePurchases(manager, role)}</div></details>`;
     }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>'}</div>`;
+    bindLiveSort();
   }
 
   function renderManagersPanel() {
@@ -1086,7 +1113,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'budget',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 

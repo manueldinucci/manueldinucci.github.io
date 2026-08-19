@@ -1,7 +1,20 @@
-# Fantacalcio — Asta Live Manager
+# Fantacalcio Checklist PWA v18
+
+— Asta Live Manager
 
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
+
+## Novità v18
+
+- navigazione superiore aggiornata a `Por | Dif | Cen | Att | Live | Rose`;
+- nella Live è tornato l’ordinamento per `Slot rimasti` o `Max bid possibile`, entrambi decrescenti;
+- badge Live nel formato `P/D/C/A - X SLOT RIMASTI`, con singolare corretto e stato `AL COMPLETO` a zero;
+- i partecipanti `AL COMPLETO` vengono attenuati visivamente senza perdere interattività;
+- dettaglio espanso Live disposto in due colonne bilanciate, mantenendo nome giocatore e prezzo di acquisto;
+- stessa compattazione a due colonne applicata alle rose complete;
+- nel riepilogo Rose è stata rimossa la parola ridondante `Rosa`;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v18`.
 
 ## Novità v17
 
@@ -353,7 +366,7 @@ Le card libere hanno anche una scala di grigi molto leggera basata su S1–S5. G
 
 Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Asta Live Manager** (`Asta Live` come short name PWA).
 
-Il Service Worker usa la cache `fantacalcio-checklist-v17`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
+Il Service Worker usa la cache `fantacalcio-checklist-v18`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
 
 ## Novità v11 — schermata principale più operativa
 

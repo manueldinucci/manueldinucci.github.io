@@ -11,7 +11,7 @@ ok(!html.includes('id="liveRemaining"'), 'global Live remaining chip must be rem
 ok(!app.includes('freeRolePlayers'), 'global free-player count must be removed from Live');
 ok(!app.includes('`${role} rimasti: ${freeRolePlayers}`'), 'global role remaining label must be removed');
 ok(app.includes('stats.roleRemaining[role]'), 'per-manager remaining count must use manager roleRemaining');
-ok(app.includes('`${role} rimasti ${stats.roleRemaining[role]}`') || app.includes('`${role} rimasti ${remaining}`'), 'per-manager role badge format must be role rimasti X');
+ok(app.includes('`${role} rimasti ${stats.roleRemaining[role]}`') || app.includes('`${role} rimasti ${remaining}`') || app.includes('`${role} - ${remaining} SLOT ${remaining === 1 ? \'RIMASTO\' : \'RIMASTI\'}`'), 'per-manager role badge must remain role-specific');
 ok(app.includes('class="manager-live-row"'), 'Live manager information must use one-row layout');
 ok(app.includes('class="manager-role-badge"'), 'per-manager remaining value must use a badge');
 ok(app.includes('class="manager-live-max"'), 'maxBid must remain in main Live row');
