@@ -106,8 +106,8 @@
               <option value="S5">S5</option>
             </select>
           </label>
-          <label>Target min<input id="editTargetMin" type="number" inputmode="numeric" min="0" /></label>
-          <label>Target max<input id="editTargetMax" type="number" inputmode="numeric" min="0" /></label>
+          <label>Target min<select id="editTargetMin" aria-label="Target minimo"></select></label>
+          <label>Target max<select id="editTargetMax" aria-label="Target massimo"></select></label>
         </div>
         <label class="full-field comment-field">Commento<textarea id="editComment" rows="4" placeholder="Nota personale..."></textarea></label>
       </div>
@@ -140,14 +140,14 @@
       <button id="closeToolsBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
     <div class="sheet-scroll tool-list">
-      <button id="importListBtn" class="primary-btn">IMPORTA LISTONE XLSX</button>
+      <button id="importListBtn" class="primary-btn import-list-btn">Importa listone .xlsx</button>
       <input id="listFileInput" type="file" accept=".xlsx,.xls,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/json" hidden />
+      <button id="manageManagersBtn" class="secondary-btn manager-settings-btn">Gestione fantallenatori</button>
       <button id="exportBackupBtn" class="secondary-btn">Esporta backup</button>
       <button id="importBackupBtn" class="secondary-btn">Importa backup</button>
       <input id="backupFileInput" type="file" accept=".json,application/json" hidden />
       <button id="addPlayerBtn" class="secondary-btn">Aggiungi giocatore</button>
       <button id="removePlayerBtn" class="secondary-btn">Rimuovi giocatore</button>
-      <button id="manageManagersBtn" class="secondary-btn">Gestione fantallenatori</button>
       <button id="resetAuctionBtn" class="secondary-btn danger-soft">Reset asta</button>
       <button id="resetAllBtn" class="secondary-btn danger">Reset completo</button>
       <p class="tool-note">I dati restano sul dispositivo. Prima di sostituire il listone è consigliato esportare un backup.</p>
@@ -204,7 +204,7 @@
   <section id="managersSheet" class="bottom-sheet tall-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="managersTitle">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="managersTitle">Fantallenatori</h2><div id="managersMeta" class="sheet-meta">Budget e slot in tempo reale</div></div>
+      <div><h2 id="managersTitle">Live</h2><div id="managersMeta" class="sheet-meta">Budget e slot in tempo reale</div><div id="liveRemaining" class="live-remaining-chip" aria-live="polite"></div></div>
       <button id="closeManagersBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
     <div class="sheet-scroll">

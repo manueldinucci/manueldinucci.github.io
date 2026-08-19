@@ -59,6 +59,12 @@
       .map(value => `<option value="${value}">${value}</option>`).join('');
   }
 
+  function initTargetSelects() {
+    const options = '<option value="">—</option>' + Array.from({length:301}, (_, i) => i)
+      .map(value => `<option value="${value}">${value}</option>`).join('');
+    ['editTargetMin','editTargetMax'].forEach(id => { if ($(id)) $(id).innerHTML = options; });
+  }
+
   function managerStats(manager, excludeKey = null) {
     const players = excludeKey ? state.players.filter(p => p.key !== excludeKey) : state.players;
     return FantaAuction.computeManagerStats(manager, players, state.auctionConfig);
@@ -73,6 +79,7 @@
     initLetterSelect();
     initFvmSelect();
     initAssignmentPriceSelect();
+    initTargetSelects();
     applyStateToControls();
     applyTheme();
     await refreshPlayers();
@@ -484,10 +491,12 @@
     }));
     $('confirmImportBtn').addEventListener('click', confirmImport);
 
-    ['editTargetMin','editTargetMax','editComment'].forEach(id => {
-      $(id).addEventListener('input', scheduleSelectedPlayerSave);
+    ['editTargetMin','editTargetMax'].forEach(id => {
+      $(id).addEventListener('change', scheduleSelectedPlayerSave);
       $(id).addEventListener('focus', () => setTimeout(() => $(id).scrollIntoView({block:'center',behavior:'smooth'}), 250));
     });
+    $('editComment').addEventListener('input', scheduleSelectedPlayerSave);
+    $('editComment').addEventListener('focus', () => setTimeout(() => $('editComment').scrollIntoView({block:'center',behavior:'smooth'}), 250));
     $('editSlot').addEventListener('change', scheduleSelectedPlayerSave);
     $('editSlot').addEventListener('focus', () => setTimeout(() => $('editSlot').scrollIntoView({block:'center',behavior:'smooth'}), 250));
     $('toggleTakenSheet').addEventListener('click', async () => {
@@ -736,8 +745,10 @@
     $('managerSort').value = state.managerSort;
     const c = state.auctionConfig;
     $('managersMeta').textContent = `Confronto live · ruolo ${state.role}`;
-    let rows = FantaAuction.computeAllManagerStats(state.managers, state.players, c);
     const role = state.role;
+    const freeRolePlayers = state.players.filter(p => p.ruolo === role && !p.preso).length;
+    if ($('liveRemaining')) $('liveRemaining').textContent = `${role} rimasti: ${freeRolePlayers}`;
+    let rows = FantaAuction.computeAllManagerStats(state.managers, state.players, c);
     const sorters = {
       budget:(a,b)=>b.stats.budgetRemaining-a.stats.budgetRemaining,
       maxBid:(a,b)=>b.stats.maxBid-a.stats.maxBid,
