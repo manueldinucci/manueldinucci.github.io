@@ -52,6 +52,13 @@
     ['editManager','assignmentManager'].forEach(id => { if ($(id)) $(id).innerHTML = options; });
   }
 
+  function initAssignmentPriceSelect() {
+    const select = $('assignmentPrice');
+    if (!select) return;
+    select.innerHTML = Array.from({length:300}, (_,i) => i + 1)
+      .map(value => `<option value="${value}">${value}</option>`).join('');
+  }
+
   function managerStats(manager, excludeKey = null) {
     const players = excludeKey ? state.players.filter(p => p.key !== excludeKey) : state.players;
     return FantaAuction.computeManagerStats(manager, players, state.auctionConfig);
@@ -65,6 +72,7 @@
     bindStaticEvents();
     initLetterSelect();
     initFvmSelect();
+    initAssignmentPriceSelect();
     applyStateToControls();
     applyTheme();
     await refreshPlayers();
@@ -494,7 +502,7 @@
     $('savePurchaseBtn').addEventListener('click', savePurchaseAssignment);
 
     $('assignmentManager').addEventListener('change', updateAssignmentPreview);
-    $('assignmentPrice').addEventListener('input', updateAssignmentPreview);
+    $('assignmentPrice').addEventListener('change', updateAssignmentPreview);
     $('confirmAssignmentBtn').addEventListener('click', confirmAssignment);
     $('managerSort').addEventListener('change', async e => { state.managerSort = e.target.value; await saveManagerUI(); renderManagersPanel(); });
     $('toastClose').addEventListener('click', () => { clearTimeout(toastTimer); $('toast').classList.add('hidden'); });
@@ -545,7 +553,7 @@
     $('sheetPlayerName').textContent = p.nome;
     $('sheetPlayerMeta').textContent = `${p.squadra || '—'} · ${p.ruolo}${p.ruolo_mantra ? ` · ${p.ruolo_mantra}` : ''}`;
     $('sheetInfoGrid').innerHTML = [
-      ['FVM',displayNum(p.fvm)], ['QI',displayNum(p.quotazione_iniziale)], ['Quotazione attuale',displayNum(p.quotazione)], ['Stato',p.preso?'PRESO':'LIBERO']
+      ['FVM',displayNum(p.fvm)], ['QI',displayNum(p.quotazione_iniziale)], ['Quotazione attuale',displayNum(p.quotazione)]
     ].map(([a,b]) => `<div class="info-chip"><span>${esc(a)}</span><strong>${esc(b)}</strong></div>`).join('');
     const slotSelect = $('editSlot');
     slotSelect.querySelectorAll('option[data-custom]').forEach(o => o.remove());
@@ -626,8 +634,9 @@
     const eligible = FantaAuction.getCompetitors(p, state.managers, state.players.filter(x => x.key !== p.key), state.auctionConfig);
     const preferred = p.manager_id || eligible[0]?.manager.id || state.managers[0]?.id || '';
     $('assignmentManager').value = preferred;
-    $('assignmentPrice').min = state.auctionConfig.minPrice;
-    $('assignmentPrice').value = p.prezzo_acquisto ?? state.auctionConfig.minPrice;
+    const savedPrice = num(p.prezzo_acquisto);
+    const defaultPrice = Math.min(300, Math.max(1, savedPrice ?? num(state.auctionConfig.minPrice) ?? 1));
+    $('assignmentPrice').value = String(defaultPrice);
     $('forceAssignment').checked = false;
     $('forceAssignmentWrap').classList.add('hidden');
     updateAssignmentPreview();
@@ -639,12 +648,11 @@
     const p = state.players.find(x => x.key === state.pendingAssignmentKey); if (!p) return;
     const manager = getManagerById($('assignmentManager').value);
     if (!manager) {
-      $('assignmentManagerInfo').textContent = 'Seleziona un fantallenatore.';
-      $('assignmentValidation').textContent = '';
+      $('assignmentValidation').textContent = 'Seleziona un fantallenatore.';
+      $('assignmentValidation').classList.add('invalid');
+      $('forceAssignmentWrap').classList.add('hidden');
       return;
     }
-    const stats = managerStats(manager, p.key);
-    $('assignmentManagerInfo').innerHTML = `<strong>${esc(manager.nome)}</strong> · ${displayNum(stats.budgetRemaining)} cr · ${stats.slotsRemaining} slot · Max ${displayNum(Math.floor(stats.maxBid))}<br><span>P ${stats.roleRemaining.P} · D ${stats.roleRemaining.D} · C ${stats.roleRemaining.C} · A ${stats.roleRemaining.A} · media ${displayNum(Math.round(stats.avgPerSlot * 10)/10)}/slot</span>`;
     const validation = FantaAuction.validateAssignment({ player:p, manager, price:$('assignmentPrice').value, players:state.players, config:state.auctionConfig, excludeKey:p.key });
     $('assignmentValidation').textContent = validation.ok ? 'Assegnazione valida' : validation.reason;
     $('assignmentValidation').classList.toggle('invalid', !validation.ok);

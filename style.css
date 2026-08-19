@@ -147,11 +147,11 @@ h2 { margin: 0; font-size: 20px; }
 .player-card.favorite:not(.taken) .player-name { color: var(--favorite-star); }
 .player-card.favorite.taken .fav-btn { color: var(--favorite-star); opacity: .65; }
 .assign-btn {
-  position: relative; width: 40px; height: 40px; margin-right: 5px; border-radius: 9px; border: 1px solid #3a3a3c;
+  position: relative; width: 38px; height: 38px; margin-right: 6px; border-radius: 9px; border: 1px solid #3a3a3c;
   background: #3a3a3c; color: #fff; display: inline-flex; align-items: center; justify-content: center;
   font-size: 25px; font-weight: 650; line-height: 1; padding: 0; flex: none;
 }
-.assign-btn::after { content: ''; position: absolute; inset: -2px; }
+.assign-btn::after { content: ''; position: absolute; inset: -3px; }
 .assign-btn:active { transform: scale(.97); }
 .assign-btn.assigned {
   background: #e8e8eb; color: #707076; border-color: #dedee2; font-size: 23px;
@@ -194,6 +194,9 @@ html[data-theme="dark"] .assign-btn.assigned { background: #303035; color: #a5a5
 .edit-grid select { width: 100%; min-height: 42px; border-radius: 8px; padding: 8px 9px; font-size: 16px; color: var(--text); }
 .edit-section { border-top: 1px solid var(--line); padding-top: 10px; }
 .edit-section-title { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--muted); margin-bottom: 8px; }
+.target-grid { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); gap: 7px; }
+.target-grid label { min-width: 0; }
+.target-grid input, .target-grid select { min-width: 0; padding-left: 8px; padding-right: 8px; }
 .target-grid .cap-field { grid-column: 1 / -1; }
 .field-hint { color: var(--muted); font-size: 10px; font-weight: 500; }
 .full-field { margin-top: 9px; }
@@ -296,8 +299,6 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
 .assignment-fields { display: grid; grid-template-columns: 1.35fr .65fr; gap: 8px; }
 .assignment-fields label, .managers-toolbar label, .auction-config-grid label, .manager-editor-fields label { display: grid; gap: 4px; color: var(--muted); font-size: 11px; }
 .assignment-fields select, .assignment-fields input, .managers-toolbar select, .auction-config-grid input, .manager-editor-fields input { width: 100%; min-height: 44px; border-radius: 8px; padding: 8px 9px; font-size: 16px; color: var(--text); }
-.assignment-manager-info { margin-top: 9px; padding: 8px 9px; border-radius: 9px; background: var(--surface-2); font-size: 11px; line-height: 1.45; }
-.assignment-manager-info span { color: var(--muted); }
 .assignment-validation { min-height: 20px; margin-top: 7px; font-size: 11px; font-weight: 760; }
 .assignment-validation.invalid { color: var(--danger); }
 .force-assignment { margin-top: 4px; color: var(--danger); }
