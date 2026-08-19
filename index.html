@@ -43,7 +43,6 @@
           <div class="search-wrap">
             <input id="searchInput" type="search" placeholder="Cerca giocatore" autocomplete="off" spellcheck="false" />
           </div>
-          <button id="managersBtn" class="secondary-btn managers-open-btn" aria-label="Apri situazione live">LIVE</button>
           <button id="filtersBtn" class="secondary-btn">Filtri</button>
         </div>
         <div id="demandSummary" class="demand-summary"></div>
@@ -76,6 +75,7 @@
 
       <section id="playerList" class="player-list" aria-live="polite"></section>
       <div id="emptyState" class="empty-state hidden">Nessun giocatore corrisponde ai filtri.</div>
+      <section id="managerDashboard" class="manager-dashboard hidden" aria-live="polite"></section>
     </main>
   </div>
 
@@ -231,10 +231,10 @@
         <div class="auction-config-grid">
           <label>Budget iniziale<input id="configBudget" type="number" inputmode="numeric" min="0" required></label>
           <label>Prezzo base<select id="configBasePrice" aria-label="Prezzo base"><option value="1">1</option><option value="qti">Qt.I</option><option value="qta">Qt.A</option><option value="fvm">FVM</option></select></label>
-          <label>Portieri<input id="configP" type="number" inputmode="numeric" min="0" required></label>
-          <label>Difensori<input id="configD" type="number" inputmode="numeric" min="0" required></label>
-          <label>Centrocampisti<input id="configC" type="number" inputmode="numeric" min="0" required></label>
-          <label>Attaccanti<input id="configA" type="number" inputmode="numeric" min="0" required></label>
+          <label>Portieri<select id="configP" aria-label="Portieri"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+          <label>Difensori<select id="configD" aria-label="Difensori"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+          <label>Centrocampisti<select id="configC" aria-label="Centrocampisti"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
+          <label>Attaccanti<select id="configA" aria-label="Attaccanti"><option value="1">1</option><option value="2">2</option><option value="3">3</option><option value="4">4</option><option value="5">5</option><option value="6">6</option><option value="7">7</option><option value="8">8</option><option value="9">9</option><option value="10">10</option></select></label>
         </div>
         <div class="manager-editor-head"><strong>Partecipanti</strong><button id="addManagerRowBtn" type="button" class="secondary-btn">+ Aggiungi</button></div>
         <div id="managerEditorRows" class="manager-editor-rows"></div>

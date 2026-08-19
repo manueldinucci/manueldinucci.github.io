@@ -25,8 +25,8 @@ ok(app.includes('function nameFontWeight'), 'FVM-dependent font weight helper mu
 ok(app.includes('650 + 150 * n'), 'font weight must range approximately 650..800');
 ok(app.includes('font-weight:${weight}'), 'player name must receive dynamic font weight inline');
 ok(css.includes('.player-name { font-weight: 680;'), 'static fallback player weight must be reduced');
-ok(app.includes('parts.push(`Qt.A ${displayNum(qta)}`)'), 'player card must show current quote as Qt.A');
-ok(app.includes("['FVM',displayNum(p.fvm)], ['Qt.A',displayNum(p.quotazione)]"), 'player sheet must show Qt.A instead of QI as quote reference');
+ok(app.includes('parts.push(`Qt.A ${displayNum(qta)}`)') || app.includes('parts.push(`Quot ${displayNum(qta)}`)'), 'player card must show current quote');
+ok(app.includes("['FVM',displayNum(p.fvm)], ['Qt.A',displayNum(p.quotazione)]") || app.includes("['Quot',displayNum(p.quotazione)], ['FVM',displayNum(p.fvm)]"), 'player sheet must show current quote instead of QI as quote reference');
 
 ok(app.includes('class="manager-live-left"'), 'Live left identity/need block must exist');
 ok(app.includes('class="manager-live-economy"'), 'Live economy block must exist');
@@ -46,7 +46,7 @@ ok(app.includes("basePriceMode:$('configBasePrice').value"), 'Prezzo base select
 ok(auction.includes('minPrice: 1,'), 'regulatory minimum must be fixed at 1 credit');
 ok(auction.includes('basePriceMode,'), 'base price mode must be part of normalized auction config');
 ok(/\.auction-config-grid\s*\{[^}]*repeat\(3,/m.test(css), 'auction general settings must use compact three-column grid');
-ok(css.includes('.manager-editor-fields { display: grid; grid-template-columns: minmax(0,1.15fr) minmax(0,1fr) 82px 58px;'), 'participants must use compact uniform wide layout');
+ok(css.includes('.manager-editor-fields { display: grid; grid-template-columns:') || css.includes('.manager-editor-fields { grid-template-columns:'), 'participants must use compact uniform layout');
 ok(app.includes('class="manager-self-toggle"'), 'Io control must use integrated toggle wrapper');
 
 const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);

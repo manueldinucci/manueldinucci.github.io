@@ -3,6 +3,16 @@
 PWA mobile-first e offline-first per usare l’iPhone come unico strumento durante un’asta Fantacalcio.
 
 
+## Novità v17
+
+- nelle card giocatore la Quotazione attuale è ora mostrata come `Quot` e precede l’FVM;
+- in `Configura asta`, P/D/C/A sono menu a tendina 1–10 e il budget opzionale per singolo partecipante è stato rimosso;
+- navigazione principale riorganizzata su `P | D | C | A | Live | Rose`, con seconda riga `Lettera iniz. | Cerca giocatore | Filtri`;
+- `Live` è ora una vista minimale per il ruolo corrente: nome, slot rimasti, crediti, max bid e dettaglio espandibile dei soli acquisti di quel ruolo con relativo prezzo;
+- nuova vista `Rose` dedicata alla consultazione completa delle squadre e dei riepiloghi P/D/C/A;
+- il budget globale è l’unica fonte usata per tutti i fantallenatori; eventuali override legacy individuali non incidono più sui calcoli;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v17`.
+
 ## Novità v16
 
 - gerarchia dei nomi affinata: dimensione dinamica FVM confermata e peso dinamico moderato circa 650–800;
@@ -12,7 +22,7 @@ PWA mobile-first e offline-first per usare l’iPhone come unico strumento duran
 - Live riorganizzata in due blocchi: `Nome [ruolo rimasti]` e `crediti · (max bid ...)`;
 - `Gestione fantallenatori` rinominato `Configura asta`; parametri generali e Partecipanti resi più compatti;
 - `Prezzo minimo` sostituito da `Prezzo base` (`1`, `Qt.I`, `Qt.A`, `FVM`), usato solo come proposta iniziale: il minimo regolamentare resta 1 credito;
-- Service Worker aggiornato alla cache `fantacalcio-checklist-v16`.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v17`.
 
 ## Novità v15
 
@@ -343,7 +353,7 @@ Le card libere hanno anche una scala di grigi molto leggera basata su S1–S5. G
 
 Il tema è un toggle diretto **Chiaro ↔ Scuro**. Il nome visualizzato è **Asta Live Manager** (`Asta Live` come short name PWA).
 
-Il Service Worker usa la cache `fantacalcio-checklist-v16`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
+Il Service Worker usa la cache `fantacalcio-checklist-v17`. Non è necessario reinstallare la PWA né cancellare IndexedDB: dopo il deploy basta aprire una volta il sito online per ricevere la nuova app shell.
 
 ## Novità v11 — schermata principale più operativa
 

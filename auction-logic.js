@@ -45,7 +45,8 @@
 
   function computeManagerStats(manager, players, config) {
     const c = makeDefaultConfig(config);
-    const budgetInitial = Math.max(0, numberOr(manager?.budgetInitial, c.budgetInitial));
+    // v17: il budget è globale; eventuali override legacy del singolo manager vengono ignorati.
+    const budgetInitial = c.budgetInitial;
     const roleBought = { P:0, D:0, C:0, A:0 };
     let spent = 0;
     let bought = 0;
