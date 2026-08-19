@@ -1,6 +1,11 @@
-# Fantacalcio Checklist PWA v19
+# Fantacalcio Checklist PWA v20
 
-## v19
+
+## v20
+Tipografia dei pulsanti principali uniformata; scheda giocatore resa keyboard-aware su iPhone tramite Visual Viewport e scroll interno mirato del campo attivo.
+
+## Novità v19
+
 Live e Rose sono ora bottom sheet mobile-first con ripristino dello stato sottostante; Configura asta ha righe Partecipanti più pulite con toggle Io compatto.
 
 — Asta Live Manager

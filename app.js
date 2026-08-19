@@ -552,12 +552,12 @@
 
     ['editTargetMin','editTargetMax'].forEach(id => {
       $(id).addEventListener('change', scheduleSelectedPlayerSave);
-      $(id).addEventListener('focus', () => setTimeout(() => $(id).scrollIntoView({block:'center',behavior:'smooth'}), 250));
+      $(id).addEventListener('focus', () => schedulePlayerFieldVisibility($(id)));
     });
     $('editComment').addEventListener('input', scheduleSelectedPlayerSave);
-    $('editComment').addEventListener('focus', () => setTimeout(() => $('editComment').scrollIntoView({block:'center',behavior:'smooth'}), 250));
+    $('editComment').addEventListener('focus', () => schedulePlayerFieldVisibility($('editComment')));
     $('editSlot').addEventListener('change', scheduleSelectedPlayerSave);
-    $('editSlot').addEventListener('focus', () => setTimeout(() => $('editSlot').scrollIntoView({block:'center',behavior:'smooth'}), 250));
+    $('editSlot').addEventListener('focus', () => schedulePlayerFieldVisibility($('editSlot')));
     $('toggleTakenSheet').addEventListener('click', async () => {
       if (!state.selectedKey) return;
       const key = state.selectedKey;
@@ -1227,14 +1227,60 @@
     });
   }
 
+  function ensurePlayerFieldVisible(field) {
+    const sheet = $('playerSheet');
+    if (!field || !sheet || sheet.classList.contains('hidden')) return;
+    const scroller = sheet.querySelector('.sheet-scroll');
+    if (!scroller) return;
+    const fieldRect = field.getBoundingClientRect();
+    const scrollRect = scroller.getBoundingClientRect();
+    const topGap = 12;
+    const bottomGap = 18;
+    if (fieldRect.bottom > scrollRect.bottom - bottomGap) {
+      scroller.scrollBy({ top: fieldRect.bottom - (scrollRect.bottom - bottomGap), behavior: 'smooth' });
+    } else if (fieldRect.top < scrollRect.top + topGap) {
+      scroller.scrollBy({ top: fieldRect.top - (scrollRect.top + topGap), behavior: 'smooth' });
+    }
+  }
+
+  function schedulePlayerFieldVisibility(field) {
+    // iOS completa l'animazione della tastiera in più step: due controlli brevi
+    // mantengono il campo nel viewport senza usare scrollIntoView sul documento.
+    setTimeout(() => ensurePlayerFieldVisible(field), 90);
+    setTimeout(() => ensurePlayerFieldVisible(field), 280);
+  }
+
   function setupViewportHandling() {
-    if (!window.visualViewport) return;
+    const root = document.documentElement;
+    const fallback = () => {
+      root.style.setProperty('--visual-viewport-height', `${window.innerHeight}px`);
+      root.style.setProperty('--keyboard-offset', '0px');
+      root.style.setProperty('--keyboard-safe-gap', '18px');
+    };
+    if (!window.visualViewport) {
+      fallback();
+      window.addEventListener('resize', fallback, {passive:true});
+      return;
+    }
     const update = () => {
       const vv = window.visualViewport;
-      const offset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
-      document.documentElement.style.setProperty('--keyboard-offset', `${offset}px`);
+      const keyboardOffset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+      const keyboardOpen = keyboardOffset > 80;
+      root.style.setProperty('--visual-viewport-height', `${Math.max(240, vv.height)}px`);
+      root.style.setProperty('--visual-viewport-top', `${Math.max(0, vv.offsetTop)}px`);
+      root.style.setProperty('--keyboard-offset', `${keyboardOffset}px`);
+      root.style.setProperty('--keyboard-safe-gap', keyboardOpen ? '20px' : '18px');
+      const playerSheet = $('playerSheet');
+      if (playerSheet) playerSheet.classList.toggle('keyboard-open', keyboardOpen);
+      if (keyboardOpen && playerSheet && !playerSheet.classList.contains('hidden')) {
+        const active = document.activeElement;
+        if (active && playerSheet.contains(active)) schedulePlayerFieldVisibility(active);
+      }
     };
-    visualViewport.addEventListener('resize', update); visualViewport.addEventListener('scroll', update); update();
+    visualViewport.addEventListener('resize', update, {passive:true});
+    visualViewport.addEventListener('scroll', update, {passive:true});
+    window.addEventListener('orientationchange', () => setTimeout(update, 120), {passive:true});
+    update();
   }
 
   function setupSwipeToClose() {
