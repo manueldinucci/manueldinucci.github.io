@@ -1,7 +1,11 @@
-# Fantacalcio Checklist PWA v20
+# Fantacalcio Checklist PWA v21
 
 
-## v20
+## v21
+
+- Vista Tutti, nuovo pannello Ordina per, modifica assegnazione, barra azioni scheda giocatore e Live all’80%.
+
+## Novità v20
 Tipografia dei pulsanti principali uniformata; scheda giocatore resa keyboard-aware su iPhone tramite Visual Viewport e scroll interno mirato del campo attivo.
 
 ## Novità v19

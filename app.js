@@ -9,6 +9,8 @@
     players: [],
     role: 'C',
     startLetter: 'M',
+    sortMode: 'alpha',
+    showAll: false,
     search: '',
     team: '',
     slot: '',
@@ -81,6 +83,7 @@
     await loadAuctionContext();
     bindStaticEvents();
     initLetterSelect();
+    updateSortControls();
     initFvmSelect();
     initQtaSelect();
     initAssignmentPriceSelect();
@@ -105,8 +108,10 @@
       await FantaDB.setSetting('theme', state.theme);
     }
     if (!['light','dark'].includes(state.theme)) state.theme = 'light';
-    // v19: Live e Rose sono overlay temporanei, la vista principale resta la lista giocatori.
+    // v19+: Live e Rose sono overlay temporanei, la vista principale resta la lista giocatori.
     state.mainView = 'players';
+    if (!['alpha','slot','fvm','quot','team'].includes(state.sortMode)) state.sortMode = 'alpha';
+    state.showAll = Boolean(state.showAll);
   }
 
 
@@ -129,6 +134,8 @@
     return {
       role: state.role,
       startLetter: state.startLetter,
+      sortMode: state.sortMode,
+      showAll: state.showAll,
       search: state.search,
       team: state.team,
       slot: state.slot,
@@ -164,14 +171,16 @@
   function renderRoleTabs() {
     const counts = Object.fromEntries(roles.map(([r]) => [r, state.players.filter(p => p.ruolo === r).length]));
     const roleButtons = roles.map(([r]) => `
-      <button class="role-tab role-short ${state.mainView==='players' && state.role===r?'active':''}" data-role="${r}" aria-label="${roleName(r)}">${({P:'Por',D:'Dif',C:'Cen',A:'Att'})[r]}<span class="tab-count">${counts[r]}</span></button>
+      <button class="role-tab role-short ${!state.showAll && state.role===r?'active':''}" data-role="${r}" aria-label="${roleName(r)}">${({P:'Por',D:'Dif',C:'Cen',A:'Att'})[r]}<span class="tab-count">${counts[r]}</span></button>
     `).join('');
+    const allButton = `<button class="role-tab view-tab all-tab ${state.showAll?'active':''}" data-all="1">Tutti</button>`;
     const viewButtons = ['live','rose'].map(view => `
       <button class="role-tab view-tab ${state.overlayView===view?'active':''}" data-view="${view}">${view === 'live' ? 'Live' : 'Rose'}</button>
     `).join('');
-    $('roleTabs').innerHTML = roleButtons + viewButtons;
+    $('roleTabs').innerHTML = roleButtons + allButton + viewButtons;
     $('roleTabs').querySelectorAll('[data-role]').forEach(btn => btn.addEventListener('click', () => {
       state.role = btn.dataset.role;
+      state.showAll = false;
       state.mainView = 'players';
       state.team = '';
       state.slot = '';
@@ -181,6 +190,17 @@
       populateDynamicFilters();
       renderAll();
     }));
+    $('roleTabs').querySelector('[data-all]')?.addEventListener('click', () => {
+      state.showAll = true;
+      state.mainView = 'players';
+      state.team = '';
+      state.slot = '';
+      $('teamFilter').value = '';
+      $('slotFilter').value = '';
+      scheduleUISave();
+      populateDynamicFilters();
+      renderAll();
+    });
     $('roleTabs').querySelectorAll('[data-view]').forEach(btn => btn.addEventListener('click', () => {
       openDashboardSheet(btn.dataset.view);
     }));
@@ -198,6 +218,12 @@
     $('startLetter').innerHTML = letters.map(l => `<option value="${l}">${l}</option>`).join('');
   }
 
+  function updateSortControls() {
+    if ($('sortMode')) $('sortMode').value = state.sortMode;
+    if ($('startLetter')) $('startLetter').value = state.startLetter;
+    if ($('sortLetterWrap')) $('sortLetterWrap').classList.toggle('hidden', state.sortMode !== 'alpha');
+  }
+
   function initFvmSelect() {
     $('minFvmFilter').innerHTML = '<option value="">—</option>' + Array.from({length:100}, (_, i) => i + 1)
       .map(v => `<option value="${v}">${v}</option>`).join('');
@@ -209,7 +235,7 @@
   }
 
   function populateDynamicFilters() {
-    const rolePlayers = state.players.filter(p => p.ruolo === state.role);
+    const rolePlayers = state.showAll ? state.players : state.players.filter(p => p.ruolo === state.role);
     const teams = [...new Set(rolePlayers.map(p => p.squadra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
     const slots = [...new Set(rolePlayers.map(p => p.slot).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
     const teamValue = state.team;
@@ -236,6 +262,7 @@
     $('minQtaFilter').value = state.minQta;
     updateCompactButton();
     updateThemeButton();
+    updateSortControls();
   }
 
   function firstLetter(name='') {
@@ -259,12 +286,26 @@
     return slot === String(filter).trim().toUpperCase();
   }
 
+  function slotSortRank(slot) {
+    const m = String(slot || '').trim().toUpperCase().match(/^S(\d+)$/);
+    return m ? Number(m[1]) : 999;
+  }
+
+  function comparePlayers(a, b) {
+    const alpha = () => a.nome.localeCompare(b.nome,'it',{sensitivity:'base'});
+    if (state.sortMode === 'slot') return slotSortRank(a.slot) - slotSortRank(b.slot) || alpha();
+    if (state.sortMode === 'fvm') return (num(b.fvm) ?? -Infinity) - (num(a.fvm) ?? -Infinity) || alpha();
+    if (state.sortMode === 'quot') return (num(b.quotazione) ?? -Infinity) - (num(a.quotazione) ?? -Infinity) || alpha();
+    if (state.sortMode === 'team') return String(a.squadra || '').localeCompare(String(b.squadra || ''),'it',{sensitivity:'base'}) || alpha();
+    return circularRank(a.nome) - circularRank(b.nome) || alpha();
+  }
+
   function getFilteredPlayers() {
     const q = FantaDB.normalizeText(state.search);
     const minFvm = num(state.minFvm);
     const minQta = num(state.minQta);
     return state.players
-      .filter(p => p.ruolo === state.role)
+      .filter(p => state.showAll || p.ruolo === state.role)
       .filter(p => !q || FantaDB.normalizeText(`${p.nome} ${p.squadra}`).includes(q))
       .filter(p => !state.team || p.squadra === state.team)
       .filter(p => slotMatchesFilter(p.slot, state.slot))
@@ -272,7 +313,7 @@
       .filter(p => minQta == null || (num(p.quotazione) ?? -Infinity) >= minQta)
       .filter(p => !state.onlyAvailable || !p.preso)
       .filter(p => !state.onlyFavorites || p.preferito)
-      .sort((a,b) => circularRank(a.nome) - circularRank(b.nome) || a.nome.localeCompare(b.nome,'it',{sensitivity:'base'}));
+      .sort(comparePlayers);
   }
 
   function percentile(sorted, pct) {
@@ -284,7 +325,7 @@
   }
 
   function fvmScaleInfo() {
-    const values = state.players.filter(p => p.ruolo === state.role).map(p => num(p.fvm)).filter(v => v != null && v >= 0).sort((a,b)=>a-b);
+    const values = state.players.filter(p => state.showAll || p.ruolo === state.role).map(p => num(p.fvm)).filter(v => v != null && v >= 0).sort((a,b)=>a-b);
     return { low: percentile(values, .05), high: percentile(values, .95) };
   }
 
@@ -454,7 +495,7 @@
 
   function renderCountsAndDemand() {
     const rolePlayers = state.players.filter(p => p.ruolo === state.role);
-    renderDemandSummary(rolePlayers);
+    if (state.showAll) $('demandSummary').classList.add('hidden'); else renderDemandSummary(rolePlayers);
     if (state.mainView !== 'players') {
       $('demandSummary').classList.add('hidden');
       renderManagerDashboard(state.overlayView ? 'viewSheetContent' : 'managerDashboard', state.overlayView || state.mainView);
@@ -503,6 +544,9 @@
   }
 
   function bindStaticEvents() {
+    $('sortBtn').addEventListener('click', () => { updateSortControls(); openOnly('sortSheet'); });
+    $('closeSortBtn').addEventListener('click', closeAllSheets);
+    $('sortMode').addEventListener('change', e => { state.sortMode = e.target.value; updateSortControls(); scheduleUISave(); renderMainView(); });
     $('startLetter').addEventListener('change', e => { state.startLetter = e.target.value; scheduleUISave(); renderMainView(); });
     $('searchInput').addEventListener('input', e => { state.search = e.target.value; scheduleUISave(); renderMainView(); });
     $('filtersBtn').addEventListener('click', openFiltersSheet);
@@ -520,6 +564,7 @@
     $('menuBtn').addEventListener('click', openTools);
     $('closeToolsBtn').addEventListener('click', closeAllSheets);
     $('closeSheetBtn').addEventListener('click', closeAllSheets);
+    $('closeSheetBottomBtn').addEventListener('click', closeAllSheets);
     $('closeImportBtn').addEventListener('click', closeAllSheets);
     $('closeSimpleFormBtn').addEventListener('click', closeAllSheets);
     $('closeAssignmentBtn').addEventListener('click', closeAllSheets);
@@ -577,7 +622,11 @@
     $('addManagerRowBtn').addEventListener('click', () => addManagerEditorRow({}));
     $('managerConfigForm').addEventListener('submit', saveManagerConfig);
     $('closeUnassignBtn').addEventListener('click', closeAllSheets);
-    $('keepAssignmentBtn').addEventListener('click', closeAllSheets);
+    $('modifyAssignmentBtn').addEventListener('click', () => {
+      const key = state.pendingUnassignKey;
+      state.pendingUnassignKey = null;
+      if (key) openAssignmentSheet(key, true);
+    });
     $('confirmUnassignBtn').addEventListener('click', confirmUnassign);
   }
 
@@ -600,12 +649,12 @@
 
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
   function openOnly(id) {
-    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $(id).classList.remove('hidden'); showBackdrop(); document.body.style.overflow = 'hidden';
   }
   function closeAllSheets() {
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
-    ['filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null;
     const hadOverlayView = Boolean(state.overlayView); const overlayScrollY = state.overlayScrollY || 0; state.overlayView = '';
     if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
@@ -646,8 +695,9 @@
   }
 
   function updateSheetButtons(p) {
-    $('toggleTakenSheet').textContent = p.preso ? 'Rimuovi assegnazione' : 'Assegna giocatore';
-    $('toggleFavoriteSheet').textContent = p.preferito ? '★ Preferito' : '☆ Preferito';
+    $('toggleTakenSheet').textContent = p.preso ? 'Gestisci assegnazione' : 'Assegna giocatore';
+    $('toggleFavoriteSheet').textContent = p.preferito ? '★' : '☆';
+    $('toggleFavoriteSheet').setAttribute('aria-label', p.preferito ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti');
   }
 
   function scheduleSelectedPlayerSave() {
@@ -705,13 +755,14 @@
     return Math.min(300, Math.max(1, Math.round(Number(raw) || 1)));
   }
 
-  function openAssignmentSheet(key) {
+  function openAssignmentSheet(key, editingExisting=false) {
     const p = state.players.find(x => x.key === key); if (!p) return;
     if (!state.managers.length) { toast('Configura prima i fantallenatori.'); openManagersPanel(); return; }
     state.pendingAssignmentKey = key;
     populateManagerSelects();
-    $('assignmentTitle').textContent = `Assegna ${p.nome}`;
+    $('assignmentTitle').textContent = (editingExisting || p.preso) ? `Modifica ${p.nome}` : `Assegna ${p.nome}`;
     $('assignmentMeta').textContent = `${p.squadra || '—'} · ${p.ruolo} · FVM ${displayNum(p.fvm)}`;
+    $('confirmAssignmentBtn').textContent = (editingExisting || p.preso) ? 'Salva modifica' : 'Conferma';
     $('assignmentPlayerCard').innerHTML = `<strong>${esc(p.nome)}</strong><span>${esc(targetText(p))}</span>`;
     const eligible = FantaAuction.getCompetitors(p, state.managers, state.players.filter(x => x.key !== p.key), state.auctionConfig);
     const preferred = p.manager_id || eligible[0]?.manager.id || state.managers[0]?.id || '';
@@ -808,6 +859,7 @@
     state.overlayScrollY = window.scrollY || document.documentElement.scrollTop || 0;
     state.mainView = 'players';
     renderManagerDashboard('viewSheetContent', state.overlayView);
+    $('viewSheet').classList.toggle('live-height-80', state.overlayView === 'live');
     openOnly('viewSheet');
     // openOnly non deve azzerare lo stato temporaneo della vista.
     state.overlayView = view === 'rose' ? 'rose' : 'live';
@@ -1144,7 +1196,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(window.SEED_PLAYERS || []); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 

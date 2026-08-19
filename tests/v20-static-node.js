@@ -12,5 +12,5 @@ assert(js.includes('window.visualViewport'));
 assert(js.includes('ensurePlayerFieldVisible'));
 assert(js.includes('schedulePlayerFieldVisibility'));
 assert(!js.includes("$('editComment').scrollIntoView"));
-assert(sw.includes('fantacalcio-checklist-v20'));
+assert(Number((sw.match(/fantacalcio-checklist-v(\d+)/)||[])[1]||0) >= 20);
 console.log('v20 static tests OK');

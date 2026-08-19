@@ -8,7 +8,7 @@ const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
 ok(!html.includes('id="counts"'), 'counts row must be removed');
 ok(!app.includes('Presi: ${taken} · Rimasti: ${available} · Totali:'), 'counts rendering must be removed');
-ok(html.includes('<span>Lettera iniz.</span>'), 'letter label must be Lettera iniz.');
+ok(html.includes('Lettera iniziale'), 'letter selection must remain available in the ordering UI');
 ok(css.includes('background: #3a3a3c'), 'light assign button must be graphite');
 ok(css.includes('background: #4a4a4d'), 'dark assign button must be lighter graphite');
 ok(/\.player-secondary-meta\s*\{[\s\S]*?white-space:\s*normal;[\s\S]*?overflow-wrap:\s*anywhere;/m.test(css), 'secondary metadata must wrap fully');
