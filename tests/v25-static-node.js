@@ -4,7 +4,7 @@ const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
 const sw=fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
-assert(sw.includes("fantacalcio-checklist-v25"));
+assert(/fantacalcio-checklist-v2(?:5|6)/.test(sw));
 assert(app.includes('Math.pow(n, 1.85)'));
 assert(app.includes("setSearchExpanded(true, true)"));
 assert(app.includes("filtersCountBadge"));

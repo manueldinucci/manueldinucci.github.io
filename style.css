@@ -1142,3 +1142,116 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
 .listone-news-body { padding-bottom: 4px; }
 @supports not (height: 1dvh) { .listone-news-sheet { height: min(78vh, 720px); } }
 \n\n/* v25 — scala Slot più leggibile, gerarchia FVM e toolbar iconica */\n/* I badge restano monocromatici ma coprono uno spettro più ampio. */\nhtml[data-theme="light"] .player-card.slot-s1:not(.taken) .player-slot-badge { background:#686b70; border-color:#686b70; color:#fff; }\nhtml[data-theme="light"] .player-card.slot-s2:not(.taken) .player-slot-badge { background:#898c91; border-color:#898c91; color:#fff; }\nhtml[data-theme="light"] .player-card.slot-s3:not(.taken) .player-slot-badge { background:#b4b6ba; border-color:#a9abb0; color:#202124; }\nhtml[data-theme="light"] .player-card.slot-s4:not(.taken) .player-slot-badge { background:#d7d8db; border-color:#c9cace; color:#303236; }\nhtml[data-theme="light"] .player-card.slot-s5:not(.taken) .player-slot-badge { background:#f0f0f2; border-color:#dedfe2; color:#45474b; }\nhtml[data-theme="dark"] .player-card.slot-s1:not(.taken) .player-slot-badge { background:#777a80; border-color:#85888e; color:#fff; }\nhtml[data-theme="dark"] .player-card.slot-s2:not(.taken) .player-slot-badge { background:#62656a; border-color:#707378; color:#fff; }\nhtml[data-theme="dark"] .player-card.slot-s3:not(.taken) .player-slot-badge { background:#4c4f54; border-color:#5a5d62; color:#f4f4f5; }\nhtml[data-theme="dark"] .player-card.slot-s4:not(.taken) .player-slot-badge { background:#393c40; border-color:#4b4e53; color:#eeeeef; }\nhtml[data-theme="dark"] .player-card.slot-s5:not(.taken) .player-slot-badge { background:#292b2f; border-color:#3d4045; color:#dedfe1; }\n\n.main-tool-row { align-items:center; }\n.tool-icon-btn {\n  position:relative; flex:0 0 44px; width:44px; height:44px; min-height:44px; padding:0;\n  display:inline-flex; align-items:center; justify-content:center; border-radius:9px;\n}\n.tool-icon-btn svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.9; stroke-linecap:round; stroke-linejoin:round; pointer-events:none; }\n.filters-trigger svg { width:20px; height:20px; }\n.sort-trigger { flex-basis:44px; width:44px; padding:0; font-size:inherit; }\n.tool-count-badge {\n  position:absolute; top:3px; right:3px; min-width:15px; height:15px; padding:0 3px; border-radius:999px;\n  display:flex; align-items:center; justify-content:center; background:var(--text); color:var(--bg);\n  border:1px solid var(--surface); font-size:8px; font-weight:850; line-height:1;\n}\n.search-wrap { transition:flex-basis .16s ease, flex-grow .16s ease; }\n.search-wrap.compact-search { flex:0 0 44px; width:44px; }\n.search-wrap.compact-search #searchInput { display:none; }\n.search-wrap.expanded { flex:1 1 auto; width:auto; }\n.search-wrap.expanded .search-toggle { display:none; }\n.search-wrap.expanded #searchInput { display:block; }\n.search-toggle { width:44px; }\n#searchInput { min-width:0; }\n@media (max-width:430px) {\n  .sort-trigger, .tool-icon-btn, .search-wrap.compact-search, .search-toggle { flex-basis:44px; width:44px; }\n  .compact-row { gap:5px; }\n}\n@media (prefers-reduced-motion: reduce) { .search-wrap { transition:none; } }\n
+
+{}
+/* v26 — hotfix chirurgico toolbar Ordina / Cerca / Filtri */
+.main-tool-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  min-width: 0;
+}
+
+.main-tool-row > .tool-icon-btn,
+.main-tool-row > #searchWrap.compact-search {
+  flex: 0 0 44px;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  height: 44px;
+}
+
+.main-tool-row .tool-icon-btn {
+  position: relative;
+  box-sizing: border-box;
+  min-height: 44px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 9px;
+  line-height: 1;
+}
+
+.main-tool-row .tool-icon-btn svg {
+  display: block;
+  width: 21px;
+  height: 21px;
+  flex: 0 0 auto;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  pointer-events: none;
+}
+
+.main-tool-row .filters-trigger svg { width: 20px; height: 20px; }
+
+.main-tool-row > #searchWrap {
+  min-width: 0;
+  height: 44px;
+  box-sizing: border-box;
+}
+
+.main-tool-row > #searchWrap.compact-search {
+  display: block;
+}
+
+.main-tool-row > #searchWrap.compact-search #searchToggleBtn {
+  display: inline-flex;
+  width: 44px;
+  min-width: 44px;
+  max-width: 44px;
+  height: 44px;
+}
+
+.main-tool-row > #searchWrap.compact-search #searchInput {
+  display: none !important;
+}
+
+.main-tool-row > #searchWrap.expanded {
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
+  max-width: none;
+}
+
+.main-tool-row > #searchWrap.expanded #searchToggleBtn {
+  display: none !important;
+}
+
+.main-tool-row > #searchWrap.expanded #searchInput {
+  display: block;
+  box-sizing: border-box;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  margin: 0;
+}
+
+.main-tool-row .tool-count-badge {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  min-width: 15px;
+  width: auto;
+  height: 15px;
+  padding: 0 3px;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--text);
+  color: var(--bg);
+  border: 1px solid var(--surface);
+  font-size: 8px;
+  font-weight: 850;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+@media (max-width: 430px) {
+  .main-tool-row { gap: 5px; }
+}
