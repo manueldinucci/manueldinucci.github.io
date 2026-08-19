@@ -251,6 +251,7 @@
   function applyStateToControls() {
     $('startLetter').value = state.startLetter;
     $('searchInput').value = state.search;
+    setSearchExpanded(Boolean(state.search), false);
     $('onlyAvailable').checked = state.onlyAvailable;
     $('onlyFavorites').checked = state.onlyFavorites;
     $('emphasisSlider').value = state.emphasis;
@@ -335,7 +336,9 @@
     if (value == null || scale.high <= scale.low) return 0.2;
     const clamped = Math.min(scale.high, Math.max(scale.low, value));
     let n = (clamped - scale.low) / (scale.high - scale.low);
-    return Math.log1p(4 * n) / Math.log(5);
+    // v25: comprimiamo nettamente la fascia bassa. Lo slider aumenta la
+    // gerarchia fra i nomi, non la dimensione media dell'intero listone.
+    return Math.pow(n, 1.85);
   }
 
   function nameFontSize(fvm, scale) {
@@ -344,7 +347,8 @@
   }
 
   function nameFontWeight(fvm, scale) {
-    const n = fvmVisualRank(fvm, scale);
+    const sizeRank = fvmVisualRank(fvm, scale);
+    const n = Math.pow(sizeRank, 0.78);
     return Math.round(650 + 150 * n);
   }
 
@@ -555,12 +559,34 @@
     el.classList.remove('hidden');
   }
 
+  function setSearchExpanded(expanded, focus = false) {
+    const wrap = $('searchWrap');
+    if (!wrap) return;
+    const shouldExpand = expanded || Boolean(String(state.search || '').trim());
+    wrap.classList.toggle('expanded', shouldExpand);
+    wrap.classList.toggle('compact-search', !shouldExpand);
+    $('searchToggleBtn')?.setAttribute('aria-expanded', shouldExpand ? 'true' : 'false');
+    if (focus && shouldExpand) requestAnimationFrame(() => $('searchInput')?.focus({preventScroll:true}));
+  }
+
   function bindStaticEvents() {
     $('sortBtn').addEventListener('click', () => { updateSortControls(); openOnly('sortSheet'); });
     $('closeSortBtn').addEventListener('click', closeAllSheets);
     $('sortMode').addEventListener('change', e => { state.sortMode = e.target.value; updateSortControls(); scheduleUISave(); renderMainView(); });
     $('startLetter').addEventListener('change', e => { state.startLetter = e.target.value; scheduleUISave(); renderMainView(); });
-    $('searchInput').addEventListener('input', e => { state.search = e.target.value; scheduleUISave(); renderMainView(); });
+    $('searchToggleBtn').addEventListener('click', () => setSearchExpanded(true, true));
+    $('searchInput').addEventListener('input', e => {
+      state.search = e.target.value;
+      setSearchExpanded(true, false);
+      scheduleUISave();
+      renderMainView();
+    });
+    $('searchInput').addEventListener('blur', () => {
+      window.setTimeout(() => { if (!String(state.search || '').trim()) setSearchExpanded(false, false); }, 80);
+    });
+    $('searchInput').addEventListener('keydown', e => {
+      if (e.key === 'Escape' && !String(e.currentTarget.value || '').trim()) { e.currentTarget.blur(); setSearchExpanded(false, false); }
+    });
     $('filtersBtn').addEventListener('click', openFiltersSheet);
     $('closeFiltersBtn').addEventListener('click', closeAllSheets);
     bindFilter('teamFilter','team','change');
@@ -660,7 +686,12 @@
 
   function renderFilterButton() {
     const count = activeFilterCount();
-    $('filtersBtn').textContent = count ? `Filtri · ${count}` : 'Filtri';
+    const badge = $('filtersCountBadge');
+    if (!badge) return;
+    badge.textContent = count ? String(count) : '';
+    badge.classList.toggle('hidden', !count);
+    $('filtersBtn').setAttribute('aria-label', count ? `Filtri, ${count} attivi` : 'Filtri');
+    $('filtersBtn').title = count ? `Filtri · ${count} attivi` : 'Filtri';
   }
 
 

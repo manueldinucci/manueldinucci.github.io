@@ -36,12 +36,20 @@
       <nav id="roleTabs" class="role-tabs" aria-label="Ruoli"></nav>
 
       <div class="sticky-tools">
-        <div class="control-row compact-row">
-          <button id="sortBtn" class="secondary-btn sort-trigger" type="button">Ordina per</button>
-          <div class="search-wrap">
-            <input id="searchInput" type="search" placeholder="Cerca giocatore" autocomplete="off" spellcheck="false" />
+        <div class="control-row compact-row main-tool-row">
+          <button id="sortBtn" class="secondary-btn tool-icon-btn sort-trigger" type="button" aria-label="Ordina per" title="Ordina per">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 4v16m0-16L4.5 7.5M8 4l3.5 3.5M16 20V4m0 16-3.5-3.5M16 20l3.5-3.5"/></svg>
+          </button>
+          <div id="searchWrap" class="search-wrap compact-search">
+            <button id="searchToggleBtn" class="secondary-btn tool-icon-btn search-toggle" type="button" aria-label="Cerca giocatore" title="Cerca giocatore">
+              <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4 4"/></svg>
+            </button>
+            <input id="searchInput" type="search" placeholder="Cerca giocatore" aria-label="Cerca giocatore" autocomplete="off" spellcheck="false" />
           </div>
-          <button id="filtersBtn" class="secondary-btn">Filtri</button>
+          <button id="filtersBtn" class="secondary-btn tool-icon-btn filters-trigger" type="button" aria-label="Filtri" title="Filtri">
+            <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.1v5.3l-3.6 1.8v-7.1L4 5Z"/></svg>
+            <span id="filtersCountBadge" class="tool-count-badge hidden" aria-hidden="true"></span>
+          </button>
         </div>
         <div id="demandSummary" class="demand-summary"></div>
       </div>

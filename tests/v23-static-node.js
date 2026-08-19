@@ -15,5 +15,5 @@ assert(js.includes("$('editComment').addEventListener('input', () =>"), 'comment
 assert(css.includes('/* v23 — Commento sempre visibile su iPhone'), 'v23 CSS override missing');
 assert(css.includes('var(--player-action-bar-height, 64px)'), 'sheet scroll padding must include action bar height');
 assert(css.includes('.player-edit-sheet.keyboard-open .sheet-scroll'), 'keyboard-specific scroll space missing');
-assert(/fantacalcio-checklist-v2[34]/.test(sw), 'service worker cache must be v23 or newer');
+assert(Number((sw.match(/fantacalcio-checklist-v(\d+)/)||[])[1]||0) >= 23, 'service worker cache must be v23 or newer');
 console.log('v23 static tests: OK');

@@ -17,7 +17,7 @@ must(html.includes('id="listoneNewsSheet"'), 'manca bottom sheet Novità listone
 must(css.includes('.listone-change-section'), 'manca UI sezioni confronto listone');
 must(db.includes("removedPlayersArchive"), 'manca archivio interno giocatori rimossi');
 must(db.includes('archivedBySourceId') && db.includes('archivedByName'), 'manca matching dei giocatori archiviati');
-must(sw.includes("fantacalcio-checklist-v24"), 'cache Service Worker non aggiornata a v24');
+must(Number((sw.match(/fantacalcio-checklist-v(\d+)/)||[])[1]||0) >= 24, 'cache Service Worker deve essere v24 o successiva');
 must(sw.includes('apple-touch-icon.png') && sw.includes('favicon.png'), 'asset icona nuovi non precache');
 must(html.includes('apple-touch-icon.png') && html.includes('favicon.png'), 'head senza nuove icone');
 must(manifest.icons.some(x => x.sizes === '192x192'), 'manifest senza 192');
