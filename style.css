@@ -1255,3 +1255,144 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
 @media (max-width: 430px) {
   .main-tool-row { gap: 5px; }
 }
+
+/* v27 — Slot più gerarchici + slider FVM nella toolbar principale */
+/* Light: i primi due badge sono più scuri della v26, con un distacco sottile. */
+html[data-theme="light"] .player-card.slot-s1:not(.taken) .player-slot-badge {
+  background: #5d6065 !important;
+  border-color: #5d6065 !important;
+  color: #fff !important;
+}
+html[data-theme="light"] .player-card.slot-s2:not(.taken) .player-slot-badge {
+  background: #777a80 !important;
+  border-color: #777a80 !important;
+  color: #fff !important;
+}
+html[data-theme="light"] .player-card.slot-s3:not(.taken) .player-slot-badge {
+  background: #b4b6ba !important;
+  border-color: #a9abb0 !important;
+  color: #202124 !important;
+}
+html[data-theme="light"] .player-card.slot-s4:not(.taken) .player-slot-badge {
+  background: #d7d8db !important;
+  border-color: #c9cace !important;
+  color: #303236 !important;
+}
+html[data-theme="light"] .player-card.slot-s5:not(.taken) .player-slot-badge {
+  background: #f0f0f2 !important;
+  border-color: #dedfe2 !important;
+  color: #45474b !important;
+}
+
+/* Dark: manteniamo la gerarchia per contrasto senza rendere i badge aggressivi. */
+html[data-theme="dark"] .player-card.slot-s1:not(.taken) .player-slot-badge {
+  background: #666970 !important;
+  border-color: #74777e !important;
+  color: #fff !important;
+}
+html[data-theme="dark"] .player-card.slot-s2:not(.taken) .player-slot-badge {
+  background: #56595f !important;
+  border-color: #64676d !important;
+  color: #fff !important;
+}
+html[data-theme="dark"] .player-card.slot-s3:not(.taken) .player-slot-badge {
+  background: #44474c !important;
+  border-color: #52555a !important;
+  color: #f4f4f5 !important;
+}
+html[data-theme="dark"] .player-card.slot-s4:not(.taken) .player-slot-badge {
+  background: #34363b !important;
+  border-color: #45484d !important;
+  color: #eeeeef !important;
+}
+html[data-theme="dark"] .player-card.slot-s5:not(.taken) .player-slot-badge {
+  background: #27292d !important;
+  border-color: #393c41 !important;
+  color: #dedfe1 !important;
+}
+
+/* Slider FVM: usa lo spazio libero senza alterare i 44×44 della toolbar v26. */
+.main-tool-row > .quick-emphasis {
+  flex: 1 1 auto;
+  min-width: 86px;
+  height: 44px;
+  margin: 0;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--muted);
+  overflow: hidden;
+}
+.quick-emphasis-label {
+  flex: 0 0 auto;
+  font-size: 9px;
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: .04em;
+  color: var(--muted);
+}
+.quick-emphasis-value {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.main-tool-row .quick-emphasis input[type="range"] {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  height: 32px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  accent-color: var(--text);
+  touch-action: pan-y;
+}
+.main-tool-row .quick-emphasis input[type="range"]::-webkit-slider-runnable-track {
+  height: 3px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 42%, var(--surface));
+}
+.main-tool-row .quick-emphasis input[type="range"]::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 20px;
+  height: 20px;
+  margin-top: -8.5px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--text);
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--text) 25%, transparent);
+}
+.main-tool-row .quick-emphasis input[type="range"]::-moz-range-track {
+  height: 3px;
+  border: 0;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted) 42%, var(--surface));
+}
+.main-tool-row .quick-emphasis input[type="range"]::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--surface);
+  background: var(--text);
+}
+
+/* Quando la ricerca si espande, ha priorità e lo slider scompare senza perdere stato. */
+.main-tool-row > #searchWrap.expanded + .quick-emphasis {
+  display: none;
+}
+
+@media (max-width: 390px) {
+  .main-tool-row > .quick-emphasis { min-width: 72px; padding-inline: 8px; gap: 5px; }
+  .quick-emphasis-label { font-size: 8px; }
+}

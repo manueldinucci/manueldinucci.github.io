@@ -46,6 +46,11 @@
             </button>
             <input id="searchInput" type="search" placeholder="Cerca giocatore" aria-label="Cerca giocatore" autocomplete="off" spellcheck="false" />
           </div>
+          <label id="quickEmphasisWrap" class="quick-emphasis" aria-label="Intensità FVM" title="Intensità FVM">
+            <span class="quick-emphasis-label">FVM</span>
+            <input id="emphasisSlider" type="range" min="0" max="100" step="1" value="65" aria-label="Intensità FVM" />
+            <span id="emphasisValue" class="quick-emphasis-value" aria-live="polite">65%</span>
+          </label>
           <button id="filtersBtn" class="secondary-btn tool-icon-btn filters-trigger" type="button" aria-label="Filtri" title="Filtri">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.1v5.3l-3.6 1.8v-7.1L4 5Z"/></svg>
             <span id="filtersCountBadge" class="tool-count-badge hidden" aria-hidden="true"></span>
@@ -95,9 +100,6 @@
             <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
             <label class="switch-line"><input id="onlyFavorites" type="checkbox" /><span>Solo preferiti</span></label>
           </div>
-          <label class="slider-field">Enfasi dimensione <span id="emphasisValue">65%</span>
-            <input id="emphasisSlider" type="range" min="0" max="100" step="1" value="65" />
-          </label>
         </div>
       </section>
 
