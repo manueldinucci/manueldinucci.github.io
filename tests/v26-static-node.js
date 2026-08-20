@@ -4,7 +4,7 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
 const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const sw=fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
-assert(/fantacalcio-checklist-v2(?:6|7)/.test(sw));
+assert(Number((sw.match(/fantacalcio-checklist-v(\d+)/)||[])[1]||0) >= 26);
 assert(html.includes('id="sortBtn"'));
 assert(html.includes('id="searchToggleBtn"'));
 assert(html.includes('id="filtersBtn"'));

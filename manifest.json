@@ -1,7 +1,7 @@
 {
-  "name": "Fantacalcio — Asta Live Manager",
+  "name": "Fantacalcio — Live Asta",
   "short_name": "Asta Live",
-  "description": "Asta Live Manager offline-first per Fantacalcio.",
+  "description": "Live Asta offline-first per Fantacalcio.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

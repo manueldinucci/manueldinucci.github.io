@@ -19,6 +19,8 @@
     onlyAvailable: false,
     onlyFavorites: false,
     compact: false,
+    commentsVisible: true,
+    privacyMode: false,
     emphasis: 65,
     theme: 'light',
     selectedKey: null,
@@ -113,6 +115,8 @@
     state.mainView = 'players';
     if (!['alpha','slot','fvm','quot','team'].includes(state.sortMode)) state.sortMode = 'alpha';
     state.showAll = Boolean(state.showAll);
+    state.commentsVisible = state.commentsVisible !== false;
+    state.privacyMode = false; // modalità sicurezza volutamente non persistente tra sessioni complete
   }
 
 
@@ -145,6 +149,7 @@
       onlyAvailable: state.onlyAvailable,
       onlyFavorites: state.onlyFavorites,
       compact: state.compact,
+      commentsVisible: state.commentsVisible,
       emphasis: state.emphasis,
       mainView: state.mainView
     };
@@ -262,6 +267,8 @@
     const minQta = Number(state.minQta);
     state.minQta = Number.isInteger(minQta) && minQta >= 1 && minQta <= 30 ? String(minQta) : '';
     $('minQtaFilter').value = state.minQta;
+    updatePrivacyButton();
+    updateCommentsButton();
     updateCompactButton();
     updateThemeButton();
     updateSortControls();
@@ -295,7 +302,18 @@
 
   function comparePlayers(a, b) {
     const alpha = () => a.nome.localeCompare(b.nome,'it',{sensitivity:'base'});
-    if (state.sortMode === 'slot') return slotSortRank(a.slot) - slotSortRank(b.slot) || alpha();
+    if (state.sortMode === 'slot') {
+      const slotDiff = slotSortRank(a.slot) - slotSortRank(b.slot);
+      if (slotDiff) return slotDiff;
+      const aTarget = num(a.target_max) ?? num(a.prezzo_ideale_max);
+      const bTarget = num(b.target_max) ?? num(b.prezzo_ideale_max);
+      const aHasTarget = aTarget != null;
+      const bHasTarget = bTarget != null;
+      if (aHasTarget !== bHasTarget) return aHasTarget ? -1 : 1;
+      if (aHasTarget && bHasTarget && aTarget !== bTarget) return bTarget - aTarget;
+      const fvmDiff = (num(b.fvm) ?? -Infinity) - (num(a.fvm) ?? -Infinity);
+      return fvmDiff || alpha();
+    }
     if (state.sortMode === 'fvm') return (num(b.fvm) ?? -Infinity) - (num(a.fvm) ?? -Infinity) || alpha();
     if (state.sortMode === 'quot') return (num(b.quotazione) ?? -Infinity) - (num(a.quotazione) ?? -Infinity) || alpha();
     if (state.sortMode === 'team') return String(a.squadra || '').localeCompare(String(b.squadra || ''),'it',{sensitivity:'base'}) || alpha();
@@ -385,15 +403,17 @@
     return parts.join('');
   }
 
-  function playerSecondaryMeta(p) {
+  function playerSecondaryMetaMarkup(p) {
     const parts = [];
     const fvm = num(p.fvm);
     const qta = num(p.quotazione);
     const note = String(p.commento || '').trim();
     if (qta != null) parts.push(`Quot ${displayNum(qta)}`);
     if (fvm != null) parts.push(`FVM ${displayNum(fvm)}`);
-    if (note) parts.push(note);
-    return parts.join(' · ');
+    const officialHtml = parts.length ? `<span class="player-official-meta">${esc(parts.join(' · '))}</span>` : '';
+    const noteHtml = note && state.commentsVisible ? `<span class="player-comment">${esc(note)}</span>` : '';
+    if (officialHtml && noteHtml) return `${officialHtml}<span class="player-meta-sep"> · </span>${noteHtml}`;
+    return officialHtml || noteHtml;
   }
 
   function slotClass(p) {
@@ -409,23 +429,30 @@
     const frag = document.createDocumentFragment();
     for (const p of list) {
       const card = document.createElement('article');
-      card.className = `player-card${p.preso?' taken':''}${p.preferito?' favorite':''}${state.compact?' compact':''}${slotClass(p)}`;
+      card.className = state.privacyMode
+        ? `player-card privacy-card${state.compact?' compact':''}`
+        : `player-card${p.preso?' taken':''}${p.preferito?' favorite':''}${state.compact?' compact':''}${slotClass(p)}`;
       card.dataset.key = p.key;
       const size = nameFontSize(p.fvm, scale).toFixed(1);
       const weight = nameFontWeight(p.fvm, scale);
-      card.innerHTML = `
-        <button class="fav-btn" aria-label="${p.preferito?'Rimuovi preferito':'Aggiungi preferito'}">${p.preferito?'★':'☆'}</button>
-        <div class="player-main" tabindex="0" role="button" aria-label="Apri ${esc(p.nome)}">
-          <div class="player-line"><span class="player-name" style="font-size:${size}px;font-weight:${weight}">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
-          ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : (playerPrimaryMetaMarkup(p) ? `<div class="player-primary-meta">${playerPrimaryMetaMarkup(p)}</div>` : '')}
-          ${p.preso ? '' : (playerSecondaryMeta(p) ? `<div class="player-secondary-meta">${esc(playerSecondaryMeta(p))}</div>` : '')}
-        </div>
-        <button class="assign-btn ${p.preso?'assigned':''}" aria-label="${p.preso?'Rimuovi assegnazione':'Assegna giocatore'}">${p.preso?'−':'+'}</button>`;
-      card.querySelector('.assign-btn').addEventListener('click', () => toggleTaken(p.key));
-      card.querySelector('.fav-btn').addEventListener('click', () => toggleFavorite(p.key));
-      const main = card.querySelector('.player-main');
-      main.addEventListener('click', () => openPlayerSheet(p.key));
-      main.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openPlayerSheet(p.key); });
+      const secondaryMeta = playerSecondaryMetaMarkup(p);
+      if (state.privacyMode) {
+        card.innerHTML = `<div class="player-main privacy-player-main"><div class="player-line"><span class="player-name">${esc(p.nome)}</span></div></div>`;
+      } else {
+        card.innerHTML = `
+          <button class="fav-btn" aria-label="${p.preferito?'Rimuovi preferito':'Aggiungi preferito'}">${p.preferito?'★':'☆'}</button>
+          <div class="player-main" tabindex="0" role="button" aria-label="Apri ${esc(p.nome)}">
+            <div class="player-line"><span class="player-name" style="font-size:${size}px;font-weight:${weight}">${esc(p.nome)}</span><span class="player-team">${esc(p.squadra)}</span></div>
+            ${p.preso ? (purchaseText(p) ? `<div class="player-purchase">${esc(purchaseText(p))}</div>` : '') : (playerPrimaryMetaMarkup(p) ? `<div class="player-primary-meta">${playerPrimaryMetaMarkup(p)}</div>` : '')}
+            ${p.preso ? '' : (secondaryMeta ? `<div class="player-secondary-meta">${secondaryMeta}</div>` : '')}
+          </div>
+          <button class="assign-btn ${p.preso?'assigned':''}" aria-label="${p.preso?'Rimuovi assegnazione':'Assegna giocatore'}">${p.preso?'−':'+'}</button>`;
+        card.querySelector('.assign-btn').addEventListener('click', () => toggleTaken(p.key));
+        card.querySelector('.fav-btn').addEventListener('click', () => toggleFavorite(p.key));
+        const main = card.querySelector('.player-main');
+        main.addEventListener('click', () => openPlayerSheet(p.key));
+        main.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') openPlayerSheet(p.key); });
+      }
       frag.appendChild(card);
     }
     container.replaceChildren(frag);
@@ -625,6 +652,8 @@
     $('manageManagersBtn').addEventListener('click', openManagerConfig);
     $('resetAuctionBtn').addEventListener('click', resetAuction);
     $('resetAllBtn').addEventListener('click', resetAll);
+    $('privacyHeaderBtn').addEventListener('click', togglePrivacy);
+    $('commentsHeaderBtn').addEventListener('click', toggleComments);
     $('compactHeaderBtn').addEventListener('click', toggleCompact);
     $('themeHeaderBtn').addEventListener('click', toggleTheme);
 
@@ -1292,8 +1321,39 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,commentsVisible:true,privacyMode:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
+  }
+
+  function updateCommentsButton() {
+    const btn = $('commentsHeaderBtn');
+    if (!btn) return;
+    btn.classList.toggle('active', state.commentsVisible);
+    btn.setAttribute('aria-pressed', state.commentsVisible ? 'true' : 'false');
+    btn.setAttribute('aria-label', state.commentsVisible ? 'Nascondi commenti' : 'Mostra commenti');
+    btn.setAttribute('title', state.commentsVisible ? 'Commenti visibili' : 'Commenti nascosti');
+  }
+
+  function toggleComments() {
+    state.commentsVisible = !state.commentsVisible;
+    updateCommentsButton();
+    scheduleUISave();
+    renderPlayers();
+  }
+
+  function updatePrivacyButton() {
+    const btn = $('privacyHeaderBtn');
+    if (!btn) return;
+    btn.classList.toggle('active', state.privacyMode);
+    btn.setAttribute('aria-pressed', state.privacyMode ? 'true' : 'false');
+    btn.setAttribute('aria-label', state.privacyMode ? 'Disattiva modalità privacy' : 'Attiva modalità privacy');
+    btn.setAttribute('title', state.privacyMode ? 'Privacy attiva' : 'Modalità privacy');
+  }
+
+  function togglePrivacy() {
+    state.privacyMode = !state.privacyMode;
+    updatePrivacyButton();
+    renderPlayers();
   }
 
   function updateCompactButton() {

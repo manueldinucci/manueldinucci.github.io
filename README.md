@@ -416,3 +416,9 @@ La schermata principale usa una sola riga di fabbisogno:
 `⚠` compare solo quando il bacino principale è inferiore al fabbisogno residuo complessivo della lega.
 
 Sulle card, la stella è l'unico controllo a sinistra. A destra `+` assegna il giocatore; dopo l'assegnazione diventa `−` e richiede conferma prima di liberarlo. Lo sfondo resta legato allo slot S1–S5; un preferito usa stella e nome oro senza sostituire lo sfondo.
+
+
+## v28
+- Toggle commenti nelle card principali.
+- Ordinamento Slot: Slot, Target max desc, FVM desc, nome.
+- Modalità privacy rapida e titolo Live Asta.

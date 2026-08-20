@@ -12,7 +12,7 @@
   <link rel="icon" type="image/png" sizes="64x64" href="icons/favicon.png" />
   <link rel="manifest" href="manifest.json" />
   <link rel="stylesheet" href="style.css" />
-  <title>Fantacalcio — Asta Live Manager</title>
+  <title>Fantacalcio — Live Asta</title>
 </head>
 <body>
   <div id="app" class="app-shell">
@@ -20,9 +20,15 @@
       <div class="title-row">
         <div>
           <div class="eyebrow">FANTACALCIO</div>
-          <h1>Asta Live Manager</h1>
+          <h1>Live Asta</h1>
         </div>
         <div class="header-actions">
+          <button id="privacyHeaderBtn" class="header-icon-btn privacy-toggle-btn" type="button" aria-label="Attiva modalità privacy" aria-pressed="false" title="Modalità privacy">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4.2 9.5 6a10.4 10.4 0 0 1-2.7 3.3M6.2 6.2C4.3 7.4 3.1 9 2.5 10c1 1.8 4.5 6 9.5 6 1 0 2-.2 2.9-.5"/></svg>
+          </button>
+          <button id="commentsHeaderBtn" class="header-icon-btn comments-toggle-btn" type="button" aria-label="Nascondi commenti" aria-pressed="true" title="Commenti visibili">
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H10l-5 4v-4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/></svg>
+          </button>
           <button id="compactHeaderBtn" class="header-icon-btn compact-toggle-btn" type="button" aria-label="Attiva modalità compatta" aria-pressed="false" title="Modalità compatta">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
               <path d="M7 6h10M7 18h10M9 9l3 3 3-3M9 15l3-3 3 3" />
