@@ -422,3 +422,12 @@ Sulle card, la stella è l'unico controllo a sinistra. A destra `+` assegna il g
 - Toggle commenti nelle card principali.
 - Ordinamento Slot: Slot, Target max desc, FVM desc, nome.
 - Modalità privacy rapida e titolo Live Asta.
+
+
+## v29
+
+- I filtri **Squadra** e **Slot** restano attivi passando tra Por/Dif/Cen/Att/Tutti, anche quando il nuovo reparto produce zero risultati.
+- Le opzioni cumulative **S1-S2** e **S1-S3** seguono la stessa persistenza.
+- **Ordina per** e **Filtri** ora si aprono come popover contestuali vicino ai rispettivi pulsanti della toolbar, senza bottom sheet o backdrop.
+- I popover restano nel viewport, si chiudono al tap fuori, con Escape, secondo tap sul trigger, scroll o resize.
+- Cache PWA aggiornata a `fantacalcio-checklist-v29`.

@@ -4,7 +4,7 @@ const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
 const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
 const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
 const sw=fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
-assert(sw.includes('fantacalcio-checklist-v28'));
+assert(Number((sw.match(/fantacalcio-checklist-v(\d+)/)||[])[1]||0) >= 28);
 assert(html.includes('<h1>Live Asta</h1>'));
 assert(html.includes('id="privacyHeaderBtn"'));
 assert(html.includes('id="commentsHeaderBtn"'));

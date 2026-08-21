@@ -188,10 +188,6 @@
       state.role = btn.dataset.role;
       state.showAll = false;
       state.mainView = 'players';
-      state.team = '';
-      state.slot = '';
-      $('teamFilter').value = '';
-      $('slotFilter').value = '';
       scheduleUISave();
       populateDynamicFilters();
       renderAll();
@@ -199,10 +195,6 @@
     $('roleTabs').querySelector('[data-all]')?.addEventListener('click', () => {
       state.showAll = true;
       state.mainView = 'players';
-      state.team = '';
-      state.slot = '';
-      $('teamFilter').value = '';
-      $('slotFilter').value = '';
       scheduleUISave();
       populateDynamicFilters();
       renderAll();
@@ -241,16 +233,19 @@
   }
 
   function populateDynamicFilters() {
-    const rolePlayers = state.showAll ? state.players : state.players.filter(p => p.ruolo === state.role);
-    const teams = [...new Set(rolePlayers.map(p => p.squadra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
-    const slots = [...new Set(rolePlayers.map(p => p.slot).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
+    // v29: Squadra e Slot sono filtri globali del listone, non dipendono dal reparto corrente.
+    // Così il cambio Por/Dif/Cen/Att/Tutti non azzera mai una selezione valida.
+    const teams = [...new Set(state.players.map(p => p.squadra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
+    const slots = [...new Set(state.players.map(p => p.slot).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
     const teamValue = state.team;
     const slotValue = state.slot;
-    $('teamFilter').innerHTML = '<option value="">Tutte</option>' + teams.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
+    const teamOptions = teamValue && !teams.includes(teamValue) ? [teamValue, ...teams] : teams;
+    const slotOptions = slotValue && !slots.includes(slotValue) && !['S1-S2','S1-S3'].includes(slotValue) ? [slotValue, ...slots] : slots;
+    $('teamFilter').innerHTML = '<option value="">Tutte</option>' + teamOptions.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
     const cumulativeSlots = '<option value="S1-S2">S1-S2</option><option value="S1-S3">S1-S3</option>';
-    $('slotFilter').innerHTML = '<option value="">Tutti</option>' + cumulativeSlots + slots.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
-    if (teams.includes(teamValue)) $('teamFilter').value = teamValue; else state.team = '';
-    if (slots.includes(slotValue) || ['S1-S2','S1-S3'].includes(slotValue)) $('slotFilter').value = slotValue; else state.slot = '';
+    $('slotFilter').innerHTML = '<option value="">Tutti</option>' + cumulativeSlots + slotOptions.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    $('teamFilter').value = teamValue || '';
+    $('slotFilter').value = slotValue || '';
   }
 
   function applyStateToControls() {
@@ -597,7 +592,7 @@
   }
 
   function bindStaticEvents() {
-    $('sortBtn').addEventListener('click', () => { updateSortControls(); openOnly('sortSheet'); });
+    $('sortBtn').addEventListener('click', () => { updateSortControls(); toggleContextPopover('sortSheet', 'sortBtn'); });
     $('closeSortBtn').addEventListener('click', closeAllSheets);
     $('sortMode').addEventListener('change', e => { state.sortMode = e.target.value; updateSortControls(); scheduleUISave(); renderMainView(); });
     $('startLetter').addEventListener('change', e => { state.startLetter = e.target.value; scheduleUISave(); renderMainView(); });
@@ -614,7 +609,7 @@
     $('searchInput').addEventListener('keydown', e => {
       if (e.key === 'Escape' && !String(e.currentTarget.value || '').trim()) { e.currentTarget.blur(); setSearchExpanded(false, false); }
     });
-    $('filtersBtn').addEventListener('click', openFiltersSheet);
+    $('filtersBtn').addEventListener('click', () => toggleContextPopover('filtersPanel', 'filtersBtn'));
     $('closeFiltersBtn').addEventListener('click', closeAllSheets);
     bindFilter('teamFilter','team','change');
     bindFilter('slotFilter','slot','change');
@@ -700,6 +695,15 @@
       if (key) openAssignmentSheet(key, true);
     });
     $('confirmUnassignBtn').addEventListener('click', confirmUnassign);
+
+    document.addEventListener('pointerdown', e => {
+      const inSort = $('sortSheet').contains(e.target) || $('sortBtn').contains(e.target);
+      const inFilters = $('filtersPanel').contains(e.target) || $('filtersBtn').contains(e.target);
+      if (!inSort && !inFilters) closeContextPopovers();
+    });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') closeContextPopovers(); });
+    window.addEventListener('scroll', () => closeContextPopovers(), {passive:true});
+    window.addEventListener('resize', () => closeContextPopovers(), {passive:true});
   }
 
   function bindFilter(id, key, evt) {
@@ -726,10 +730,12 @@
 
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
   function openOnly(id) {
+    closeContextPopovers();
     ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $(id).classList.remove('hidden'); showBackdrop(); document.body.style.overflow = 'hidden';
   }
   function closeAllSheets() {
+    closeContextPopovers();
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
     ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
     $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null;
@@ -737,11 +743,54 @@
     if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
     if (restoreFilters) requestAnimationFrame(() => window.scrollTo(0, state.filtersScrollY || 0));
   }
-  function openFiltersSheet() {
-    state.filtersScrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    openOnly('filtersPanel');
+  function contextPopoverIds() { return ['sortSheet','filtersPanel']; }
+  function closeContextPopovers(exceptId = '') {
+    contextPopoverIds().forEach(id => {
+      if (id === exceptId) return;
+      const panel = $(id); if (!panel) return;
+      panel.classList.add('hidden');
+      panel.removeAttribute('data-placement');
+    });
+    const sortOpen = !$('sortSheet').classList.contains('hidden');
+    const filtersOpen = !$('filtersPanel').classList.contains('hidden');
+    $('sortBtn').setAttribute('aria-expanded', String(sortOpen));
+    $('filtersBtn').setAttribute('aria-expanded', String(filtersOpen));
   }
-  function openTools() { openOnly('toolsSheet'); }
+
+  function positionContextPopover(panelId, triggerId) {
+    const panel = $(panelId), trigger = $(triggerId);
+    if (!panel || !trigger || panel.classList.contains('hidden')) return;
+    const margin = 8, gap = 7;
+    const vw = window.visualViewport?.width || window.innerWidth;
+    const vh = window.visualViewport?.height || window.innerHeight;
+    const offsetTop = window.visualViewport?.offsetTop || 0;
+    const triggerRect = trigger.getBoundingClientRect();
+    const panelRect = panel.getBoundingClientRect();
+    let left = triggerRect.left + triggerRect.width / 2 - panelRect.width / 2;
+    left = Math.max(margin, Math.min(left, vw - panelRect.width - margin));
+    const belowTop = triggerRect.bottom + gap;
+    const aboveTop = triggerRect.top - panelRect.height - gap;
+    const fitsBelow = belowTop + panelRect.height <= offsetTop + vh - margin;
+    let top = fitsBelow ? belowTop : Math.max(offsetTop + margin, aboveTop);
+    panel.style.left = `${Math.round(left)}px`;
+    panel.style.top = `${Math.round(top)}px`;
+    panel.style.bottom = 'auto';
+    panel.style.transform = 'none';
+    panel.dataset.placement = fitsBelow ? 'bottom' : 'top';
+  }
+
+  function toggleContextPopover(panelId, triggerId) {
+    const panel = $(panelId);
+    if (!panel) return;
+    const isOpen = !panel.classList.contains('hidden');
+    closeContextPopovers();
+    if (isOpen) return;
+    panel.classList.remove('hidden');
+    requestAnimationFrame(() => positionContextPopover(panelId, triggerId));
+    $(triggerId).setAttribute('aria-expanded', 'true');
+  }
+
+  function openTools() { closeContextPopovers(); openOnly('toolsSheet'); }
 
   function openPlayerSheet(key, preserve=false) {
     const p = state.players.find(x => x.key === key); if (!p) return;

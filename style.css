@@ -1454,3 +1454,40 @@ html[data-theme="dark"] .player-card.slot-s5:not(.taken) .player-slot-badge {
   .header-icon-btn { width: 39px; height: 39px; min-width: 39px; min-height: 39px; }
   h1 { font-size: 20px; }
 }
+
+
+/* v29 — popover contestuali Ordina/Filtri e filtri globali Squadra/Slot */
+.context-popover {
+  position: fixed;
+  z-index: 95;
+  box-sizing: border-box;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  box-shadow: 0 10px 28px rgba(0,0,0,.16);
+  overflow: hidden;
+  padding: 0;
+}
+.sort-popover { width: min(250px, calc(100vw - 16px)); }
+.filters-popover { width: min(330px, calc(100vw - 16px)); }
+.context-popover .sheet-header {
+  padding: 8px 10px 7px;
+  min-height: 40px;
+}
+.context-popover .sheet-header h2 { font-size: 14px; }
+.context-popover .sheet-header .icon-btn { width: 34px; height: 34px; min-height: 34px; }
+.context-popover .sheet-scroll {
+  max-height: min(52dvh, 430px);
+  padding: 10px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+.sort-popover .sort-sheet-body { display: grid; gap: 8px; }
+.context-popover[data-placement="top"] { transform-origin: bottom center; }
+.context-popover[data-placement="bottom"] { transform-origin: top center; }
+@media (max-width: 430px) {
+  .sort-popover { width: min(236px, calc(100vw - 16px)); }
+  .filters-popover { width: min(318px, calc(100vw - 16px)); }
+  .context-popover .sheet-scroll { max-height: min(48dvh, 390px); }
+}
+html[data-theme="dark"] .context-popover { box-shadow: 0 12px 30px rgba(0,0,0,.42); }
