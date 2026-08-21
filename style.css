@@ -1499,3 +1499,20 @@ html[data-theme="dark"] .context-popover { box-shadow: 0 12px 30px rgba(0,0,0,.4
 .context-popover * {
   pointer-events: auto;
 }
+
+/* v30 — reset filtri e popover click-away sicuro */
+.filters-reset-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 10px;
+  padding-top: 9px;
+  border-top: 1px solid var(--line);
+}
+.filters-reset-btn {
+  min-height: 38px;
+  padding: 7px 12px;
+  border-radius: 9px;
+  font-size: 12px;
+  font-weight: 760;
+  white-space: nowrap;
+}

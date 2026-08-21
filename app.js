@@ -617,6 +617,7 @@
     bindFilter('minQtaFilter','minQta','change');
     bindCheck('onlyAvailable','onlyAvailable');
     bindCheck('onlyFavorites','onlyFavorites');
+    $('resetFiltersBtn').addEventListener('click', resetFilters);
     $('emphasisSlider').addEventListener('input', e => {
       state.emphasis = Number(e.target.value); $('emphasisValue').textContent = `${state.emphasis}%`; scheduleUISave(); renderMainView();
     });
@@ -696,11 +697,23 @@
     });
     $('confirmUnassignBtn').addEventListener('click', confirmUnassign);
 
-    document.addEventListener('pointerdown', e => {
-      const inSort = $('sortSheet').contains(e.target) || $('sortBtn').contains(e.target);
-      const inFilters = $('filtersPanel').contains(e.target) || $('filtersBtn').contains(e.target);
-      if (!inSort && !inFilters) closeContextPopovers();
-    });
+    // v30: il primo click fuori da Ordina/Filtri viene consumato interamente.
+    // Usiamo la capture phase: il popover si chiude prima che il click possa
+    // raggiungere card, pulsanti +/− o altri controlli sottostanti.
+    document.addEventListener('click', e => {
+      const sortOpen = !$('sortSheet').classList.contains('hidden');
+      const filtersOpen = !$('filtersPanel').classList.contains('hidden');
+      if (!sortOpen && !filtersOpen) return;
+      const inSort = $('sortSheet').contains(e.target);
+      const inFilters = $('filtersPanel').contains(e.target);
+      const onSortTrigger = $('sortBtn').contains(e.target);
+      const onFiltersTrigger = $('filtersBtn').contains(e.target);
+      if (inSort || inFilters || onSortTrigger || onFiltersTrigger) return;
+      e.preventDefault();
+      e.stopPropagation();
+      if (typeof e.stopImmediatePropagation === 'function') e.stopImmediatePropagation();
+      closeContextPopovers();
+    }, true);
     document.addEventListener('keydown', e => { if (e.key === 'Escape') closeContextPopovers(); });
     window.addEventListener('scroll', () => closeContextPopovers(), {passive:true});
     window.addEventListener('resize', () => closeContextPopovers(), {passive:true});
@@ -711,6 +724,26 @@
   }
   function bindCheck(id, key) {
     $(id).addEventListener('change', e => { state[key] = e.target.checked; scheduleUISave(); renderMainView(); renderFilterButton(); });
+  }
+
+  function resetFilters() {
+    state.team = '';
+    state.slot = '';
+    state.minFvm = '';
+    state.minQta = '';
+    state.onlyAvailable = false;
+    state.onlyFavorites = false;
+
+    $('teamFilter').value = '';
+    $('slotFilter').value = '';
+    $('minFvmFilter').value = '';
+    $('minQtaFilter').value = '';
+    $('onlyAvailable').checked = false;
+    $('onlyFavorites').checked = false;
+
+    scheduleUISave();
+    renderMainView();
+    renderFilterButton();
   }
 
   function activeFilterCount() {

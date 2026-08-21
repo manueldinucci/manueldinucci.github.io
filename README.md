@@ -435,3 +435,9 @@ Sulle card, la stella è l'unico controllo a sinistra. A destra `+` assegna il g
 
 ## v29.1 hotfix
 Ordina e Filtri sono popover contestuali senza backdrop globale; controlli interattivi e click-away preservati.
+
+## v30
+- Aggiunto `Reset filtri` nel popover Filtri: ripristina Squadra, Slot, FVM minimo, Qt.A minima, Solo liberi e Solo preferiti senza toccare ricerca, ordinamento o ruolo.
+- Corretto il click-through dei popover: il primo click fuori da Ordina/Filtri chiude soltanto il popover e non attiva card o controlli sottostanti.
+- Nuova icona PWA minimale monocromatica: pallone geometrico senza martelletto, applicata a favicon, Apple Touch Icon, icone 192/512 e maskable.
+- Cache PWA aggiornata a `fantacalcio-checklist-v30`.
