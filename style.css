@@ -1459,7 +1459,8 @@ html[data-theme="dark"] .player-card.slot-s5:not(.taken) .player-slot-badge {
 /* v29 — popover contestuali Ordina/Filtri e filtri globali Squadra/Slot */
 .context-popover {
   position: fixed;
-  z-index: 95;
+  z-index: 120;
+  pointer-events: auto;
   box-sizing: border-box;
   background: var(--surface);
   border: 1px solid var(--line);
@@ -1491,3 +1492,10 @@ html[data-theme="dark"] .player-card.slot-s5:not(.taken) .player-slot-badge {
   .context-popover .sheet-scroll { max-height: min(48dvh, 390px); }
 }
 html[data-theme="dark"] .context-popover { box-shadow: 0 12px 30px rgba(0,0,0,.42); }
+
+
+/* v29.1 — Ordina/Filtri sono popover contestuali senza backdrop globale. */
+.context-popover,
+.context-popover * {
+  pointer-events: auto;
+}

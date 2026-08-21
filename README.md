@@ -431,3 +431,7 @@ Sulle card, la stella è l'unico controllo a sinistra. A destra `+` assegna il g
 - **Ordina per** e **Filtri** ora si aprono come popover contestuali vicino ai rispettivi pulsanti della toolbar, senza bottom sheet o backdrop.
 - I popover restano nel viewport, si chiudono al tap fuori, con Escape, secondo tap sul trigger, scroll o resize.
 - Cache PWA aggiornata a `fantacalcio-checklist-v29`.
+
+
+## v29.1 hotfix
+Ordina e Filtri sono popover contestuali senza backdrop globale; controlli interattivi e click-away preservati.

@@ -593,7 +593,7 @@
 
   function bindStaticEvents() {
     $('sortBtn').addEventListener('click', () => { updateSortControls(); toggleContextPopover('sortSheet', 'sortBtn'); });
-    $('closeSortBtn').addEventListener('click', closeAllSheets);
+    $('closeSortBtn').addEventListener('click', () => closeContextPopovers());
     $('sortMode').addEventListener('change', e => { state.sortMode = e.target.value; updateSortControls(); scheduleUISave(); renderMainView(); });
     $('startLetter').addEventListener('change', e => { state.startLetter = e.target.value; scheduleUISave(); renderMainView(); });
     $('searchToggleBtn').addEventListener('click', () => setSearchExpanded(true, true));
@@ -610,7 +610,7 @@
       if (e.key === 'Escape' && !String(e.currentTarget.value || '').trim()) { e.currentTarget.blur(); setSearchExpanded(false, false); }
     });
     $('filtersBtn').addEventListener('click', () => toggleContextPopover('filtersPanel', 'filtersBtn'));
-    $('closeFiltersBtn').addEventListener('click', closeAllSheets);
+    $('closeFiltersBtn').addEventListener('click', () => closeContextPopovers());
     bindFilter('teamFilter','team','change');
     bindFilter('slotFilter','slot','change');
     bindFilter('minFvmFilter','minFvm','change');
@@ -784,6 +784,11 @@
     if (!panel) return;
     const isOpen = !panel.classList.contains('hidden');
     closeContextPopovers();
+    // v29.1: Ordina e Filtri sono popover contestuali, non modal.
+    // Qualunque backdrop legacy rimasto attivo deve essere neutralizzato qui,
+    // senza alterare i backdrop usati dalle vere bottom sheet/modal dell'app.
+    $('sheetBackdrop')?.classList.add('hidden');
+    document.body.style.overflow = '';
     if (isOpen) return;
     panel.classList.remove('hidden');
     requestAnimationFrame(() => positionContextPopover(panelId, triggerId));
