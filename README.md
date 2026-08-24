@@ -1,3 +1,11 @@
+# Fantacalcio Checklist PWA — v31.3
+
+Hotfix UI/UX della Mappa Slot:
+- centratura ottica definitiva dei tab `Por / Dif / Cen / Att`;
+- etichetta `n.c.` al posto di `Senza target`;
+- corpo della Mappa Slot realmente scrollabile fino a `Fuori slot` e all'ultimo elemento, con safe area iPhone;
+- sottofasce delimitate da campiture grigie progressive a tutta larghezza della riga.
+
 # Fantacalcio Checklist PWA v31.1
 
 ## v31.1

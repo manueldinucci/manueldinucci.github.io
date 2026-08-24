@@ -1521,12 +1521,16 @@ html[data-theme="dark"] .context-popover { box-shadow: 0 12px 30px rgba(0,0,0,.4
 html { color-scheme: light; }
 .slot-map-toggle-btn svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
 .slot-map-toggle-btn svg rect { fill:currentColor; stroke:none; }
-.slot-map-sheet { height:min(88dvh, 820px); max-height:calc(100dvh - 12px); }
+.slot-map-sheet { height:min(88dvh, 820px); max-height:calc(100dvh - 12px); display:flex; flex-direction:column; overflow:hidden; }
+.slot-map-sheet > .sheet-handle,
+.slot-map-sheet > .slot-map-header,
+.slot-map-sheet > .slot-map-role-tabs { flex:0 0 auto; }
 .slot-map-header { padding-bottom:8px; }
 .slot-map-role-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding:0 12px 9px; border-bottom:1px solid var(--line); }
-.slot-map-role-btn { min-height:36px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; font-size:12px; font-weight:750; display:flex; align-items:center; justify-content:center; line-height:1; padding-top:0; padding-bottom:0; }
+.slot-map-role-btn { min-height:36px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; font-size:12px; font-weight:750; display:grid; place-items:center; line-height:1; padding:0; appearance:none; -webkit-appearance:none; }
+.slot-map-role-btn > span { display:block; line-height:1; margin:0; transform:translateY(1px); }
 .slot-map-role-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
-.slot-map-content { padding:10px 12px calc(var(--safe-bottom) + 18px); }
+.slot-map-content { flex:1 1 auto; min-height:0; max-height:none !important; overflow-y:auto; -webkit-overflow-scrolling:touch; overscroll-behavior:contain; padding:10px 12px calc(var(--safe-bottom) + 34px); }
 .slot-map-slot { padding:10px 0 12px; border-bottom:1px solid var(--line); }
 .slot-map-slot:first-child { padding-top:2px; }
 .slot-map-slot-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
@@ -1534,9 +1538,9 @@ html { color-scheme: light; }
 .slot-map-slot-head span { flex:0 0 auto; font-size:10px; font-weight:700; color:var(--muted); }
 .slot-map-progress { height:3px; margin:6px 0 8px; border-radius:999px; overflow:hidden; background:#dedfe2; }
 .slot-map-progress span { display:block; height:100%; border-radius:inherit; background:#72757a; }
-.slot-map-band { display:grid; grid-template-columns:48px minmax(0,1fr); column-gap:8px; align-items:start; }
+.slot-map-band { display:grid; grid-template-columns:48px minmax(0,1fr); column-gap:8px; align-items:start; padding:6px 7px; background:rgba(17,24,39,var(--slot-map-band-alpha,.055)); border-radius:5px; }
 .slot-map-band.no-label { grid-template-columns:minmax(0,1fr); }
-.slot-map-band + .slot-map-band { margin-top:7px; }
+.slot-map-band + .slot-map-band { margin-top:5px; }
 .slot-map-band-label { margin:2px 0 0; font-size:10px; line-height:1.2; font-weight:800; color:var(--muted); white-space:nowrap; }
 .slot-map-names { min-width:0; display:flex; flex-wrap:wrap; gap:3px 0; align-items:baseline; line-height:1.28; }
 .slot-map-player { color:var(--text); padding:1px 0; margin:0; font:inherit; font-size:11.5px; line-height:1.28; font-weight:650; text-align:left; }

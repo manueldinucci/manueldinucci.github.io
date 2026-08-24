@@ -601,7 +601,7 @@
     if (min != null && max != null) return { key:`range:${min}:${max}`, label:`${displayNum(min)}–${displayNum(max)}`, rank:max * 1000 + min };
     if (max != null) return { key:`cap:${max}`, label:`≤${displayNum(max)}`, rank:max * 1000 + 500 };
     if (min != null) return { key:`min:${min}`, label:`da ${displayNum(min)}`, rank:min * 1000 };
-    return { key:'none', label:'Senza target', rank:-1 };
+    return { key:'none', label:'n.c.', rank:-1 };
   }
 
   function slotMapNameSort(a,b) {
@@ -635,14 +635,18 @@
       }
       const grouped = [...bands.values()].sort((a,b) => b.rank - a.rank);
       const showBandLabel = grouped.length > 1 || (grouped[0] && grouped[0].key !== 'none');
-      body = grouped.map(group => `<div class="slot-map-band${showBandLabel ? '' : ' no-label'}">${showBandLabel ? `<div class="slot-map-band-label">${esc(group.label)}</div>` : ''}<div class="slot-map-names">${group.players.map(slotMapNameText).join('')}</div></div>`).join('');
+      body = grouped.map((group, index) => {
+        const denom = Math.max(1, grouped.length - 1);
+        const alpha = grouped.length === 1 ? 0.055 : 0.11 - (index / denom) * 0.065;
+        return `<div class="slot-map-band${showBandLabel ? '' : ' no-label'}" style="--slot-map-band-alpha:${alpha.toFixed(3)}">${showBandLabel ? `<div class="slot-map-band-label">${esc(group.label)}</div>` : ''}<div class="slot-map-names">${group.players.map(slotMapNameText).join('')}</div></div>`;
+      }).join('');
     }
     return `<section class="slot-map-slot"><div class="slot-map-slot-head"><strong>${esc(slotMapSlotLabel(slot))}</strong><span>${remaining}/${total} disponibili</span></div>${slotMapProgress(remaining,total)}${body}</section>`;
   }
 
   function renderSlotMapRoleTabs() {
     const box = $('slotMapRoleTabs'); if (!box) return;
-    box.innerHTML = roles.map(([role]) => `<button type="button" class="slot-map-role-btn ${state.slotMapRole===role?'active':''}" data-slot-map-role="${role}">${slotMapRoleLabel(role)}</button>`).join('');
+    box.innerHTML = roles.map(([role]) => `<button type="button" class="slot-map-role-btn ${state.slotMapRole===role?'active':''}" data-slot-map-role="${role}"><span>${slotMapRoleLabel(role)}</span></button>`).join('');
     box.querySelectorAll('[data-slot-map-role]').forEach(btn => btn.addEventListener('click', () => {
       state.slotMapRole = btn.dataset.slotMapRole;
       renderSlotMap();
