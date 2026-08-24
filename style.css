@@ -110,9 +110,10 @@ h2 { margin: 0; font-size: 20px; }
 .secondary-btn:active, .primary-btn:active { transform: translateY(1px); }
 .demand-summary {
   margin-top: 6px; padding-bottom: 2px; font-size: 11.5px; line-height: 1.28; color: var(--muted);
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; white-space:nowrap;
 }
-.demand-summary.warning { color: color-mix(in srgb, var(--danger) 76%, var(--muted)); font-weight: 720; }
+.demand-slots { min-width:0; }
+.demand-fab { flex:0 0 auto; color:var(--text); font-weight:780; }
 
 .main-content { padding: 8px 10px calc(var(--safe-bottom) + 28px); }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: 11px; padding: 10px; margin-bottom: 8px; }
@@ -1542,10 +1543,9 @@ html { color-scheme: light; }
 .slot-map-band.no-label { grid-template-columns:minmax(0,1fr); }
 .slot-map-band + .slot-map-band { margin-top:5px; }
 .slot-map-band-label { margin:2px 0 0; font-size:10px; line-height:1.2; font-weight:800; color:var(--muted); white-space:nowrap; }
-.slot-map-names { min-width:0; display:flex; flex-wrap:wrap; gap:3px 0; align-items:baseline; line-height:1.28; }
-.slot-map-player { color:var(--text); padding:1px 0; margin:0; font:inherit; font-size:12px; line-height:1.28; font-weight:650; text-align:left; }
+.slot-map-names { min-width:0; display:block; line-height:1.28; }
+.slot-map-player { color:var(--text); margin:0; font:inherit; font-size:12px; line-height:1.28; font-weight:650; text-align:left; }
 .slot-map-player.taken { color:#9a9ca1; text-decoration:line-through; text-decoration-thickness:1.4px; opacity:.72; }
-.slot-map-player + .slot-map-player::before { content:'·'; display:inline-block; margin:0 7px; color:#b5b6ba; text-decoration:none; }
 .slot-map-outside { margin-top:12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
 .slot-map-outside summary { list-style:none; min-height:38px; padding:9px 10px; display:flex; align-items:center; font-size:11px; font-weight:750; cursor:pointer; }
 .slot-map-outside summary::-webkit-details-marker { display:none; }

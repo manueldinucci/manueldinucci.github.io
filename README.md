@@ -1,9 +1,9 @@
-# Fantacalcio Checklist PWA — v31.4
+# Fantacalcio Checklist PWA — v31.5
 
 Micro-refinement UI della Mappa Slot:
 - rimosso completamente il sottotitolo ridondante sotto `Mappa Slot`, recuperando spazio verticale reale;
 - aumentata di 0,5 px la dimensione dei soli nomi giocatore nella Mappa Slot, inclusi i Fuori Slot, senza alterare peso, layout o spaziature.
-- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.4`.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.5`.
 
 # Fantacalcio Checklist PWA — v31.3
 
@@ -469,3 +469,10 @@ Ordina e Filtri sono popover contestuali senza backdrop globale; controlli inter
 - Corretto il click-through dei popover: il primo click fuori da Ordina/Filtri chiude soltanto il popover e non attiva card o controlli sottostanti.
 - Nuova icona PWA minimale monocromatica: pallone geometrico senza martelletto, applicata a favicon, Apple Touch Icon, icone 192/512 e maskable.
 - Cache PWA aggiornata a `fantacalcio-checklist-v30`.
+
+
+## v31.5
+
+- Mappa Slot: wrapping dei nomi convertito a flusso inline naturale; le righe successive sono allineate alla prima e il separatore `·` non apre più una nuova riga.
+- Riga sintetica reparto: conteggi live `S1 | S2 | S3 | S4 | S5` (solo S1-S4 per i portieri) e `FAB` riferito alla rosa marcata come `Io`.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.5`.

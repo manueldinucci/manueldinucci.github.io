@@ -11,5 +11,6 @@ assert(!app.includes('graduatoria personale residua'), 'slot map redundant subti
 assert(css.includes('.slot-map-player {') && css.includes('font-size:12px'), 'slot map player names must be increased by 0.5px');
 assert(css.includes('.slot-map-player { font-size:11.5px; }'), 'narrow viewport slot map names must also be increased by 0.5px');
 assert(css.includes('font-weight:650'), 'slot map player font weight must remain unchanged');
-assert(sw.includes("fantacalcio-checklist-v31.4"), 'service worker cache must be v31.4');
+const cacheMatch = sw.match(/fantacalcio-checklist-v(\d+)\.(\d+)/);
+assert(cacheMatch && (Number(cacheMatch[1]) > 31 || (Number(cacheMatch[1]) === 31 && Number(cacheMatch[2]) >= 4)), 'service worker cache must be v31.4 or newer');
 console.log('v31.4 static checks OK');
