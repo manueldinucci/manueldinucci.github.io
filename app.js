@@ -521,7 +521,9 @@
   function renderCountsAndDemand() {
     renderSlotMapIfOpen();
     const rolePlayers = state.players.filter(p => p.ruolo === state.role);
-    if (state.showAll) $('demandSummary').classList.add('hidden'); else renderDemandSummary(rolePlayers);
+    // v31.8: il blocco strategico non deve essere visibile in Tutti o in Privacy.
+    if (state.showAll || state.privacyMode) $('demandSummary').classList.add('hidden');
+    else renderDemandSummary(rolePlayers);
     if (state.mainView !== 'players') {
       $('demandSummary').classList.add('hidden');
       renderManagerDashboard(state.overlayView ? 'viewSheetContent' : 'managerDashboard', state.overlayView || state.mainView);
@@ -596,29 +598,34 @@
     return { role, slots, counts, needs };
   }
 
+  function participantGridMarkup(rows, valueGetter, extraClass = '') {
+    const list = rows || [];
+    if (!list.length) return '';
+    return `<div class="demand-participant-grid${extraClass ? ` ${extraClass}` : ''}">${list.map(row => `
+      <div class="demand-participant-cell${row.complete ? ' complete' : ''}">
+        <span class="demand-participant-code${row.complete ? ' complete' : ''}">${esc(row.abbreviation)}</span>
+        <span class="demand-participant-value">${esc(valueGetter(row))}</span>
+      </div>`).join('')}</div>`;
+  }
+
   function participantNeedsMarkup(rows) {
-    return (rows || []).map((row, index) => {
-      const separator = index < rows.length - 1 ? '<span class="demand-participant-separator" aria-hidden="true"> |</span>' : '';
-      return `<span class="demand-participant-item"><span class="demand-participant-code${row.complete ? ' complete' : ''}">${esc(row.abbreviation)}:${row.owned}</span>${separator}</span>`;
-    }).join(' ');
+    return participantGridMarkup(rows, row => displayNum(row.owned), 'demand-needs-grid');
   }
 
   function participantMaxBidMarkup(rows) {
     const ordered = (rows || []).slice().sort((a,b) => b.maxBid - a.maxBid || a.index - b.index);
-    return ordered.map((row, index) => {
-      const separator = index < ordered.length - 1 ? '<span class="demand-participant-separator" aria-hidden="true"> |</span>' : '';
-      return `<span class="demand-participant-item"><span class="demand-participant-code${row.complete ? ' complete' : ''}">${esc(row.abbreviation)}:${displayNum(Math.floor(row.maxBid))}</span>${separator}</span>`;
-    }).join(' ');
+    return participantGridMarkup(ordered, row => displayNum(Math.floor(row.maxBid)), 'demand-max-bid-grid');
   }
 
   function renderDemandSummary(rolePlayers) {
     const el = $('demandSummary'); if (!el) return;
+    if (state.privacyMode || state.showAll) { el.classList.add('hidden'); return; }
     const model = demandLineModel(rolePlayers);
     const slotsText = model.slots.map(slot => `${slot}: ${model.counts[slot]}`).join(' | ');
     const fabText = `FAB: ${model.needs.fab == null ? '—' : model.needs.fab}`;
     const participants = participantNeedsMarkup(model.needs.rows);
     const maxBids = model.role === 'A' ? participantMaxBidMarkup(model.needs.rows) : '';
-    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${esc(slotsText)}</span><span class="demand-fab">${esc(fabText)}</span></div>${participants ? `<div class="demand-participants">${participants}</div>` : ''}${maxBids ? `<div class="demand-participants demand-max-bids">${maxBids}</div>` : ''}`;
+    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${esc(slotsText)}</span><span class="demand-fab">${esc(fabText)}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
     el.classList.remove('warning', 'hidden');
   }
 
@@ -1181,18 +1188,19 @@
     renderRoleTabs();
   }
 
-  function twoColumnPlayers(players, itemClass) {
-    if (!players.length) return '';
-    const split = Math.ceil(players.length / 2);
-    const columns = [players.slice(0, split), players.slice(split)];
-    return `<div class="purchase-columns">${columns.filter(col => col.length).map(col => `<div class="purchase-column">${col.map(p => `<div class="${itemClass}"><span>${esc(p.nome)}</span><b>${num(p.prezzo_acquisto) != null ? `${displayNum(p.prezzo_acquisto)} cr` : '—'}</b></div>`).join('')}</div>`).join('')}</div>`;
+  function rosePlayerInlineMarkup(players) {
+    if (!players.length) return '<span class="rose-role-empty">—</span>';
+    return players.map(p => {
+      const price = num(p.prezzo_acquisto);
+      const priceMarkup = price != null ? `<span class="rose-player-price"> ${displayNum(price)} cr</span>` : '';
+      return `<span class="rose-player-entry">${esc(p.nome)}${priceMarkup}</span>`;
+    }).join('&nbsp;· ');
   }
 
   function managerFullRosterDetails(manager, stats) {
     const sections = FantaAuction.ROLES.map(role => {
       const players = state.players.filter(p => p.preso && p.ruolo === role && FantaAuction.assignmentBelongsToManager(p, manager));
-      const items = players.length ? twoColumnPlayers(players, 'roster-player') : '<div class="roster-empty">Nessun acquisto</div>';
-      return `<div class="roster-role"><div class="roster-role-head"><strong>${role} ${stats.roleBought[role]}/${state.auctionConfig.roster[role]}</strong></div>${items}</div>`;
+      return `<div class="rose-role-row"><strong class="rose-role-code">${esc(role)}</strong><div class="rose-role-players">${rosePlayerInlineMarkup(players)}</div></div>`;
     }).join('');
     return `<div class="manager-roster-body rose-roster-body">${sections}</div>`;
   }
@@ -1201,14 +1209,20 @@
     const dashboard = $(targetId);
     if (!dashboard || view !== 'rose') return;
     const inSheet = targetId === 'viewSheetContent';
-    const baseRows = FantaAuction.computeAllManagerStats(state.managers, state.players, state.auctionConfig);
+    const baseRows = FantaAuction.computeAllManagerStats(state.managers, state.players, state.auctionConfig)
+      .map((row, index) => ({...row, originalIndex:index}));
 
     if (inSheet) {
       $('viewSheetTitle').textContent = 'Rose';
       $('viewSheetToolbar').innerHTML = '';
     }
 
-    const rows = baseRows.slice().sort((a,b) => String(a.manager.nome).localeCompare(String(b.manager.nome), 'it', {sensitivity:'base'}));
+    // v31.8: potere d'acquisto = Max Bid; budget residuo e ordine originale sciolgono le parità.
+    const rows = baseRows.slice().sort((a,b) =>
+      Number(b.stats.maxBid || 0) - Number(a.stats.maxBid || 0) ||
+      Number(b.stats.budgetRemaining || 0) - Number(a.stats.budgetRemaining || 0) ||
+      a.originalIndex - b.originalIndex
+    );
     const head = inSheet ? '' : `<div class="dashboard-head"><h2>Rose</h2><span>Situazione completa delle squadre</span></div>`;
     dashboard.innerHTML = `${head}<div class="manager-cards rose-cards">${rows.length ? rows.map(({manager,stats}) => {
       return `<details class="manager-card rose-manager${manager.isMe?' self-manager':''}" open><summary class="rose-manager-head"><strong>${esc(manager.nome)}</strong><b>${displayNum(stats.budgetRemaining)} cr</b></summary>${managerFullRosterDetails(manager,stats)}</details>`;
@@ -1537,7 +1551,7 @@
     state.privacyMode = !state.privacyMode;
     updatePrivacyButton();
     renderPlayers();
-    renderSlotMapIfOpen();
+    renderCountsAndDemand();
   }
 
   function updateCompactButton() {

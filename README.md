@@ -1,11 +1,12 @@
-# Fantacalcio Checklist PWA — v31.7
+# Fantacalcio Checklist PWA — v31.8
 
-Release chirurgica orientata alla lettura d’asta:
-- Attacco: terza riga sintetica con Max Bid dei partecipanti, ordinata in modo decrescente;
-- abbreviazioni partecipanti in maiuscolo e peso normale; `FAB` senza grassetto;
-- vista `Live` rimossa dalla navigazione e non più apribile;
-- `Rose` semplificata: titolo neutro, card aperte di default, header con solo nome e crediti residui.
-- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.7`.
+Release sperimentale e chirurgica orientata alla leggibilità durante l’asta:
+- navigazione `Por | Dif | Cen | Att | Tutti | Rose` su sei colonne equivalenti a tutta larghezza;
+- blocco strategico ad alto contrasto e nascosto integralmente dalla modalità Privacy;
+- stato partecipanti in micro-griglia delimitata a 5 colonne, ordinata per carenza residua;
+- in Attacco, seconda micro-griglia `MAX BID` ordinata per Max Bid decrescente;
+- `Rose` ordinate per potere d’acquisto e compattate in righe inline `P/D/C/A`;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.8`.
 
 # Fantacalcio Checklist PWA — v31.3
 
@@ -494,3 +495,14 @@ Ordina e Filtri sono popover contestuali senza backdrop globale; controlli inter
 - Rimossa la voce Live dalla navigazione: `Por | Dif | Cen | Att | Tutti | Rose`.
 - Rose: titolo senza reparto, card partecipanti aperte di default e richiudibili; header ridotto a nome + crediti residui; eliminato il riepilogo aggregato P/D/C/A.
 - Service Worker aggiornato alla cache `fantacalcio-checklist-v31.7`.
+
+
+## v31.8
+
+- Navigazione `Por | Dif | Cen | Att | Tutti | Rose` distribuita su sei colonne equivalenti a tutta larghezza.
+- Blocco strategico ad alto contrasto: testo nero; in Privacy viene nascosto integralmente.
+- Stato partecipanti trasformato in micro-griglia a 5 colonne, ordinata per carenza residua; partecipanti completi attenuati.
+- In Attacco, Max Bid mostrati in una seconda micro-griglia dedicata e ordinata per potere d’acquisto.
+- Rose ordinate dinamicamente per Max Bid decrescente, poi crediti residui e ordine originale.
+- Contenuto Rose compattato in quattro righe `P/D/C/A` con nomi e prezzi inline.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.8`.

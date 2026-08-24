@@ -34,5 +34,5 @@ ok(!app.includes('const roleSummary = FantaAuction.ROLES.map'), 'aggregate P/D/C
 ok(!app.includes('${selfBadge}${manager.squadra ?'), 'Rose header must not include self badge/team');
 ok(css.includes('.rose-manager-head::-webkit-details-marker { display: none; }'), 'Rose cards must remain collapsible without native marker noise');
 
-ok(sw.includes("fantacalcio-checklist-v31.7"), 'service worker cache must be v31.7');
+ok(/fantacalcio-checklist-v31\.(?:[7-9]|[1-9]\d+)/.test(sw), 'service worker cache must be v31.7 or a compatible successor');
 console.log('v31.7 static checks: OK');
