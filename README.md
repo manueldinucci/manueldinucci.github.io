@@ -1,9 +1,9 @@
-# Fantacalcio Checklist PWA — v31.5
+# Fantacalcio Checklist PWA — v31.6
 
 Micro-refinement UI della Mappa Slot:
 - rimosso completamente il sottotitolo ridondante sotto `Mappa Slot`, recuperando spazio verticale reale;
 - aumentata di 0,5 px la dimensione dei soli nomi giocatore nella Mappa Slot, inclusi i Fuori Slot, senza alterare peso, layout o spaziature.
-- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.5`.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.6`.
 
 # Fantacalcio Checklist PWA — v31.3
 
@@ -470,6 +470,13 @@ Ordina e Filtri sono popover contestuali senza backdrop globale; controlli inter
 - Nuova icona PWA minimale monocromatica: pallone geometrico senza martelletto, applicata a favicon, Apple Touch Icon, icone 192/512 e maskable.
 - Cache PWA aggiornata a `fantacalcio-checklist-v30`.
 
+
+## v31.6
+
+- Mappa Slot: i gruppi classificati senza Target mostrano sempre `n.c.` nella stessa colonna delle altre sottofasce.
+- `FAB` ora somma il fabbisogno residuo del reparto per tutti i fantallenatori configurati.
+- Nuova riga compatta partecipanti: abbreviazione minima da 3 lettere, giocatori posseduti nel ruolo, ordinamento dinamico per carenza residua e attenuazione dei reparti completi.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.6`.
 
 ## v31.5
 

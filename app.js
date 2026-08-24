@@ -540,11 +540,57 @@
     return available.filter(p => accepted.has(String(p.slot || '').trim().toUpperCase())).length;
   }
 
-  function selfRoleNeed(role) {
-    const selfManager = state.managers.find(manager => manager?.isMe);
-    if (!selfManager) return null;
-    const stats = FantaAuction.computeManagerStats(selfManager, state.players, state.auctionConfig);
-    return stats.roleRemaining?.[role] ?? 0;
+  function participantAbbreviations(managers) {
+    const list = (managers || []).map((manager, index) => {
+      const name = String(manager?.nome || '').trim();
+      const chars = Array.from(name);
+      return { manager, index, name, chars, length:Math.min(3, chars.length) };
+    });
+
+    // Allunga solo i prefissi ambigui, fino al minimo necessario per distinguerli.
+    let changed = true;
+    while (changed) {
+      changed = false;
+      const groups = new Map();
+      for (const row of list) {
+        const prefix = row.chars.slice(0, row.length).join('');
+        const key = FantaDB.normalizeText(prefix);
+        if (!groups.has(key)) groups.set(key, []);
+        groups.get(key).push(row);
+      }
+      for (const rows of groups.values()) {
+        if (rows.length < 2) continue;
+        for (const row of rows) {
+          if (row.length < row.chars.length) { row.length += 1; changed = true; }
+        }
+      }
+    }
+
+    return new Map(list.map(row => [String(row.manager?.id || row.index), row.chars.slice(0, row.length).join('')]));
+  }
+
+  function getRoleNeeds(role) {
+    const managers = state.managers || [];
+    if (!managers.length) return { rows:[], fab:null };
+    const config = FantaAuction.makeDefaultConfig(state.auctionConfig);
+    const quota = Number(config.roster?.[role] || 0);
+    const abbreviations = participantAbbreviations(managers);
+    const rows = FantaAuction.computeAllManagerStats(managers, state.players, config).map(({manager, stats}, index) => {
+      const owned = Number(stats.roleBought?.[role] || 0);
+      const missing = Math.max(0, quota - owned);
+      return {
+        manager,
+        index,
+        owned,
+        quota,
+        missing,
+        complete: owned >= quota,
+        abbreviation: abbreviations.get(String(manager?.id || index)) || String(manager?.nome || '').trim()
+      };
+    });
+    const fab = rows.reduce((sum, row) => sum + row.missing, 0);
+    rows.sort((a,b) => b.missing - a.missing || a.index - b.index);
+    return { rows, fab };
   }
 
   function demandLineModel(rolePlayers) {
@@ -552,16 +598,24 @@
     const available = rolePlayers.filter(p => !p.preso);
     const slots = role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5'];
     const counts = Object.fromEntries(slots.map(slot => [slot, slotCount(available, [slot])]));
-    const need = selfRoleNeed(role);
-    return { role, slots, counts, need };
+    const needs = getRoleNeeds(role);
+    return { role, slots, counts, needs };
+  }
+
+  function participantNeedsMarkup(rows) {
+    return (rows || []).map((row, index) => {
+      const separator = index < rows.length - 1 ? '<span class="demand-participant-separator" aria-hidden="true"> |</span>' : '';
+      return `<span class="demand-participant-item"><span class="demand-participant-code${row.complete ? ' complete' : ''}">${esc(row.abbreviation)}:${row.owned}</span>${separator}</span>`;
+    }).join(' ');
   }
 
   function renderDemandSummary(rolePlayers) {
     const el = $('demandSummary'); if (!el) return;
     const model = demandLineModel(rolePlayers);
     const slotsText = model.slots.map(slot => `${slot}: ${model.counts[slot]}`).join(' | ');
-    const fabText = `FAB: ${model.need == null ? '—' : model.need}`;
-    el.innerHTML = `<span class="demand-slots">${esc(slotsText)}</span><strong class="demand-fab">${esc(fabText)}</strong>`;
+    const fabText = `FAB: ${model.needs.fab == null ? '—' : model.needs.fab}`;
+    const participants = participantNeedsMarkup(model.needs.rows);
+    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${esc(slotsText)}</span><strong class="demand-fab">${esc(fabText)}</strong></div>${participants ? `<div class="demand-participants">${participants}</div>` : ''}`;
     el.classList.remove('warning', 'hidden');
   }
 
@@ -627,11 +681,10 @@
         bands.get(band.key).players.push(p);
       }
       const grouped = [...bands.values()].sort((a,b) => b.rank - a.rank);
-      const showBandLabel = grouped.length > 1 || (grouped[0] && grouped[0].key !== 'none');
       body = grouped.map((group, index) => {
         const denom = Math.max(1, grouped.length - 1);
         const alpha = grouped.length === 1 ? 0.055 : 0.11 - (index / denom) * 0.065;
-        return `<div class="slot-map-band${showBandLabel ? '' : ' no-label'}" style="--slot-map-band-alpha:${alpha.toFixed(3)}">${showBandLabel ? `<div class="slot-map-band-label">${esc(group.label)}</div>` : ''}<div class="slot-map-names">${slotMapNamesMarkup(group.players)}</div></div>`;
+        return `<div class="slot-map-band" style="--slot-map-band-alpha:${alpha.toFixed(3)}"><div class="slot-map-band-label">${esc(group.label)}</div><div class="slot-map-names">${slotMapNamesMarkup(group.players)}</div></div>`;
       }).join('');
     }
     return `<section class="slot-map-slot"><div class="slot-map-slot-head"><strong>${esc(slotMapSlotLabel(slot))}</strong><span>${remaining}/${total} disponibili</span></div>${slotMapProgress(remaining,total)}${body}</section>`;
