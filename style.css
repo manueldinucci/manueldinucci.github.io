@@ -1685,3 +1685,37 @@ html { color-scheme: light; }
 }
 /* Evita la doppia attenuazione ereditata dal vecchio hook v31.6: in v31.8 si attenua la cella intera. */
 .demand-participant-cell.complete .demand-participant-code.complete { opacity: 1; }
+
+
+/* v31.9 — toggle Partecipanti + abbreviazioni a 5 lettere */
+.participants-toggle-btn svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.9;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+.participants-toggle-btn.active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+/* Mantiene sei touch target da 42px sulla stessa riga senza ridisegnare la toolbar. */
+@media (max-width: 430px) {
+  .title-row { gap: 2px; }
+  .header-actions { gap: 2px; }
+  .title-row > :first-child { min-width: 0; }
+}
+/* 5 lettere leggibili nelle 5 colonne della micro-griglia. */
+.demand-participant-code {
+  font-size: 8.5px;
+  letter-spacing: 0;
+}
+@media (max-width: 430px) {
+  .demand-participant-code { font-size: 8.25px; }
+}
+@media (max-width: 360px) {
+  .demand-participant-code { font-size: 8px; }
+}

@@ -21,6 +21,7 @@
     compact: false,
     commentsVisible: true,
     privacyMode: false,
+    participantsVisible: true,
     emphasis: 65,
     selectedKey: null,
     importModel: null,
@@ -111,6 +112,7 @@
     if (!['alpha','slot','fvm','quot','team'].includes(state.sortMode)) state.sortMode = 'alpha';
     state.showAll = Boolean(state.showAll);
     state.commentsVisible = state.commentsVisible !== false;
+    state.participantsVisible = state.participantsVisible !== false; // v31.9: preferenza UI persistente, default visibile
     state.privacyMode = false; // modalità sicurezza volutamente non persistente tra sessioni complete
   }
 
@@ -140,6 +142,7 @@
       onlyFavorites: state.onlyFavorites,
       compact: state.compact,
       commentsVisible: state.commentsVisible,
+      participantsVisible: state.participantsVisible,
       emphasis: state.emphasis,
       mainView: state.mainView
     };
@@ -256,6 +259,7 @@
     updatePrivacyButton();
     updateCommentsButton();
     updateCompactButton();
+    updateParticipantsButton();
     updateSortControls();
   }
 
@@ -536,13 +540,14 @@
   }
 
   function participantAbbreviations(managers) {
+    const baseLength = 5;
     const list = (managers || []).map((manager, index) => {
       const name = String(manager?.nome || '').trim();
       const chars = Array.from(name);
-      return { manager, index, name, chars, length:Math.min(3, chars.length) };
+      return { manager, index, name, chars, length:Math.min(baseLength, chars.length), suffix:'' };
     });
 
-    // Allunga solo i prefissi ambigui, fino al minimo necessario per distinguerli.
+    // v31.9: allunga solo i prefissi ambigui oltre le 5 lettere, fino al minimo necessario.
     let changed = true;
     while (changed) {
       changed = false;
@@ -555,13 +560,32 @@
       }
       for (const rows of groups.values()) {
         if (rows.length < 2) continue;
-        for (const row of rows) {
-          if (row.length < row.chars.length) { row.length += 1; changed = true; }
+        const extensible = rows.filter(row => row.length < row.chars.length);
+        if (extensible.length) {
+          for (const row of rows) {
+            if (row.length < row.chars.length) { row.length += 1; changed = true; }
+          }
         }
       }
     }
 
-    return new Map(list.map(row => [String(row.manager?.id || row.index), row.chars.slice(0, row.length).join('').toLocaleUpperCase('it')]));
+    // Fallback deterministico solo per nomi completamente identici/non ulteriormente distinguibili.
+    const finalGroups = new Map();
+    for (const row of list) {
+      const prefix = row.chars.slice(0, row.length).join('');
+      const key = FantaDB.normalizeText(prefix);
+      if (!finalGroups.has(key)) finalGroups.set(key, []);
+      finalGroups.get(key).push(row);
+    }
+    for (const rows of finalGroups.values()) {
+      if (rows.length < 2) continue;
+      rows.forEach((row, i) => { row.suffix = String(i + 1); });
+    }
+
+    return new Map(list.map(row => {
+      const prefix = row.chars.slice(0, row.length).join('');
+      return [String(row.manager?.id || row.index), `${prefix}${row.suffix}`.toLocaleUpperCase('it')];
+    }));
   }
 
   function getRoleNeeds(role) {
@@ -623,8 +647,8 @@
     const model = demandLineModel(rolePlayers);
     const slotsText = model.slots.map(slot => `${slot}: ${model.counts[slot]}`).join(' | ');
     const fabText = `FAB: ${model.needs.fab == null ? '—' : model.needs.fab}`;
-    const participants = participantNeedsMarkup(model.needs.rows);
-    const maxBids = model.role === 'A' ? participantMaxBidMarkup(model.needs.rows) : '';
+    const participants = state.participantsVisible ? participantNeedsMarkup(model.needs.rows) : '';
+    const maxBids = state.participantsVisible && model.role === 'A' ? participantMaxBidMarkup(model.needs.rows) : '';
     el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${esc(slotsText)}</span><span class="demand-fab">${esc(fabText)}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
     el.classList.remove('warning', 'hidden');
   }
@@ -814,6 +838,7 @@
     $('privacyHeaderBtn').addEventListener('click', togglePrivacy);
     $('commentsHeaderBtn').addEventListener('click', toggleComments);
     $('compactHeaderBtn').addEventListener('click', toggleCompact);
+    $('participantsHeaderBtn').addEventListener('click', toggleParticipants);
     $('slotMapHeaderBtn').addEventListener('click', openSlotMap);
     $('closeSlotMapBtn').addEventListener('click', closeAllSheets);
 
@@ -1518,7 +1543,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,commentsVisible:true,privacyMode:false,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 
@@ -1568,6 +1593,29 @@
     updateCompactButton();
     scheduleUISave();
     renderPlayers();
+  }
+
+  function participantsIconMarkup(visible) {
+    return visible
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4.2 9.5 6a10.4 10.4 0 0 1-2.7 3.3M6.2 6.2C4.3 7.4 3.1 9 2.5 10c1 1.8 4.5 6 9.5 6 1 0 2-.2 2.9-.5"/></svg>';
+  }
+
+  function updateParticipantsButton() {
+    const btn = $('participantsHeaderBtn');
+    if (!btn) return;
+    btn.innerHTML = participantsIconMarkup(state.participantsVisible);
+    btn.classList.toggle('active', state.participantsVisible);
+    btn.setAttribute('aria-pressed', state.participantsVisible ? 'true' : 'false');
+    btn.setAttribute('aria-label', state.participantsVisible ? 'Nascondi partecipanti' : 'Mostra partecipanti');
+    btn.setAttribute('title', state.participantsVisible ? 'Partecipanti visibili' : 'Partecipanti nascosti');
+  }
+
+  function toggleParticipants() {
+    state.participantsVisible = !state.participantsVisible;
+    updateParticipantsButton();
+    scheduleUISave();
+    renderCountsAndDemand();
   }
 
   function applyTheme() {

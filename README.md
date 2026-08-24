@@ -1,3 +1,12 @@
+# Fantacalcio Checklist PWA — v31.9
+
+Release chirurgica UI:
+- nuovo toggle persistente `Partecipanti` con icona occhio tra Comprimi e Mappa Slot;
+- toggle globale che mostra/nasconde micro-griglia partecipanti e, in Attacco, MAX BID, lasciando visibile S1-S5/FAB;
+- Privacy mantiene priorità assoluta senza alterare la preferenza Partecipanti;
+- abbreviazioni partecipanti portate a 5 lettere, maiuscole, con disambiguazione deterministica;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.9`.
+
 # Fantacalcio Checklist PWA — v31.8
 
 Release sperimentale e chirurgica orientata alla leggibilità durante l’asta:
