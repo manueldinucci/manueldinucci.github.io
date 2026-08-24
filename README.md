@@ -1,4 +1,10 @@
-# Fantacalcio Checklist PWA v31
+# Fantacalcio Checklist PWA v31.1
+
+## v31.1
+
+- Hotfix avvio: rimosso il riferimento residuo a `updateThemeButton()` dopo la rimozione del tema scuro.
+- Nessuna modifica funzionale alla Mappa Slot o alle altre funzioni v31.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.1`.
 
 ## v31
 

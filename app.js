@@ -260,7 +260,6 @@
     updatePrivacyButton();
     updateCommentsButton();
     updateCompactButton();
-    updateThemeButton();
     updateSortControls();
   }
 
