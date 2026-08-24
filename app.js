@@ -658,7 +658,6 @@
     const role = state.slotMapRole || state.role || 'C';
     state.slotMapRole = role;
     renderSlotMapRoleTabs();
-    $('slotMapSubtitle').textContent = `${roleName(role)} · graduatoria personale residua`;
     const rolePlayers = slotMapPlayersForRole(role);
     if (!rolePlayers.length) {
       content.innerHTML = '<div class="slot-map-empty">Nessun giocatore classificato in questo reparto.</div>';

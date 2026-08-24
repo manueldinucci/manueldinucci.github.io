@@ -1,3 +1,10 @@
+# Fantacalcio Checklist PWA — v31.4
+
+Micro-refinement UI della Mappa Slot:
+- rimosso completamente il sottotitolo ridondante sotto `Mappa Slot`, recuperando spazio verticale reale;
+- aumentata di 0,5 px la dimensione dei soli nomi giocatore nella Mappa Slot, inclusi i Fuori Slot, senza alterare peso, layout o spaziature.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.4`.
+
 # Fantacalcio Checklist PWA — v31.3
 
 Hotfix UI/UX della Mappa Slot:
