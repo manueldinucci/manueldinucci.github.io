@@ -609,9 +609,9 @@
     return (num(b.fvm) || 0) - (num(a.fvm) || 0) || a.nome.localeCompare(b.nome,'it',{sensitivity:'base'});
   }
 
-  function slotMapNameButton(p) {
+  function slotMapNameText(p) {
     const taken = p.preso ? ' taken' : '';
-    return `<button type="button" class="slot-map-player${taken}" data-slot-map-key="${esc(p.key)}" aria-label="Apri ${esc(p.nome)}${p.preso ? ', già preso' : ''}">${esc(p.nome)}</button>`;
+    return `<span class="slot-map-player${taken}">${esc(p.nome)}</span>`;
   }
 
   function slotMapProgress(remaining,total) {
@@ -625,7 +625,7 @@
     const ordered = [...players].sort(slotMapNameSort);
     let body = '';
     if (privacy) {
-      body = `<div class="slot-map-names privacy-names">${ordered.map(slotMapNameButton).join('')}</div>`;
+      body = `<div class="slot-map-names privacy-names">${ordered.map(slotMapNameText).join('')}</div>`;
     } else {
       const bands = new Map();
       for (const p of ordered) {
@@ -635,9 +635,9 @@
       }
       const grouped = [...bands.values()].sort((a,b) => b.rank - a.rank);
       const showBandLabel = grouped.length > 1 || (grouped[0] && grouped[0].key !== 'none');
-      body = grouped.map(group => `<div class="slot-map-band">${showBandLabel ? `<div class="slot-map-band-label">${esc(group.label)}</div>` : ''}<div class="slot-map-names">${group.players.map(slotMapNameButton).join('')}</div></div>`).join('');
+      body = grouped.map(group => `<div class="slot-map-band${showBandLabel ? '' : ' no-label'}">${showBandLabel ? `<div class="slot-map-band-label">${esc(group.label)}</div>` : ''}<div class="slot-map-names">${group.players.map(slotMapNameText).join('')}</div></div>`).join('');
     }
-    return `<section class="slot-map-slot"><div class="slot-map-slot-head"><strong>${esc(slotMapSlotLabel(slot))}</strong><span>${remaining}/${total} rimasti</span></div>${slotMapProgress(remaining,total)}${body}</section>`;
+    return `<section class="slot-map-slot"><div class="slot-map-slot-head"><strong>${esc(slotMapSlotLabel(slot))}</strong><span>${remaining}/${total} disponibili</span></div>${slotMapProgress(remaining,total)}${body}</section>`;
   }
 
   function renderSlotMapRoleTabs() {
@@ -671,9 +671,8 @@
       if (coverage.length) sections.push(slotMapSectionMarkup('COPERTURE', coverage, state.privacyMode));
     }
     const outside = state.players.filter(p => p.ruolo === role && !String(p.slot || '').trim() && !(role === 'P' && isGoalkeeperCoverage(p)));
-    const outsideMarkup = outside.length ? `<details class="slot-map-outside"><summary>Fuori slot · ${outside.length}</summary><div class="slot-map-names">${outside.slice().sort(slotMapNameSort).map(slotMapNameButton).join('')}</div></details>` : '';
+    const outsideMarkup = outside.length ? `<details class="slot-map-outside"><summary>Fuori slot · ${outside.length}</summary><div class="slot-map-names">${outside.slice().sort(slotMapNameSort).map(slotMapNameText).join('')}</div></details>` : '';
     content.innerHTML = `${state.privacyMode ? '<div class="slot-map-privacy-note">Privacy attiva · sottofasce economiche nascoste</div>' : ''}${sections.join('')}${outsideMarkup}`;
-    content.querySelectorAll('[data-slot-map-key]').forEach(btn => btn.addEventListener('click', () => openPlayerSheet(btn.dataset.slotMapKey)));
   }
 
   function renderSlotMapIfOpen() {
