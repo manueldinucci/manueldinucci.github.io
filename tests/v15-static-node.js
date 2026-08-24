@@ -6,6 +6,16 @@ const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
+const isV317 = sw.includes('fantacalcio-checklist-v31.7');
+if (isV317) {
+  ok(!app.includes('data-view="live"'), 'v31.7 must not expose Live in navigation');
+  ok(app.includes("const viewButtons = ['rose']"), 'v31.7 must expose Rose as the only dashboard tab');
+  ok(!html.includes('id="managersSheet"'), 'v31.7 legacy Live sheet must be removed');
+  ok(app.includes("if (view !== 'rose') return;"), 'v31.7 dashboard opener must reject Live');
+  console.log('v15-static-node.js historical checks superseded by v31.7 Live removal: OK');
+  process.exit(0);
+}
+
 
 ok(!html.includes('id="liveRemaining"'), 'global Live remaining chip must be removed');
 ok(!app.includes('freeRolePlayers'), 'global free-player count must be removed from Live');

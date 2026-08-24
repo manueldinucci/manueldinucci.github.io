@@ -1,9 +1,11 @@
-# Fantacalcio Checklist PWA — v31.6
+# Fantacalcio Checklist PWA — v31.7
 
-Micro-refinement UI della Mappa Slot:
-- rimosso completamente il sottotitolo ridondante sotto `Mappa Slot`, recuperando spazio verticale reale;
-- aumentata di 0,5 px la dimensione dei soli nomi giocatore nella Mappa Slot, inclusi i Fuori Slot, senza alterare peso, layout o spaziature.
-- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.6`.
+Release chirurgica orientata alla lettura d’asta:
+- Attacco: terza riga sintetica con Max Bid dei partecipanti, ordinata in modo decrescente;
+- abbreviazioni partecipanti in maiuscolo e peso normale; `FAB` senza grassetto;
+- vista `Live` rimossa dalla navigazione e non più apribile;
+- `Rose` semplificata: titolo neutro, card aperte di default, header con solo nome e crediti residui.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.7`.
 
 # Fantacalcio Checklist PWA — v31.3
 
@@ -483,3 +485,12 @@ Ordina e Filtri sono popover contestuali senza backdrop globale; controlli inter
 - Mappa Slot: wrapping dei nomi convertito a flusso inline naturale; le righe successive sono allineate alla prima e il separatore `·` non apre più una nuova riga.
 - Riga sintetica reparto: conteggi live `S1 | S2 | S3 | S4 | S5` (solo S1-S4 per i portieri) e `FAB` riferito alla rosa marcata come `Io`.
 - Service Worker aggiornato alla cache `fantacalcio-checklist-v31.5`.
+
+
+## v31.7
+
+- Attacco: aggiunta terza riga sintetica con Max Bid dei partecipanti, ordinata per Max Bid decrescente e aggiornata dallo stesso calcolo economico già usato dall'app.
+- Abbreviazioni partecipanti in maiuscolo e peso tipografico normale; `FAB` non è più in grassetto.
+- Rimossa la voce Live dalla navigazione: `Por | Dif | Cen | Att | Tutti | Rose`.
+- Rose: titolo senza reparto, card partecipanti aperte di default e richiudibili; header ridotto a nome + crediti residui; eliminato il riepilogo aggregato P/D/C/A.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.7`.

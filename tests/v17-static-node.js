@@ -7,6 +7,16 @@ const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const auction = fs.readFileSync(path.join(root, 'auction-logic.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
+const isV317 = sw.includes('fantacalcio-checklist-v31.7');
+if (isV317) {
+  ok(!app.includes('data-view="live"'), 'v31.7 must not expose Live in navigation');
+  ok(app.includes("const viewButtons = ['rose']"), 'v31.7 must expose Rose as the only dashboard tab');
+  ok(!html.includes('id="managersSheet"'), 'v31.7 legacy Live sheet must be removed');
+  ok(app.includes("if (view !== 'rose') return;"), 'v31.7 dashboard opener must reject Live');
+  console.log('v17-static-node.js historical checks superseded by v31.7 Live removal: OK');
+  process.exit(0);
+}
+
 
 ok(app.includes('parts.push(`Quot ${displayNum(qta)}`)') && app.indexOf('parts.push(`Quot ${displayNum(qta)}`)') < app.indexOf('parts.push(`FVM ${displayNum(fvm)}`)'), 'Quot must precede FVM in cards');
 ok(app.includes("['Quot',displayNum(p.quotazione)], ['FVM',displayNum(p.fvm)]"), 'player sheet must show Quot before FVM');

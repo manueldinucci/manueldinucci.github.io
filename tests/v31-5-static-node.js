@@ -13,5 +13,5 @@ assert(app.includes('function getRoleNeeds(role)') || app.includes("state.manage
 assert(app.includes('FAB: ${model.needs.fab == null') || app.includes("FAB: ${model.need == null ? '—' : model.need}"), 'FAB label must be rendered');
 assert(app.includes(".join(' | ')") || app.includes("join(' | ')"), 'slot counts must use pipe separators');
 assert(css.includes('.demand-fab { flex:0 0 auto;'), 'FAB must stay on the right as a fixed flex item');
-assert(/fantacalcio-checklist-v31\.[56]/.test(sw), 'service worker cache must be v31.5 or its compatible successor');
+assert(/fantacalcio-checklist-v31\.(?:[5-9]|[1-9]\d+)/.test(sw), 'service worker cache must be v31.5 or a compatible successor');
 console.log('v31.5 static checks OK');

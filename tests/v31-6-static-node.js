@@ -20,6 +20,6 @@ ok(app.includes('demand-participant-code${row.complete ? \' complete\' : \'\'}')
 ok(app.includes('model.needs.fab'), 'demand summary does not use aggregate FAB');
 ok(css.includes('.demand-participant-code.complete { opacity:.45; }'), 'completed participant CSS attenuation missing');
 ok(css.includes('.demand-participant-item { display:inline; white-space:nowrap; }'), 'participant wrapping unit missing');
-ok(sw.includes("fantacalcio-checklist-v31.6"), 'service worker cache version not bumped');
+ok(/fantacalcio-checklist-v31\.(?:[6-9]|[1-9]\d+)/.test(sw), 'service worker cache must be v31.6 or a compatible successor');
 
 console.log('v31.6 static checks: OK');

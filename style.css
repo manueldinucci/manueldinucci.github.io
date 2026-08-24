@@ -114,10 +114,10 @@ h2 { margin: 0; font-size: 20px; }
 }
 .demand-primary { display:flex; align-items:center; justify-content:space-between; gap:8px; min-width:0; white-space:nowrap; }
 .demand-slots { min-width:0; }
-.demand-fab { flex:0 0 auto; color:var(--text); font-weight:780; }
+.demand-fab { flex:0 0 auto; color:var(--text); font-weight:400; }
 .demand-participants { margin-top:2px; min-width:0; font-size:.94em; line-height:1.32; color:var(--muted); }
 .demand-participant-item { display:inline; white-space:nowrap; }
-.demand-participant-code { font-weight:680; }
+.demand-participant-code { font-weight:400; }
 .demand-participant-code.complete { opacity:.45; }
 .demand-participant-separator { font-weight:500; opacity:.72; }
 
@@ -694,13 +694,17 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
 .live-role-player b { flex: none; white-space: nowrap; font-size: 10px; }
 .live-role-empty { padding: 5px 0 3px; color: var(--muted); font-size: 10px; }
 
-.rose-manager { padding: 7px 8px; }
-.rose-manager-head { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0; }
-.rose-manager-head > div { display: flex; align-items: baseline; gap: 5px; min-width: 0; }
-.rose-manager-head strong { font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-.rose-manager-head span:not(.self-badge) { color: var(--muted); font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rose-manager { padding: 0; overflow: hidden; }
+.rose-manager-head {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 8px; min-width: 0;
+  list-style: none; cursor: pointer; padding: 7px 8px;
+}
+.rose-manager-head::-webkit-details-marker { display: none; }
+.rose-manager-head::marker { content: ''; }
+.rose-manager-head strong { min-width:0; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .rose-manager-head > b { flex: none; font-size: 12px; }
-.rose-manager .manager-roster { margin-top: 4px; padding-top: 4px; }
+.rose-manager[open] > .rose-manager-head { border-bottom: 1px solid var(--line); }
+.rose-roster-body { padding: 5px 8px 7px; }
 
 /* v17 — partecipanti senza budget individuale */
 .manager-editor-fields { grid-template-columns: minmax(0,1.2fr) minmax(0,1fr) 58px; }
