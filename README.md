@@ -1,6 +1,13 @@
-# Fantacalcio Checklist PWA v24
+# Fantacalcio Checklist PWA v31
 
+## v31
 
+- Nuova `Mappa Slot` per leggere rapidamente la disponibilità residua della graduatoria personale per reparto, Slot e sottofascia Target.
+- Giocatori già acquistati mantenuti nella loro fascia con nome barrato e conteggi `rimasti/totali` aggiornati dallo stato reale dell’asta.
+- Navigazione interna `Por | Dif | Cen | Att`, supporto specifico a Copertura portieri e Fuori Slot collassato.
+- Privacy applicata alla Mappa Slot senza esporre le sottofasce economiche.
+- Tema scuro e relativo pulsante rimossi; l’app usa esclusivamente il tema chiaro e neutralizza preferenze dark legacy.
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31`.
 
 ## v24
 

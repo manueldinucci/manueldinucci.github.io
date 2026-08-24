@@ -22,7 +22,6 @@
     commentsVisible: true,
     privacyMode: false,
     emphasis: 65,
-    theme: 'light',
     selectedKey: null,
     importModel: null,
     importMode: 'replace',
@@ -105,12 +104,8 @@
       const { liveMode: _legacyLiveMode, onlyComments: _legacyOnlyComments, priceMax: _removedPriceMax, ...cleanSaved } = saved;
       Object.assign(state, cleanSaved);
     }
-    state.theme = await FantaDB.getSetting('theme', state.theme || 'light');
-    if (state.theme === 'system') {
-      state.theme = window.matchMedia?.('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-      await FantaDB.setSetting('theme', state.theme);
-    }
-    if (!['light','dark'].includes(state.theme)) state.theme = 'light';
+    // v31: tema unico chiaro. Migra/neutralizza eventuali preferenze dark legacy.
+    await FantaDB.setSetting('theme', 'light');
     // v19+: Live e Rose sono overlay temporanei, la vista principale resta la lista giocatori.
     state.mainView = 'players';
     if (!['alpha','slot','fvm','quot','team'].includes(state.sortMode)) state.sortMode = 'alpha';
@@ -532,6 +527,7 @@
   }
 
   function renderCountsAndDemand() {
+    renderSlotMapIfOpen();
     const rolePlayers = state.players.filter(p => p.ruolo === state.role);
     if (state.showAll) $('demandSummary').classList.add('hidden'); else renderDemandSummary(rolePlayers);
     if (state.mainView !== 'players') {
@@ -579,6 +575,117 @@
     el.textContent = `${warning ? '⚠ ' : ''}${model.text}`;
     el.classList.toggle('warning', warning);
     el.classList.remove('hidden');
+  }
+
+  function slotMapRoleLabel(role) {
+    return ({P:'Por', D:'Dif', C:'Cen', A:'Att'})[role] || role;
+  }
+
+  function slotMapSlotLabel(slot) {
+    const m = /^S(\d+)$/i.exec(String(slot || '').trim());
+    return m ? `${Number(m[1])}° SLOT` : String(slot || '').trim();
+  }
+
+  function isGoalkeeperCoverage(p) {
+    if (p.ruolo !== 'P' || String(p.slot || '').trim()) return false;
+    const note = FantaDB.normalizeText(String(p.commento || ''));
+    return /copertura|in coppia|secondo nelle gerarchie|non lasciare scoperta la porta/.test(note);
+  }
+
+  function slotMapPlayersForRole(role) {
+    return state.players.filter(p => p.ruolo === role && (/^S[1-5]$/i.test(String(p.slot || '').trim()) || (role === 'P' && isGoalkeeperCoverage(p))));
+  }
+
+  function slotMapBandKey(p) {
+    const min = num(p.target_min) ?? num(p.prezzo_ideale_min);
+    const max = num(p.target_max) ?? num(p.prezzo_ideale_max);
+    if (min != null && max != null) return { key:`range:${min}:${max}`, label:`${displayNum(min)}–${displayNum(max)}`, rank:max * 1000 + min };
+    if (max != null) return { key:`cap:${max}`, label:`≤${displayNum(max)}`, rank:max * 1000 + 500 };
+    if (min != null) return { key:`min:${min}`, label:`da ${displayNum(min)}`, rank:min * 1000 };
+    return { key:'none', label:'Senza target', rank:-1 };
+  }
+
+  function slotMapNameSort(a,b) {
+    // La classificazione viene prima; FVM è solo fallback tecnico dentro la stessa sottofascia.
+    return (num(b.fvm) || 0) - (num(a.fvm) || 0) || a.nome.localeCompare(b.nome,'it',{sensitivity:'base'});
+  }
+
+  function slotMapNameButton(p) {
+    const taken = p.preso ? ' taken' : '';
+    return `<button type="button" class="slot-map-player${taken}" data-slot-map-key="${esc(p.key)}" aria-label="Apri ${esc(p.nome)}${p.preso ? ', già preso' : ''}">${esc(p.nome)}</button>`;
+  }
+
+  function slotMapProgress(remaining,total) {
+    const pct = total ? Math.max(0, Math.min(100, remaining / total * 100)) : 0;
+    return `<div class="slot-map-progress" aria-hidden="true"><span style="width:${pct.toFixed(1)}%"></span></div>`;
+  }
+
+  function slotMapSectionMarkup(slot, players, privacy) {
+    const total = players.length;
+    const remaining = players.filter(p => !p.preso).length;
+    const ordered = [...players].sort(slotMapNameSort);
+    let body = '';
+    if (privacy) {
+      body = `<div class="slot-map-names privacy-names">${ordered.map(slotMapNameButton).join('')}</div>`;
+    } else {
+      const bands = new Map();
+      for (const p of ordered) {
+        const band = slotMapBandKey(p);
+        if (!bands.has(band.key)) bands.set(band.key, { ...band, players:[] });
+        bands.get(band.key).players.push(p);
+      }
+      const grouped = [...bands.values()].sort((a,b) => b.rank - a.rank);
+      const showBandLabel = grouped.length > 1 || (grouped[0] && grouped[0].key !== 'none');
+      body = grouped.map(group => `<div class="slot-map-band">${showBandLabel ? `<div class="slot-map-band-label">${esc(group.label)}</div>` : ''}<div class="slot-map-names">${group.players.map(slotMapNameButton).join('')}</div></div>`).join('');
+    }
+    return `<section class="slot-map-slot"><div class="slot-map-slot-head"><strong>${esc(slotMapSlotLabel(slot))}</strong><span>${remaining}/${total} rimasti</span></div>${slotMapProgress(remaining,total)}${body}</section>`;
+  }
+
+  function renderSlotMapRoleTabs() {
+    const box = $('slotMapRoleTabs'); if (!box) return;
+    box.innerHTML = roles.map(([role]) => `<button type="button" class="slot-map-role-btn ${state.slotMapRole===role?'active':''}" data-slot-map-role="${role}">${slotMapRoleLabel(role)}</button>`).join('');
+    box.querySelectorAll('[data-slot-map-role]').forEach(btn => btn.addEventListener('click', () => {
+      state.slotMapRole = btn.dataset.slotMapRole;
+      renderSlotMap();
+    }));
+  }
+
+  function renderSlotMap() {
+    const content = $('slotMapContent'); if (!content) return;
+    const role = state.slotMapRole || state.role || 'C';
+    state.slotMapRole = role;
+    renderSlotMapRoleTabs();
+    $('slotMapSubtitle').textContent = `${roleName(role)} · graduatoria personale residua`;
+    const rolePlayers = slotMapPlayersForRole(role);
+    if (!rolePlayers.length) {
+      content.innerHTML = '<div class="slot-map-empty">Nessun giocatore classificato in questo reparto.</div>';
+      return;
+    }
+    const slotOrder = role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5'];
+    const sections = [];
+    for (const slot of slotOrder) {
+      const players = rolePlayers.filter(p => String(p.slot || '').trim().toUpperCase() === slot);
+      if (players.length) sections.push(slotMapSectionMarkup(slot, players, state.privacyMode));
+    }
+    if (role === 'P') {
+      const coverage = rolePlayers.filter(isGoalkeeperCoverage);
+      if (coverage.length) sections.push(slotMapSectionMarkup('COPERTURE', coverage, state.privacyMode));
+    }
+    const outside = state.players.filter(p => p.ruolo === role && !String(p.slot || '').trim() && !(role === 'P' && isGoalkeeperCoverage(p)));
+    const outsideMarkup = outside.length ? `<details class="slot-map-outside"><summary>Fuori slot · ${outside.length}</summary><div class="slot-map-names">${outside.slice().sort(slotMapNameSort).map(slotMapNameButton).join('')}</div></details>` : '';
+    content.innerHTML = `${state.privacyMode ? '<div class="slot-map-privacy-note">Privacy attiva · sottofasce economiche nascoste</div>' : ''}${sections.join('')}${outsideMarkup}`;
+    content.querySelectorAll('[data-slot-map-key]').forEach(btn => btn.addEventListener('click', () => openPlayerSheet(btn.dataset.slotMapKey)));
+  }
+
+  function renderSlotMapIfOpen() {
+    if ($('slotMapSheet') && !$('slotMapSheet').classList.contains('hidden')) renderSlotMap();
+  }
+
+  function openSlotMap() {
+    closeContextPopovers();
+    state.slotMapRole = state.role || 'C';
+    openOnly('slotMapSheet');
+    renderSlotMap();
   }
 
   function setSearchExpanded(expanded, focus = false) {
@@ -651,7 +758,8 @@
     $('privacyHeaderBtn').addEventListener('click', togglePrivacy);
     $('commentsHeaderBtn').addEventListener('click', toggleComments);
     $('compactHeaderBtn').addEventListener('click', toggleCompact);
-    $('themeHeaderBtn').addEventListener('click', toggleTheme);
+    $('slotMapHeaderBtn').addEventListener('click', openSlotMap);
+    $('closeSlotMapBtn').addEventListener('click', closeAllSheets);
 
     $('importModeSegment').querySelectorAll('button').forEach(btn => btn.addEventListener('click', () => {
       state.importMode = btn.dataset.mode;
@@ -764,13 +872,13 @@
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
   function openOnly(id) {
     closeContextPopovers();
-    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
     $(id).classList.remove('hidden'); showBackdrop(); document.body.style.overflow = 'hidden';
   }
   function closeAllSheets() {
     closeContextPopovers();
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
-    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managersSheet','managerConfigSheet','unassignSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
     $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null;
     const hadOverlayView = Boolean(state.overlayView); const overlayScrollY = state.overlayScrollY || 0; state.overlayView = '';
     if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
@@ -1408,7 +1516,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,commentsVisible:true,privacyMode:false,emphasis:65,theme:'light',managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,commentsVisible:true,privacyMode:false,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 
@@ -1441,6 +1549,7 @@
     state.privacyMode = !state.privacyMode;
     updatePrivacyButton();
     renderPlayers();
+    renderSlotMapIfOpen();
   }
 
   function updateCompactButton() {
@@ -1459,25 +1568,9 @@
     renderPlayers();
   }
 
-  function updateThemeButton() {
-    const btn = $('themeHeaderBtn');
-    if (!btn) return;
-    const dark = state.theme === 'dark';
-    btn.textContent = dark ? '☀' : '☾';
-    btn.setAttribute('aria-label', dark ? 'Attiva tema chiaro' : 'Attiva tema scuro');
-    btn.setAttribute('title', dark ? 'Tema chiaro' : 'Tema scuro');
-  }
-
-  async function toggleTheme() {
-    state.theme = state.theme === 'dark' ? 'light' : 'dark';
-    await FantaDB.setSetting('theme', state.theme);
-    applyTheme();
-  }
-
   function applyTheme() {
-    const root = document.documentElement;
-    root.setAttribute('data-theme', state.theme === 'dark' ? 'dark' : 'light');
-    updateThemeButton();
+    // v31: interfaccia esclusivamente chiara; ignora qualsiasi stato dark legacy.
+    document.documentElement.setAttribute('data-theme', 'light');
   }
 
   function assignmentFeedbackToast(player, manager, price, undoCallback) {

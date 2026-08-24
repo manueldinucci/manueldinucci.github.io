@@ -1,5 +1,5 @@
 :root {
-  color-scheme: light dark;
+  color-scheme: light;
   --bg: #f5f5f7;
   --surface: #ffffff;
   --surface-2: #ececef;
@@ -73,7 +73,6 @@ input, select, textarea { background: var(--surface); border: 1px solid var(--li
 }
 .header-icon-btn:active { background: var(--surface-2); transform: translateY(1px); }
 #menuBtn { font-size: 19px; }
-#themeHeaderBtn { font-size: 20px; }
 .compact-toggle-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
 .compact-toggle-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 .eyebrow { font-size: 10px; letter-spacing: .12em; color: var(--muted); font-weight: 800; }
@@ -1515,4 +1514,45 @@ html[data-theme="dark"] .context-popover { box-shadow: 0 12px 30px rgba(0,0,0,.4
   font-size: 12px;
   font-weight: 760;
   white-space: nowrap;
+}
+
+
+/* v31 — Mappa Slot + interfaccia solo chiara */
+html { color-scheme: light; }
+.slot-map-toggle-btn svg { width:21px; height:21px; fill:none; stroke:currentColor; stroke-width:1.8; stroke-linecap:round; stroke-linejoin:round; }
+.slot-map-toggle-btn svg rect { fill:currentColor; stroke:none; }
+.slot-map-sheet { height:min(88dvh, 820px); max-height:calc(100dvh - 12px); }
+.slot-map-header { padding-bottom:8px; }
+.slot-map-role-tabs { display:grid; grid-template-columns:repeat(4,1fr); gap:5px; padding:0 12px 9px; border-bottom:1px solid var(--line); }
+.slot-map-role-btn { min-height:36px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--text); font:inherit; font-size:12px; font-weight:750; }
+.slot-map-role-btn.active { background:var(--text); color:var(--bg); border-color:var(--text); }
+.slot-map-content { padding:10px 12px calc(var(--safe-bottom) + 18px); }
+.slot-map-slot { padding:10px 0 12px; border-bottom:1px solid var(--line); }
+.slot-map-slot:first-child { padding-top:2px; }
+.slot-map-slot-head { display:flex; align-items:baseline; justify-content:space-between; gap:10px; }
+.slot-map-slot-head strong { font-size:13px; letter-spacing:.02em; }
+.slot-map-slot-head span { flex:0 0 auto; font-size:10px; font-weight:700; color:var(--muted); }
+.slot-map-progress { height:3px; margin:6px 0 8px; border-radius:999px; overflow:hidden; background:#dedfe2; }
+.slot-map-progress span { display:block; height:100%; border-radius:inherit; background:#72757a; }
+.slot-map-band + .slot-map-band { margin-top:8px; }
+.slot-map-band-label { margin:0 0 4px; font-size:10px; line-height:1; font-weight:800; color:var(--muted); }
+.slot-map-names { display:flex; flex-wrap:wrap; gap:4px 7px; align-items:center; }
+.slot-map-player { appearance:none; border:0; background:transparent; color:var(--text); padding:2px 0; margin:0; font:inherit; font-size:11.5px; line-height:1.2; font-weight:650; text-align:left; cursor:pointer; }
+.slot-map-player.taken { color:#9a9ca1; text-decoration:line-through; text-decoration-thickness:1.4px; opacity:.72; }
+.slot-map-player:focus-visible { outline:2px solid var(--text); outline-offset:2px; border-radius:2px; }
+.slot-map-player + .slot-map-player::before { content:'·'; display:inline-block; margin-right:7px; color:#b5b6ba; text-decoration:none; }
+.slot-map-outside { margin-top:12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); }
+.slot-map-outside summary { list-style:none; min-height:38px; padding:9px 10px; display:flex; align-items:center; font-size:11px; font-weight:750; cursor:pointer; }
+.slot-map-outside summary::-webkit-details-marker { display:none; }
+.slot-map-outside summary::after { content:'⌄'; margin-left:auto; color:var(--muted); }
+.slot-map-outside[open] summary::after { content:'⌃'; }
+.slot-map-outside .slot-map-names { border-top:1px solid var(--line); padding:9px 10px; }
+.slot-map-privacy-note { margin:0 0 8px; padding:7px 8px; border-radius:7px; background:var(--surface-2); color:var(--muted); font-size:10px; }
+.slot-map-empty { padding:24px 8px; text-align:center; color:var(--muted); font-size:12px; }
+@supports not (height:1dvh) { .slot-map-sheet { height:min(88vh,820px); max-height:calc(100vh - 12px); } }
+@media (max-width:390px) {
+  .header-actions { gap:4px; }
+  .slot-map-content { padding-left:10px; padding-right:10px; }
+  .slot-map-player { font-size:11px; }
+  .slot-map-role-tabs { padding-left:10px; padding-right:10px; }
 }

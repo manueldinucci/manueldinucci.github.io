@@ -6,7 +6,7 @@ const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
 const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
-ok(html.indexOf('id="compactHeaderBtn"') < html.indexOf('id="themeHeaderBtn"'), 'compact button must be left of theme');
+ok(!html.includes('id="themeHeaderBtn"') || html.indexOf('id="compactHeaderBtn"') < html.indexOf('id="themeHeaderBtn"'), 'compact button must be left of theme when theme exists');
 ok(!html.includes('id="compactMode"'), 'compact mode must be removed from filters');
 ok(!html.includes('id="priceMaxFilter"'), 'Target max filter must be removed');
 ok(html.includes('<select id="minFvmFilter"'), 'FVM minimo must be a select');

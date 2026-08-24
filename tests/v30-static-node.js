@@ -17,7 +17,7 @@ assert(app.includes("document.addEventListener('click', e => {") && app.includes
 assert(app.includes('e.preventDefault();') && app.includes('e.stopPropagation();'), 'Outside click must be consumed');
 assert(!app.includes("document.addEventListener('pointerdown', e => {\n      const inSort"), 'Legacy pointerdown click-away must be removed');
 assert(css.includes('.filters-reset-btn'), 'Reset button styling missing');
-assert(sw.includes('fantacalcio-checklist-v30'), 'Service worker must use v30 cache');
+assert(/fantacalcio-checklist-v(?:30(?:\.\d+)?|3[1-9]|[4-9]\d)/.test(sw), 'Service worker must use v30+ cache');
 assert(manifest.icons.some(x => x.src === 'icons/icon-192.png') && manifest.icons.some(x => x.src === 'icons/icon-512.png'), 'Manifest icon references missing');
 for (const f of ['icons/favicon.png','icons/apple-touch-icon.png','icons/icon-192.png','icons/icon-512.png','icons/icon-maskable-512.png']) {
   assert(fs.existsSync(f) && fs.statSync(f).size > 1000, `${f} missing or empty`);
