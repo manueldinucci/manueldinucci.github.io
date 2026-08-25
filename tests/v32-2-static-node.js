@@ -8,6 +8,15 @@ const db = fs.readFileSync(path.join(root, 'db.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
 
+if (sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.3';")) {
+  ok(!html.includes('id="slotMapSlotIndex"'), 'v32.3 must remove the superseded Slot index');
+  ok(!app.includes('renderSlotMapIndex') && !app.includes('data-slot-map-index='), 'v32.3 must remove Slot index logic');
+  ok(app.includes('data-slot-map-toggle='), 'v32.3 must preserve collapsible Slot headers');
+  ok(css.includes('/* v32.3 — Mappa Slot:'), 'v32.3 CSS block missing');
+  console.log('v32.2 static checks superseded by v32.3 map simplification: OK');
+  process.exit(0);
+}
+
 ok(html.includes('id="slotMapSlotIndex"'), 'Slot index container missing');
 ok(app.includes("function slotMapSlotOrder(role)"), 'role-specific Slot order missing');
 ok(app.includes("role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5']"), 'goalkeeper Slot index must omit S5');

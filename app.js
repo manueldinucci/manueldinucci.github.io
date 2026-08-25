@@ -39,7 +39,6 @@
     overlayScrollY: 0,
     slotMapReturnContext: null,
     slotMapCollapsed: {},
-    slotMapActiveSlot: '',
     lastImportChanges: null
   };
 
@@ -714,7 +713,22 @@
   }
 
   function slotMapNamesMarkup(players) {
-    return players.map(slotMapNameText).join('<span class="slot-map-separator" aria-hidden="true"> · </span>');
+    return players.map((p, index) => {
+      const separator = index < players.length - 1 ? '<span class="slot-map-separator" aria-hidden="true"> ·</span>' : '';
+      return `<span class="slot-map-player-unit">${slotMapNameText(p)}${separator}</span>`;
+    }).join(' ');
+  }
+
+  function slotMapInlineGroupsMarkup(groups) {
+    const flat = [];
+    for (const group of groups) {
+      group.players.forEach((p, index) => flat.push({ p, label: index === 0 ? group.label : '' }));
+    }
+    return `<div class="slot-map-inline">${flat.map((item, index) => {
+      const target = item.label ? `<span class="slot-map-inline-target">${esc(item.label)}</span> ` : '';
+      const separator = index < flat.length - 1 ? '<span class="slot-map-separator" aria-hidden="true"> ·</span>' : '';
+      return `<span class="${item.label ? 'slot-map-inline-lead' : 'slot-map-player-unit'}">${target}${slotMapNameText(item.p)}${separator}</span>`;
+    }).join(' ')}</div>`;
   }
 
   function slotMapSectionMarkup(slot, players, privacy, collapsed = false) {
@@ -723,11 +737,9 @@
     const ordered = [...players].sort(slotMapNameSort);
     const exhausted = remaining === 0;
     let body = '';
-    if (exhausted) {
-      body = '<div class="slot-map-empty-slot">Nessun giocatore disponibile</div>';
-    } else if (privacy) {
+    if (!exhausted && privacy) {
       body = `<div class="slot-map-names privacy-names">${slotMapNamesMarkup(ordered)}</div>`;
-    } else {
+    } else if (!exhausted) {
       const bands = new Map();
       for (const p of ordered) {
         const band = slotMapBandKey(p);
@@ -735,14 +747,20 @@
         bands.get(band.key).players.push(p);
       }
       const grouped = [...bands.values()].sort((a,b) => b.rank - a.rank);
-      body = grouped.map(group => `<div class="slot-map-band"><div class="slot-map-band-label">${esc(group.label)}</div><div class="slot-map-names">${slotMapNamesMarkup(group.players)}</div></div>`).join('');
+      if (slot === 'S1' || slot === 'S2') {
+        body = slotMapInlineGroupsMarkup(grouped);
+      } else {
+        body = grouped.map((group, index) => `<div class="slot-map-band ${index % 2 ? 'even' : 'odd'}"><div class="slot-map-band-label">${esc(group.label)}</div><div class="slot-map-names">${slotMapNamesMarkup(group.players)}</div></div>`).join('');
+      }
     }
     const label = slotMapSlotLabel(slot);
     const collapsible = /^S[1-5]$/i.test(slot);
     const head = collapsible
       ? `<button type="button" class="slot-map-slot-head" data-slot-map-toggle="${esc(slot)}" aria-expanded="${collapsed ? 'false' : 'true'}" aria-controls="slotMapBody-${esc(slot)}"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron" aria-hidden="true">${collapsed ? '›' : '⌄'}</span></span></button>`
       : `<div class="slot-map-slot-head static"><strong>${esc(label)}</strong><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span></div>`;
-    return `<section class="slot-map-slot${collapsed ? ' collapsed' : ''}" data-slot-map-slot="${esc(slot)}" id="slotMapSlot-${esc(slot)}">${head}<div class="slot-map-slot-body" id="slotMapBody-${esc(slot)}"${collapsed ? ' hidden' : ''}>${body}</div></section>`;
+    const inlineClass = slot === 'S1' || slot === 'S2' ? ' inline-slot' : '';
+    const emptyClass = exhausted ? ' exhausted-slot' : '';
+    return `<section class="slot-map-slot${inlineClass}${emptyClass}${collapsed ? ' collapsed' : ''}" data-slot-map-slot="${esc(slot)}" id="slotMapSlot-${esc(slot)}">${head}<div class="slot-map-slot-body" id="slotMapBody-${esc(slot)}"${collapsed || exhausted ? ' hidden' : ''}>${body}</div></section>`;
   }
 
   function renderSlotMapRoleTabs() {
@@ -750,65 +768,9 @@
     box.innerHTML = roles.map(([role]) => `<button type="button" class="slot-map-role-btn ${state.slotMapRole===role?'active':''}" data-slot-map-role="${role}"><span>${slotMapRoleLabel(role)}</span></button>`).join('');
     box.querySelectorAll('[data-slot-map-role]').forEach(btn => btn.addEventListener('click', () => {
       state.slotMapRole = btn.dataset.slotMapRole;
-      state.slotMapActiveSlot = slotMapSlotOrder(state.slotMapRole)[0];
       renderSlotMap();
       requestAnimationFrame(() => { const content = $('slotMapContent'); if (content) content.scrollTop = 0; });
     }));
-  }
-
-  function renderSlotMapIndex(role, rolePlayers) {
-    const box = $('slotMapSlotIndex'); if (!box) return;
-    const slotOrder = slotMapSlotOrder(role);
-    if (!slotOrder.includes(state.slotMapActiveSlot)) state.slotMapActiveSlot = slotOrder[0] || '';
-    box.style.setProperty('--slot-index-count', String(Math.max(1, slotOrder.length)));
-    box.innerHTML = slotOrder.map(slot => {
-      const players = rolePlayers.filter(p => String(p.slot || '').trim().toUpperCase() === slot);
-      const remaining = players.filter(p => !p.preso).length;
-      return `<button type="button" class="slot-map-index-btn${remaining === 0 ? ' exhausted' : ''}${state.slotMapActiveSlot === slot ? ' active' : ''}" data-slot-map-index="${slot}" aria-label="Vai a ${esc(slotMapSlotLabel(slot))}, ${remaining} disponibili"><span class="slot-map-index-code">${esc(slot)}</span><span class="slot-map-index-count">${remaining}</span></button>`;
-    }).join('');
-    box.querySelectorAll('[data-slot-map-index]').forEach(btn => btn.addEventListener('click', () => scrollSlotMapTo(btn.dataset.slotMapIndex, true)));
-  }
-
-  function setSlotMapActiveIndex(slot) {
-    if (!slot) return;
-    state.slotMapActiveSlot = slot;
-    $('slotMapSlotIndex')?.querySelectorAll('[data-slot-map-index]').forEach(btn => btn.classList.toggle('active', btn.dataset.slotMapIndex === slot));
-  }
-
-  function slotMapSectionTop(content, section) {
-    if (!content || !section) return 0;
-    return section.getBoundingClientRect().top - content.getBoundingClientRect().top + content.scrollTop;
-  }
-
-  function updateSlotMapActiveIndex() {
-    const content = $('slotMapContent'); if (!content) return;
-    const sections = [...content.querySelectorAll('.slot-map-slot[data-slot-map-slot^="S"]')];
-    if (!sections.length) return;
-    const marker = content.scrollTop + 4;
-    let current = sections[0];
-    for (const section of sections) {
-      if (slotMapSectionTop(content, section) <= marker) current = section;
-      else break;
-    }
-    setSlotMapActiveIndex(current.dataset.slotMapSlot);
-  }
-
-  function scrollSlotMapTo(slot, expand = true) {
-    const role = state.slotMapRole || state.role || 'C';
-    if (!slotMapSlotOrder(role).includes(slot)) return;
-    state.slotMapActiveSlot = slot;
-    if (expand && slotMapCollapsedSet(role).has(slot)) {
-      setSlotMapCollapsed(role, slot, false);
-      renderSlotMap();
-      requestAnimationFrame(() => scrollSlotMapTo(slot, false));
-      return;
-    }
-    const content = $('slotMapContent');
-    const section = content?.querySelector(`[data-slot-map-slot="${slot}"]`);
-    if (!content || !section) return;
-    const targetTop = Math.max(0, slotMapSectionTop(content, section) - 1);
-    content.scrollTo({ top: targetTop, behavior: 'auto' });
-    setSlotMapActiveIndex(slot);
   }
 
   function bindSlotMapInteractions() {
@@ -826,14 +788,7 @@
       btn.setAttribute('aria-expanded', willCollapse ? 'false' : 'true');
       const chevron = btn.querySelector('.slot-map-chevron');
       if (chevron) chevron.textContent = willCollapse ? '›' : '⌄';
-      setSlotMapActiveIndex(slot);
-      requestAnimationFrame(updateSlotMapActiveIndex);
     }));
-    let raf = 0;
-    content.onscroll = () => {
-      if (raf) return;
-      raf = requestAnimationFrame(() => { raf = 0; updateSlotMapActiveIndex(); });
-    };
   }
 
   function renderSlotMap() {
@@ -843,7 +798,6 @@
     renderSlotMapRoleTabs();
     const rolePlayers = slotMapPlayersForRole(role);
     const slotOrder = slotMapSlotOrder(role);
-    renderSlotMapIndex(role, rolePlayers);
     const collapsed = slotMapCollapsedSet(role);
     const sections = [];
     for (const slot of slotOrder) {
@@ -859,7 +813,6 @@
     const outsideMarkup = outsideAvailable.length ? `<details class="slot-map-outside"><summary>Fuori slot · ${outsideAvailable.length}</summary><div class="slot-map-names">${slotMapNamesMarkup(outsideAvailable.slice().sort(slotMapNameSort))}</div></details>` : '';
     content.innerHTML = `${state.privacyMode ? '<div class="slot-map-privacy-note">Privacy attiva · sottofasce economiche nascoste</div>' : ''}${sections.join('')}${outsideMarkup}`;
     bindSlotMapInteractions();
-    requestAnimationFrame(updateSlotMapActiveIndex);
   }
 
   function renderSlotMapIfOpen() {
@@ -870,7 +823,6 @@
     closeContextPopovers();
     state.slotMapRole = state.role || 'C';
     state.slotMapCollapsed = {};
-    state.slotMapActiveSlot = slotMapSlotOrder(state.slotMapRole)[0];
     openOnly('slotMapSheet');
     renderSlotMap();
     requestAnimationFrame(() => { const content = $('slotMapContent'); if (content) content.scrollTop = 0; });
@@ -880,7 +832,6 @@
     const content = $('slotMapContent');
     state.slotMapReturnContext = {
       role: state.slotMapRole || state.role || 'C',
-      activeSlot: state.slotMapActiveSlot || '',
       scrollTop: content ? content.scrollTop : 0
     };
     openPlayerSheet(key);
@@ -894,15 +845,11 @@
     state.pendingAssignmentKey = null;
     state.pendingUnassignKey = null;
     state.slotMapRole = context.role;
-    state.slotMapActiveSlot = context.activeSlot || slotMapSlotOrder(context.role)[0];
     openOnly('slotMapSheet');
     renderSlotMap();
     requestAnimationFrame(() => {
       const content = $('slotMapContent');
-      if (content) {
-        content.scrollTop = context.scrollTop || 0;
-        updateSlotMapActiveIndex();
-      }
+      if (content) content.scrollTop = context.scrollTop || 0;
     });
     return true;
   }

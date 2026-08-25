@@ -1,3 +1,14 @@
+# Fantacalcio Checklist PWA v32.3
+
+## Novità v32.3
+
+- Rimossa completamente la barra/indice `S1–S5` della Mappa Slot e la relativa logica di salto/stato attivo: gli header Slot richiudibili e sticky restano l’unico sistema di navigazione per fascia.
+- Reintrodotta una gerarchia grayscale leggera e coerente con le Rose, senza tornare alle grandi card grigie.
+- `S1` e `S2` ora usano una lista compatta inline raggruppata per Target; `S3+` mantiene la struttura analitica `Target │ Giocatori`.
+- Layout deterministico per Slot, indipendente dal numero di giocatori rimasti durante l’asta.
+- Corretto il wrapping dei nomi: il punto mediano `·` compare soltanto tra due giocatori e non può più presentarsi come bullet/separatore isolato a inizio riga.
+- Modello dati e backup restano v5; cache Service Worker `fantacalcio-checklist-v32.3`.
+
 # Fantacalcio Checklist PWA v32.2
 
 ## Novità v32.2

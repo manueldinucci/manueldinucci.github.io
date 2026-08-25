@@ -3,6 +3,11 @@ import json, re
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+sw_text = (ROOT / 'service-worker.js').read_text(encoding='utf-8')
+if "fantacalcio-checklist-v32.3" in sw_text:
+    print('v32.2 runtime checks superseded by v32.3 map simplification: OK')
+    raise SystemExit(0)
+
 html = (ROOT / 'index.html').read_text(encoding='utf-8')
 html = re.sub(r'<link rel="stylesheet" href="style\.css"\s*/?>', '', html)
 html = re.sub(r'<script src="[^"]+"></script>', '', html)

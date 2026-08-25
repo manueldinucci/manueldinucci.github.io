@@ -2024,72 +2024,39 @@ html { color-scheme: light; }
   .slot-map-player { font-size: 11.5px; }
 }
 
-/* v32.2 — Mappa Slot navigabile: indice, sezioni collassabili e gerarchia editoriale */
-.slot-map-sheet > .slot-map-slot-index { flex: 0 0 auto; }
-
-.slot-map-slot-index {
-  --slot-index-count: 5;
-  display: grid;
-  grid-template-columns: repeat(var(--slot-index-count), minmax(0, 1fr));
-  gap: 4px;
-  padding: 6px 12px 7px;
-  border-bottom: 1px solid var(--line);
-  background: var(--surface);
+/* v32.3 — Mappa Slot: gerarchia grayscale, S1/S2 inline, nessun indice duplicato */
+.slot-map-sheet {
+  background: #f1f2f4;
 }
-.slot-map-index-btn {
-  min-width: 0;
-  min-height: 34px;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 0 5px;
-  border: 1px solid #d5d7da;
-  border-radius: 7px;
-  background: #f8f8f9;
-  color: var(--text);
-  font: inherit;
-  font-size: 10.5px;
-  font-weight: 720;
-  line-height: 1;
-  cursor: pointer;
-  appearance: none;
-  -webkit-appearance: none;
-  -webkit-tap-highlight-color: rgba(0,0,0,.07);
+.slot-map-header,
+.slot-map-role-tabs {
+  background: #fafafa;
 }
-.slot-map-index-btn.active {
-  background: #e9ebed;
-  border-color: #8c9095;
-  font-weight: 850;
+.slot-map-role-tabs {
+  border-bottom-color: #d7dadf;
 }
-.slot-map-index-btn.exhausted,
-.slot-map-index-btn.exhausted .slot-map-index-count {
-  color: #c62828;
-  font-weight: 900;
-}
-.slot-map-index-code { white-space: nowrap; }
-.slot-map-index-count { font-variant-numeric: tabular-nums; }
-.slot-map-index-btn:focus-visible {
-  outline: 2px solid currentColor;
-  outline-offset: 1px;
-}
-
 .slot-map-content {
   padding: 4px 12px calc(var(--safe-bottom) + 30px);
+  background: #f1f2f4;
 }
 .slot-map-slot {
-  padding: 0 0 3px;
+  padding: 0 0 2px;
   border-bottom: 0;
+  background: #fafafa;
 }
-.slot-map-slot + .slot-map-slot { margin-top: 4px; }
-.slot-map-slot:first-child { padding-top: 0; }
+.slot-map-slot + .slot-map-slot {
+  margin-top: 5px;
+}
+.slot-map-slot:first-child {
+  padding-top: 0;
+}
 
 .slot-map-slot-head {
   position: sticky;
   top: 0;
   z-index: 5;
   width: 100%;
-  min-height: 31px;
+  min-height: 30px;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -2097,10 +2064,10 @@ html { color-scheme: light; }
   margin: 0;
   padding: 5px 7px;
   border: 0;
-  border-bottom: 1px solid #7d8085;
+  border-bottom: 1px solid #cfd2d6;
   border-radius: 0;
-  background: #f0f1f2;
-  color: var(--text);
+  background: #e7e9ec;
+  color: #111111;
   font: inherit;
   text-align: left;
   cursor: pointer;
@@ -2108,7 +2075,9 @@ html { color-scheme: light; }
   -webkit-appearance: none;
   -webkit-tap-highlight-color: rgba(0,0,0,.06);
 }
-.slot-map-slot-head.static { cursor: default; }
+.slot-map-slot-head.static {
+  cursor: default;
+}
 .slot-map-slot-head strong {
   font-size: 12px;
   font-weight: 850;
@@ -2119,14 +2088,14 @@ html { color-scheme: light; }
   display: inline-flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 7px;
+  gap: 6px;
   flex: 0 0 auto;
-  min-width: 46px;
+  min-width: 45px;
 }
 .slot-map-slot-head .slot-map-count {
   font-size: 10px;
   font-weight: 700;
-  color: var(--muted);
+  color: #5f6368;
   font-variant-numeric: tabular-nums;
 }
 .slot-map-slot-head .slot-map-count.exhausted {
@@ -2145,36 +2114,98 @@ html { color-scheme: light; }
   outline: 2px solid currentColor;
   outline-offset: -2px;
 }
-.slot-map-slot-body[hidden] { display: none !important; }
-.slot-map-slot.collapsed { padding-bottom: 0; }
+.slot-map-slot-body {
+  background: #fafafa;
+}
+.slot-map-slot-body[hidden] {
+  display: none !important;
+}
+.slot-map-slot.collapsed,
+.slot-map-slot.exhausted-slot {
+  padding-bottom: 0;
+}
 
+/* S1/S2: graduatoria sintetica inline, Target come prefisso tipografico. */
+.slot-map-slot.inline-slot .slot-map-slot-body {
+  padding: 0;
+}
+.slot-map-inline {
+  min-width: 0;
+  padding: 5px 7px 6px;
+  background: #f7f7f8;
+  color: #111111;
+  font-size: 11.5px;
+  line-height: 1.48;
+  list-style: none;
+}
+.slot-map-inline-target {
+  color: #5f6368;
+  font-size: 9.5px;
+  font-weight: 750;
+  font-variant-numeric: tabular-nums;
+}
+
+/* S3+: struttura analitica Target | Giocatori. */
 .slot-map-band {
   display: grid;
   grid-template-columns: 50px minmax(0, 1fr);
-  column-gap: 8px;
+  column-gap: 0;
   align-items: stretch;
-  padding: 3px 0;
-  background: transparent;
+  padding: 0;
   border-radius: 0;
-  border-bottom: 1px solid #e1e3e5;
+  border-bottom: 1px solid #d7dadf;
 }
-.slot-map-band + .slot-map-band { margin-top: 0; }
-.slot-map-band:last-child { border-bottom: 0; }
+.slot-map-band.odd {
+  background: #f3f4f5;
+}
+.slot-map-band.even {
+  background: #f7f7f8;
+}
+.slot-map-band + .slot-map-band {
+  margin-top: 0;
+}
+.slot-map-band:last-child {
+  border-bottom: 0;
+}
 .slot-map-band-label {
   margin: 0;
-  padding: 4px 7px 3px 0;
-  border-right: 1px solid #d7dade;
-  color: #62666b;
-  font-size: 10px;
-  line-height: 1.3;
-  font-weight: 720;
+  padding: 5px 6px 4px 0;
+  border-right: 1px solid #d7dadf;
+  color: #5f6368;
+  font-size: 9.75px;
+  line-height: 1.25;
+  font-weight: 750;
   text-align: right;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
 }
 .slot-map-names {
   min-width: 0;
-  padding: 1px 0;
-  line-height: 1.34;
+  padding: 2px 7px 3px;
+  color: #111111;
+  line-height: 1.38;
+  list-style: none;
+}
+
+/* I separatori appartengono all'elemento precedente: nessun · può iniziare una nuova riga. */
+.slot-map-player-unit,
+.slot-map-inline-lead {
+  display: inline;
+  white-space: nowrap;
+  list-style: none;
+}
+.slot-map-player-unit::marker,
+.slot-map-inline-lead::marker,
+.slot-map-names::marker,
+.slot-map-inline::marker {
+  content: '';
+  display: none;
+}
+.slot-map-player-unit::before,
+.slot-map-inline-lead::before,
+.slot-map-names::before,
+.slot-map-inline::before {
+  content: none !important;
 }
 .slot-map-player {
   display: inline;
@@ -2183,16 +2214,20 @@ html { color-scheme: light; }
   border: 0;
   border-radius: 2px;
   background: transparent;
-  color: var(--text);
+  color: #111111;
   margin: 0;
-  padding: 3px 1px;
+  padding: 2px 0;
   font: inherit;
-  font-size: 12px;
+  font-size: 11.75px;
   line-height: 1.42;
   font-weight: 500;
   text-align: left;
   cursor: pointer;
   -webkit-tap-highlight-color: rgba(0,0,0,.08);
+}
+.slot-map-player:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
 }
 .slot-map-player.taken {
   color: #96999e;
@@ -2200,35 +2235,73 @@ html { color-scheme: light; }
   text-decoration-thickness: 1.25px;
   opacity: .72;
 }
-.slot-map-separator { color: #8b8e93; }
+.slot-map-separator {
+  color: #777b80;
+  white-space: nowrap;
+}
 .slot-map-empty-slot {
-  padding: 5px 7px 4px 58px;
-  color: var(--muted);
-  font-size: 10.5px;
-  font-weight: 550;
-  line-height: 1.3;
+  display: none;
 }
 .slot-map-names.privacy-names {
   padding: 5px 7px;
+  background: #f7f7f8;
+}
+
+.slot-map-privacy-note {
+  background: #e7e9ec;
+  color: #5f6368;
 }
 .slot-map-outside {
   margin-top: 6px;
+  border: 1px solid #d7dadf;
   border-radius: 7px;
+  background: #fafafa;
 }
 .slot-map-outside summary {
   min-height: 34px;
   padding: 7px 9px;
+  background: #e7e9ec;
+  color: #111111;
 }
 .slot-map-outside .slot-map-names {
   padding: 5px 8px;
+  background: #f7f7f8;
+}
+
+/* Difesa esplicita contro marker/list style ereditati o pseudo-elementi legacy. */
+.slot-map-content,
+.slot-map-content *,
+.slot-map-outside,
+.slot-map-outside * {
+  list-style: none;
+}
+.slot-map-content ::marker,
+.slot-map-outside ::marker {
+  content: '';
+  display: none;
 }
 
 @media (max-width: 360px) {
-  .slot-map-slot-index { gap: 3px; padding-left: 10px; padding-right: 10px; }
-  .slot-map-index-btn { min-height: 33px; gap: 3px; padding-inline: 3px; font-size: 10px; }
-  .slot-map-content { padding-left: 10px; padding-right: 10px; }
-  .slot-map-band { grid-template-columns: 46px minmax(0,1fr); column-gap: 6px; }
-  .slot-map-band-label { padding-right: 6px; font-size: 9.5px; }
-  .slot-map-player { font-size: 11.5px; }
-  .slot-map-empty-slot { padding-left: 52px; }
+  .slot-map-content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+  .slot-map-band {
+    grid-template-columns: 46px minmax(0,1fr);
+  }
+  .slot-map-band-label {
+    padding-right: 5px;
+    font-size: 9.25px;
+  }
+  .slot-map-inline {
+    padding-left: 6px;
+    padding-right: 6px;
+    font-size: 11.25px;
+  }
+  .slot-map-inline-target {
+    font-size: 9.25px;
+  }
+  .slot-map-player {
+    font-size: 11.25px;
+  }
 }

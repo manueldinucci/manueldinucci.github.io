@@ -42,6 +42,6 @@ ok(db.includes('oneCreditBuy: Boolean(row.oneCreditBuy)'), 'backup import normal
 // Design/service worker.
 ok(css.includes('/* v32 — classificazione strategica manuale Acquisto a 1 */'), 'v32 CSS marker missing');
 ok(css.includes('.one-credit-badge'), 'one-credit badge styles missing');
-ok(/const CACHE_NAME = 'fantacalcio-checklist-v32(?:\.[12])?';/.test(sw), 'service worker cache must be v32 or compatible successor');
+ok(/const CACHE_NAME = 'fantacalcio-checklist-v32(?:\.[123])?';/.test(sw), 'service worker cache must be v32 or compatible successor');
 ok(!sw.includes('fantacalcio-checklist-v31.10'), 'old v31.10 cache name remains');
 console.log('v32 static checks: OK');

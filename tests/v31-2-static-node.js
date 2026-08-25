@@ -3,10 +3,10 @@ const app=fs.readFileSync('app.js','utf8'), css=fs.readFileSync('style.css','utf
 assert(app.includes('${remaining}/${total} disponibili') || app.includes('${remaining}/${total}</span>') || app.includes('${remaining}/${total}`'), 'Mappa Slot availability counter missing');
 assert(!app.includes('${remaining}/${total} rimasti'), 'Mappa Slot must not use rimasti');
 assert(app.includes('function slotMapNameText(p)'), 'static slot-map name renderer missing');
-if (!/fantacalcio-checklist-v32\.[12]/.test(sw)) assert(!app.includes('data-slot-map-player-key='), 'slot-map names must not be clickable before v32.1');
-if (!/fantacalcio-checklist-v32\.[12]/.test(sw)) assert(!app.includes("querySelectorAll('[data-slot-map-player-key]')"), 'slot-map click binding must be removed before v32.1');
+if (!/fantacalcio-checklist-v32\.[123]/.test(sw)) assert(!app.includes('data-slot-map-player-key='), 'slot-map names must not be clickable before v32.1');
+if (!/fantacalcio-checklist-v32\.[123]/.test(sw)) assert(!app.includes("querySelectorAll('[data-slot-map-player-key]')"), 'slot-map click binding must be removed before v32.1');
 assert(css.includes('.slot-map-role-btn') && css.includes('align-items:center') && css.includes('justify-content:center'), 'role tabs centering missing');
 assert(css.includes('grid-template-columns:48px minmax(0,1fr)') || css.includes('grid-template-columns: 50px minmax(0,1fr)'), 'horizontal band layout missing');
-if (!/fantacalcio-checklist-v32\.[12]/.test(sw)) assert(!css.includes('cursor: pointer'), 'slot-map player pointer styling remains before v32.1');
+if (!/fantacalcio-checklist-v32\.[123]/.test(sw)) assert(!css.includes('cursor: pointer'), 'slot-map player pointer styling remains before v32.1');
 assert(/fantacalcio-checklist-v31\.(?:10|[2-9])/.test(sw) || sw.includes('fantacalcio-checklist-v32'), 'v31.2+ cache key missing');
 console.log('v31.2 static checks OK');

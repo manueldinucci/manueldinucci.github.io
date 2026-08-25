@@ -3,6 +3,7 @@ import json, re
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
+IS_V323 = 'fantacalcio-checklist-v32.3' in (ROOT / 'service-worker.js').read_text(encoding='utf-8')
 html = (ROOT / 'index.html').read_text(encoding='utf-8')
 html = re.sub(r'<link rel="stylesheet" href="style\.css"\s*/?>', '', html)
 html = re.sub(r'<script src="[^"]+"></script>', '', html)
@@ -83,7 +84,7 @@ with sync_playwright() as pw:
     check(page.locator('.slot-map-progress').count() == 0, 'progress bar remains in Mappa')
     check(page.locator('.slot-map-band').count() > 0, 'compact bands missing')
     bg = page.locator('.slot-map-band').first.evaluate("e => getComputedStyle(e).backgroundColor")
-    check(bg in ('rgba(0, 0, 0, 0)','transparent'), f'band still card-like: {bg}')
+    check(bg in (('rgb(243, 244, 245)','rgb(247, 247, 248)') if IS_V323 else ('rgba(0, 0, 0, 0)','transparent')), f'band surface unexpected: {bg}')
     pos = page.locator('.slot-map-slot-head').first.evaluate("e => getComputedStyle(e).position")
     check(pos == 'sticky', f'Slot header not sticky: {pos}')
     check(page.locator('.slot-map-slot-head').filter(has_text='4° SLOT').locator('.slot-map-count').inner_text() == '19/20', 'X/Y semantics wrong')
@@ -121,7 +122,11 @@ with sync_playwright() as pw:
     check('exhausted' in (s1map.get_attribute('class') or ''), 'Mappa exhausted class missing')
     map_style = s1map.evaluate("e => ({color:getComputedStyle(e).color, weight:getComputedStyle(e).fontWeight})")
     check(map_style['color'] == 'rgb(198, 40, 40)' and int(map_style['weight']) >= 700, f'Mappa exhausted style wrong: {map_style}')
-    check(page.locator('.slot-map-slot').filter(has_text='1° SLOT').locator('.slot-map-empty-slot').inner_text() == 'Nessun giocatore disponibile', 'exhausted Slot not compacted')
+    exhausted_slot = page.locator('.slot-map-slot').filter(has_text='1° SLOT')
+    if IS_V323:
+        check(exhausted_slot.locator('.slot-map-slot-body').is_hidden(), 'v32.3 exhausted Slot body should be hidden')
+    else:
+        check(exhausted_slot.locator('.slot-map-empty-slot').inner_text() == 'Nessun giocatore disponibile', 'exhausted Slot not compacted')
 
     page.locator('#closeSlotMapBtn').click(); page.wait_for_timeout(60)
     main_s1 = page.locator('#demandSummary .demand-slot-count').filter(has_text='S1: 0')
