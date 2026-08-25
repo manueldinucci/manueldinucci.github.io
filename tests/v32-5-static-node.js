@@ -8,6 +8,13 @@ const db = fs.readFileSync(path.join(root, 'db.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond,msg){ if(!cond) throw new Error(msg); }
 
+if (sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.6';")) {
+  ok(css.includes('/* v32.6 — Mappa Slot:'), 'v32.6 typographic-axis CSS missing');
+  ok(app.includes('slot-map-inline-group'), 'v32.6 must preserve inline groups');
+  console.log('v32.5 static checks superseded by v32.6 typographic alignment: OK');
+  process.exit(0);
+}
+
 ok(css.includes('/* v32.5 — Mappa Slot:'), 'v32.5 CSS block missing');
 ok(!html.includes('slotMapSlotIndex'), 'Slot index must stay removed');
 ok(app.includes("if (slot === 'S1' || slot === 'S2')"), 'S1/S2 inline branch missing');

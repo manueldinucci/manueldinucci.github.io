@@ -2644,3 +2644,220 @@ html { color-scheme: light; }
     --map-content-inset: 3px;
   }
 }
+
+/* v32.6 — Mappa Slot: assi tipografici rigorosi, stessa struttura e densità */
+.slot-map-sheet {
+  --map-target-width: 44px;
+  --map-target-gap: 7px;
+  --map-header-count-width: 44px;
+  --map-chevron-width: 14px;
+  --map-header-gap: 3px;
+  --map-header-pad-x: 8px;
+  --map-header-pad-y: 3px;
+  --map-row-pad-x: 6px;
+  --map-row-pad-y: 2px;
+  --map-row-gap: 2px;
+  --map-slot-gap: 4px;
+  --map-name-axis: calc(var(--map-row-pad-x) + var(--map-target-width) + var(--map-target-gap));
+}
+
+/* Un solo ritmo verticale tra tutte le sezioni. */
+.slot-map-slot + .slot-map-slot {
+  margin-top: var(--map-slot-gap);
+}
+.slot-map-slot-body {
+  padding: 0;
+}
+
+/* Header su assi fissi: titolo | conteggio | chevron. */
+.slot-map-slot-head {
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: var(--map-header-pad-y) var(--map-header-pad-x);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) calc(var(--map-header-count-width) + var(--map-header-gap) + var(--map-chevron-width));
+  align-items: center;
+  column-gap: 0;
+}
+.slot-map-slot-head strong {
+  min-width: 0;
+  margin: 0;
+  align-self: center;
+  line-height: 1.05;
+}
+.slot-map-head-meta {
+  width: calc(var(--map-header-count-width) + var(--map-header-gap) + var(--map-chevron-width));
+  display: grid;
+  grid-template-columns: var(--map-header-count-width) var(--map-chevron-width);
+  column-gap: var(--map-header-gap);
+  align-items: center;
+  justify-items: stretch;
+}
+.slot-map-slot-head .slot-map-count {
+  box-sizing: border-box;
+  width: var(--map-header-count-width);
+  min-width: var(--map-header-count-width);
+  margin: 0;
+  padding: 0;
+  text-align: right;
+  justify-self: stretch;
+  font-variant-numeric: tabular-nums;
+}
+.slot-map-chevron,
+.slot-map-chevron-placeholder {
+  box-sizing: border-box;
+  width: var(--map-chevron-width);
+  min-width: var(--map-chevron-width);
+  margin: 0;
+  padding: 0;
+  justify-self: center;
+  text-align: center;
+  line-height: 1;
+}
+
+/* S1/S2 restano inline ma iniziano sullo stesso asse dei nomi di S3+. */
+.slot-map-inline {
+  box-sizing: border-box;
+  padding: 3px var(--map-header-pad-x) 4px var(--map-name-axis);
+  line-height: 1.38;
+}
+.slot-map-inline-group {
+  display: inline;
+}
+.slot-map-inline-lead {
+  display: inline-block;
+  white-space: nowrap;
+}
+.slot-map-inline-target {
+  margin-right: .32em;
+  font-variant-numeric: tabular-nums;
+}
+.slot-map-separator,
+.slot-map-group-separator {
+  display: inline;
+  margin-left: .24em;
+  margin-right: .24em;
+  color: #777b80;
+  white-space: nowrap;
+}
+.slot-map-group-separator {
+  margin-right: .42em;
+}
+
+/* S3/S4/S5/Fuori Slot condividono la stessa griglia invisibile. */
+.slot-map-band,
+.slot-map-band.odd,
+.slot-map-band.even,
+.slot-map-outside-band {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: var(--map-target-width) minmax(0, 1fr);
+  column-gap: var(--map-target-gap);
+  align-items: start;
+  padding: var(--map-row-pad-y) var(--map-row-pad-x);
+  margin: 0;
+  border: 0;
+  background: #f7f8f9;
+}
+.slot-map-band + .slot-map-band {
+  margin-top: var(--map-row-gap);
+}
+.slot-map-band-label {
+  box-sizing: border-box;
+  width: var(--map-target-width);
+  min-width: var(--map-target-width);
+  margin: 0;
+  padding: 1px 0 0;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.28;
+}
+.slot-map-names {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.38;
+}
+.slot-map-player-unit {
+  display: inline;
+  white-space: nowrap;
+}
+
+/* Fuori Slot usa esattamente gli stessi assi degli header e della griglia Target/Nomi. */
+.slot-map-outside {
+  margin-top: var(--map-slot-gap);
+  border: 0;
+  border-radius: 0;
+  background: #f7f8f9;
+}
+.slot-map-outside summary {
+  box-sizing: border-box;
+  min-height: 28px;
+  padding: var(--map-header-pad-y) var(--map-header-pad-x);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--map-header-count-width) var(--map-chevron-width);
+  column-gap: var(--map-header-gap);
+  align-items: center;
+  border: 0;
+  border-radius: 0;
+  background: #e9ebee;
+}
+.slot-map-outside summary strong {
+  min-width: 0;
+  margin: 0;
+  line-height: 1.05;
+}
+.slot-map-outside-count {
+  box-sizing: border-box;
+  width: var(--map-header-count-width);
+  min-width: var(--map-header-count-width);
+  margin: 0;
+  padding: 0;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.slot-map-outside summary::after {
+  box-sizing: border-box;
+  width: var(--map-chevron-width);
+  min-width: var(--map-chevron-width);
+  margin: 0;
+  padding: 0;
+  justify-self: center;
+  text-align: center;
+  line-height: 1;
+}
+.slot-map-outside-band {
+  margin: 0;
+}
+
+/* Difesa finale: nessun marker o pseudo-bullet. */
+.slot-map-player-unit,
+.slot-map-inline-lead,
+.slot-map-inline-group,
+.slot-map-names,
+.slot-map-inline {
+  list-style: none !important;
+}
+.slot-map-player-unit::marker,
+.slot-map-inline-lead::marker,
+.slot-map-inline-group::marker,
+.slot-map-names::marker,
+.slot-map-inline::marker {
+  content: '' !important;
+  display: none !important;
+}
+
+@media (max-width: 360px) {
+  .slot-map-sheet {
+    --map-target-width: 42px;
+    --map-target-gap: 6px;
+    --map-header-count-width: 42px;
+    --map-header-pad-x: 7px;
+    --map-row-pad-x: 5px;
+  }
+  .slot-map-inline {
+    padding-left: var(--map-name-axis);
+    padding-right: var(--map-header-pad-x);
+  }
+}

@@ -37,6 +37,6 @@ ok(css.includes('background: transparent') && css.includes('.slot-map-band'), 'c
 ok(css.includes('grid-template-columns: minmax(0,1fr) 46px 46px 46px'), '4-action modal grid missing');
 
 ok(db.includes('version: 5'), 'backup version must remain 5');
-ok(/const CACHE_NAME = 'fantacalcio-checklist-v32\.(?:1|2|3|4|5)';/.test(sw), 'cache must be v32.1 or compatible successor');
+ok(/const CACHE_NAME = 'fantacalcio-checklist-v32\.(?:1|2|3|4|5|6)';/.test(sw), 'cache must be v32.1 or compatible successor');
 ok((html.match(/class="header-icon-btn/g) || []).length === 5, 'toolbar must remain five controls');
 console.log('v32.1 static checks: OK');

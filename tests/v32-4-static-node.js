@@ -8,7 +8,7 @@ const db = fs.readFileSync(path.join(root, 'db.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
 
-if (sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.5';")) {
+if (sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.5';") || sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.6';")) {
   ok(css.includes('/* v32.5 — Mappa Slot:'), 'v32.5 precision map CSS missing');
   ok(app.includes('slot-map-outside-count'), 'v32.5 Fuori Slot alignment markup missing');
   ok(app.includes('slot-map-inline-group'), 'v32.5 inline group markup missing');

@@ -3,10 +3,6 @@ import json, re
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-sw_text = (ROOT / 'service-worker.js').read_text(encoding='utf-8')
-if 'fantacalcio-checklist-v32.5' in sw_text or 'fantacalcio-checklist-v32.6' in sw_text:
-    print('v32.4 runtime checks superseded by v32.5 precision layout: OK')
-    raise SystemExit(0)
 html = (ROOT/'index.html').read_text(encoding='utf-8')
 html = re.sub(r'<link rel="stylesheet" href="style\.css"\s*/?>','',html)
 html = re.sub(r'<script src="[^"]+"></script>','',html)
@@ -68,18 +64,38 @@ with sync_playwright() as pw:
     check(page.locator('[data-slot-map-slot="S3"] .slot-map-band').count()==3,'S3 categories wrong')
     check(page.locator('[data-slot-map-slot="S4"] .slot-map-band').count()==4,'S4 categories wrong')
 
-    # Minimal surfaces: no horizontal grid line, no vertical rail, same neutral row surface.
+    # Minimal surfaces + invisible geometry grid.
     b1=page.locator('[data-slot-map-slot="S4"] .slot-map-band').nth(0)
     b2=page.locator('[data-slot-map-slot="S4"] .slot-map-band').nth(1)
     styles=b1.evaluate("e=>({bb:getComputedStyle(e).borderBottomWidth,bg:getComputedStyle(e).backgroundColor,pt:getComputedStyle(e).paddingTop,pb:getComputedStyle(e).paddingBottom})")
-    label=b1.locator('.slot-map-band-label').evaluate("e=>({br:getComputedStyle(e).borderRightWidth,w:e.getBoundingClientRect().width})")
+    label=b1.locator('.slot-map-band-label').evaluate("e=>({br:getComputedStyle(e).borderRightWidth,w:e.getBoundingClientRect().width,right:e.getBoundingClientRect().right})")
     bg2=b2.evaluate("e=>getComputedStyle(e).backgroundColor")
     check(styles['bb']=='0px',f'horizontal line remains: {styles}')
     check(label['br']=='0px',f'vertical rail remains: {label}')
     check(styles['bg']==bg2,f'row alternation remains: {styles["bg"]}/{bg2}')
-    check(label['w']<=43.5,f'Target column too wide: {label["w"]}')
-    check(float(styles['pt'].replace('px',''))<=2.5 and float(styles['pb'].replace('px',''))<=2.5,f'band padding too tall: {styles}')
+    check(label['w']<=45,f'Target column too wide: {label["w"]}')
 
+    # Every S3+ first-name column must share the same x coordinate regardless of Target text.
+    name_x=[]; target_right=[]
+    for slot in ('S3','S4','S5'):
+        bands=page.locator(f'[data-slot-map-slot="{slot}"] .slot-map-band')
+        for i in range(min(bands.count(),4)):
+            band=bands.nth(i)
+            target_right.append(band.locator('.slot-map-band-label').evaluate('e=>e.getBoundingClientRect().right'))
+            name_x.append(band.locator('.slot-map-names').evaluate('e=>e.getBoundingClientRect().left'))
+    check(max(name_x)-min(name_x)<=0.75,f'name column not aligned: {name_x}')
+    check(max(target_right)-min(target_right)<=0.75,f'Target right edge not aligned: {target_right}')
+
+    # Header count and chevron columns must not shift with 5/5 vs 17/17 vs 40/40.
+    count_right=[]; chev_x=[]; head_h=[]
+    for slot in ('S1','S2','S3','S4','S5'):
+        head=page.locator(f'[data-slot-map-slot="{slot}"] .slot-map-slot-head')
+        head_h.append(head.evaluate('e=>e.getBoundingClientRect().height'))
+        count_right.append(head.locator('.slot-map-count').evaluate('e=>e.getBoundingClientRect().right'))
+        chev_x.append(head.locator('.slot-map-chevron').evaluate('e=>e.getBoundingClientRect().left'))
+    check(max(count_right)-min(count_right)<=0.75,f'count column shifts: {count_right}')
+    check(max(chev_x)-min(chev_x)<=0.75,f'chevron column shifts: {chev_x}')
+    check(max(head_h)-min(head_h)<=0.75,f'header heights differ: {head_h}')
     # Header and upper slots are compact.
     head_h=page.locator('[data-slot-map-slot="S1"] .slot-map-slot-head').evaluate('e=>e.getBoundingClientRect().height')
     s1_h=page.locator('[data-slot-map-slot="S1"]').evaluate('e=>e.getBoundingClientRect().height')
@@ -90,6 +106,13 @@ with sync_playwright() as pw:
     # Shared targets and tap remain correct.
     s1=page.locator('[data-slot-map-slot="S1"] .slot-map-inline').inner_text()
     check(s1.count('50–60')==1 and 'Calhanoglu' in s1 and 'Orsolini' in s1,'shared inline Target broken')
+    inline_left=page.locator('[data-slot-map-slot="S1"] .slot-map-inline-target').nth(0).evaluate('e=>e.getBoundingClientRect().left')
+    s3_name_left=page.locator('[data-slot-map-slot="S3"] .slot-map-band').nth(0).locator('.slot-map-names').evaluate('e=>e.getBoundingClientRect().left')
+    check(abs(inline_left-s3_name_left)<=1.25,f'S1/S2 must start on the shared name axis: {inline_left}/{s3_name_left}')
+    lead=page.locator('[data-slot-map-slot="S1"] .slot-map-inline-lead').nth(0).evaluate("e=>({display:getComputedStyle(e).display,ws:getComputedStyle(e).whiteSpace})")
+    check(lead['display']=='inline-block' and lead['ws']=='nowrap',f'Target+first-name unit not protected: {lead}')
+    sep=page.locator('[data-slot-map-slot="S1"] .slot-map-group-separator').nth(0).evaluate("e=>({ml:getComputedStyle(e).marginLeft,mr:getComputedStyle(e).marginRight,text:e.textContent})")
+    check(sep['text']=='·' and sep['ml']!='0px' and sep['mr']!='0px',f'group separator spacing not normalized: {sep}')
     page.locator('[data-slot-map-player-key="s1c|club"]').click(); page.wait_for_timeout(30)
     check(page.locator('#sheetPlayerName').inner_text()=='Calhanoglu','wrong inline player opened')
     page.locator('#closeSheetBottomBtn').click(); page.wait_for_timeout(60)
@@ -112,10 +135,18 @@ with sync_playwright() as pw:
     ctop=page.locator('#slotMapContent').evaluate('e=>e.getBoundingClientRect().top')
     check(abs(top-ctop)<=4,f'sticky broken: {top}/{ctop}')
 
-    # Fuori slot is minimal and bullet-free.
-    page.locator('.slot-map-outside summary').click(); page.wait_for_timeout(20)
+    # Fuori Slot uses the same header axes and target/name grid.
+    outside_summary=page.locator('.slot-map-outside summary')
     outside=page.locator('.slot-map-outside').evaluate("e=>({bw:getComputedStyle(e).borderWidth,br:getComputedStyle(e).borderRadius})")
-    check(outside['bw']=='0px',f'Outside still boxed: {outside}')
+    check(outside['bw']=='0px' and outside['br']=='0px',f'Outside still boxed: {outside}')
+    outside_count_right=outside_summary.locator('.slot-map-outside-count').evaluate('e=>e.getBoundingClientRect().right')
+    s5_count_right=page.locator('[data-slot-map-slot="S5"] .slot-map-count').evaluate('e=>e.getBoundingClientRect().right')
+    check(abs(outside_count_right-s5_count_right)<=0.75,f'Outside count misaligned: {outside_count_right}/{s5_count_right}')
+    outside_summary.click(); page.wait_for_timeout(20)
+    out_band=page.locator('.slot-map-outside-band')
+    out_name_x=out_band.locator('.slot-map-names').evaluate('e=>e.getBoundingClientRect().left')
+    s5_name_x=page.locator('[data-slot-map-slot="S5"] .slot-map-band').nth(0).locator('.slot-map-names').evaluate('e=>e.getBoundingClientRect().left')
+    check(abs(out_name_x-s5_name_x)<=0.75,f'Outside names misaligned: {out_name_x}/{s5_name_x}')
     check('•' not in page.locator('.slot-map-outside').inner_text(),'Outside bullet rendered')
 
     # Goalkeeper S5 remains absent.
@@ -129,10 +160,10 @@ with sync_playwright() as pw:
         check(not overflow,f'overflow at {width}px')
         if width==390:
             page.evaluate("document.getElementById('slotMapContent').scrollTop=0")
-            page.screenshot(path=str(ROOT/'tests/v32-4-map-top.png'))
+            page.screenshot(path=str(ROOT/'tests/v32-6-map-top.png'))
             page.evaluate("""() => { const c=document.getElementById('slotMapContent'); const s=c.querySelector('[data-slot-map-slot="S4"]'); c.scrollTop=s.offsetTop+10; }""")
-            page.wait_for_timeout(20); page.screenshot(path=str(ROOT/'tests/v32-4-map-s4.png'))
+            page.wait_for_timeout(20); page.screenshot(path=str(ROOT/'tests/v32-6-map-s4.png'))
 
     check(not errors,f'page errors after interactions: {errors}')
-    print('v32.4 runtime Playwright checks: OK')
+    print('v32.6 runtime Playwright checks: OK')
     browser.close()

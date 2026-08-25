@@ -1,3 +1,12 @@
+# Fantacalcio Checklist PWA v32.6
+
+## Novità v32.6
+- Mappa Slot rifinita senza redesign: stessa densità/minimalità, ma assi tipografici più rigorosi.
+- S3/S4/S5 e Fuori Slot condividono una colonna Target unica allineata a destra e una sola ascissa per i nomi/wrapping.
+- S1/S2 restano inline ma partono otticamente dalla stessa colonna dei nomi; gruppi Target + primo nome protetti e spacing uniforme.
+- Header Slot/Fuori Slot: colonne fisse per conteggio e chevron, stessa altezza/padding e numeri tabulari.
+- Nessun cambio a dati, backup v5, logiche d’asta o import; cache `fantacalcio-checklist-v32.6`.
+
 # Fantacalcio Checklist PWA v32.5
 
 ## Novità v32.5

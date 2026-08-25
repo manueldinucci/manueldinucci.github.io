@@ -714,9 +714,9 @@
 
   function slotMapNamesMarkup(players) {
     return players.map((p, index) => {
-      const separator = index < players.length - 1 ? '<span class="slot-map-separator" aria-hidden="true"> ·</span>' : '';
+      const separator = index < players.length - 1 ? '<span class="slot-map-separator" aria-hidden="true">·</span>' : '';
       return `<span class="slot-map-player-unit">${slotMapNameText(p)}${separator}</span>`;
-    }).join(' ');
+    }).join('');
   }
 
   function slotMapInlineGroupsMarkup(groups) {
@@ -725,15 +725,15 @@
         const isLastPlayer = playerIndex === group.players.length - 1;
         const hasFollowing = !isLastPlayer || groupIndex < groups.length - 1;
         const separatorClass = isLastPlayer && groupIndex < groups.length - 1 ? 'slot-map-group-separator' : 'slot-map-separator';
-        const separator = hasFollowing ? `<span class="${separatorClass}" aria-hidden="true"> ·</span>` : '';
+        const separator = hasFollowing ? `<span class="${separatorClass}" aria-hidden="true">·</span>` : '';
         if (playerIndex === 0) {
           const target = group.label ? `<span class="slot-map-inline-target">${esc(group.label)}</span> ` : '';
           return `<span class="slot-map-inline-lead">${target}${slotMapNameText(p)}${separator}</span>`;
         }
         return `<span class="slot-map-player-unit">${slotMapNameText(p)}${separator}</span>`;
-      }).join(' ');
+      }).join('');
       return `<span class="slot-map-inline-group">${players}</span>`;
-    }).join(' ')}</div>`;
+    }).join('')}</div>`;
   }
 
   function slotMapSectionMarkup(slot, players, privacy, collapsed = false) {
