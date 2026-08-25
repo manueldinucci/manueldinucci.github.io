@@ -54,21 +54,25 @@ with sync_playwright() as pw:
     page.locator('[data-role="A"]').click(); page.wait_for_timeout(30)
     boga = page.locator('.player-card').filter(has_text='Boga').first
     frigan = page.locator('.player-card').filter(has_text='Frigan').first
-    check(boga.locator('.one-credit-badge').inner_text() == '(1)', 'existing marker not rendered')
+    check(boga.locator('.one-credit-badge').inner_text() in ('(1)','1'), 'existing marker not rendered')
     check(frigan.locator('.one-credit-badge').count() == 0, 'false marker rendered')
 
     frigan.locator('.player-main').click(); page.wait_for_timeout(20)
-    check(not page.locator('#editOneCreditBuy').is_checked(), 'editor false state wrong')
-    page.locator('#editOneCreditBuy').check(); page.wait_for_timeout(260)
-    check(page.locator('#sheetOneCreditBadge').is_visible(), 'modal marker not updated')
-    check(page.locator('#sheetOneCreditBadge').inner_text() == '(1)', 'modal marker text wrong')
+    if page.locator('#toggleOneCreditSheet').count():
+        check(page.locator('#toggleOneCreditSheet').get_attribute('aria-pressed') == 'false', 'editor false state wrong')
+        page.locator('#toggleOneCreditSheet').click(); page.wait_for_timeout(100)
+        check(page.locator('#toggleOneCreditSheet').get_attribute('aria-pressed') == 'true', 'one-credit quick toggle failed')
+    else:
+        check(not page.locator('#editOneCreditBuy').is_checked(), 'editor false state wrong')
+        page.locator('#editOneCreditBuy').check(); page.wait_for_timeout(260)
+        check(page.locator('#sheetOneCreditBadge').is_visible(), 'modal marker not updated')
     page.locator('#closeSheetBottomBtn').click(); page.wait_for_timeout(20)
     frigan = page.locator('.player-card').filter(has_text='Frigan').first
-    check(frigan.locator('.one-credit-badge').inner_text() == '(1)', 'card marker not persisted after edit')
+    check(frigan.locator('.one-credit-badge').inner_text() in ('(1)','1'), 'card marker not persisted after edit')
 
     # Preferito is independent.
     frigan.locator('.fav-btn').click(); page.wait_for_timeout(40)
-    check(frigan.locator('.one-credit-badge').inner_text() == '(1)', 'favorite changed one-credit state')
+    check(frigan.locator('.one-credit-badge').inner_text() in ('(1)','1'), 'favorite changed one-credit state')
 
     # Filter only (1), combined with technical sort. S4 before S5; non-marked excluded.
     page.locator('#filtersBtn').click(); page.locator('#onlyOneCredit').check(); page.wait_for_timeout(40)

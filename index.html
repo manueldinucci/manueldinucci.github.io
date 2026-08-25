@@ -148,7 +148,6 @@
       <div>
         <h2 id="sheetPlayerName"></h2>
         <div id="sheetPlayerMeta" class="sheet-meta"></div>
-        <span id="sheetOneCreditBadge" class="one-credit-badge sheet-one-credit-badge hidden" aria-label="Acquisto a 1">(1)</span>
       </div>
       <button id="closeSheetBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
@@ -172,7 +171,6 @@
           <label>Target min<select id="editTargetMin" aria-label="Target minimo"></select></label>
           <label>Target max<select id="editTargetMax" aria-label="Target massimo"></select></label>
         </div>
-        <label class="switch-line one-credit-editor"><input id="editOneCreditBuy" type="checkbox" /><span>Acquisto a 1</span></label>
         <label class="full-field comment-field">Commento<textarea id="editComment" rows="4" placeholder="Nota personale..."></textarea></label>
       </div>
 
@@ -187,6 +185,7 @@
     </div>
     <div class="sheet-actions player-sheet-actions player-bottom-actions">
       <button id="toggleTakenSheet" class="primary-btn player-primary-action">Assegna giocatore</button>
+      <button id="toggleOneCreditSheet" class="secondary-btn player-icon-action one-credit-action" type="button" aria-label="Imposta Acquisto a 1" aria-pressed="false">1</button>
       <button id="toggleFavoriteSheet" class="secondary-btn player-icon-action" aria-label="Preferito">☆</button>
       <button id="closeSheetBottomBtn" class="secondary-btn player-icon-action" aria-label="Chiudi scheda">×</button>
     </div>

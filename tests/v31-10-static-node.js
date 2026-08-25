@@ -46,7 +46,7 @@ ok(!html.includes('id="competitorsSection"'), 'competition monitor must be remov
 ok(css.includes('top: var(--visual-viewport-center, 50%);'), 'player modal must be centered in visual viewport');
 ok(css.includes('width: min(92vw, 420px);'), 'player modal width contract missing');
 ok(css.includes('max-height: min(75dvh'), 'player modal max-height contract missing');
-ok(app.includes("$('sheetBackdrop').addEventListener('click', closeAllSheets)"), 'click outside close missing');
+ok(app.includes("$('sheetBackdrop').addEventListener('click', closeAllSheets)") || app.includes("$('sheetBackdrop').addEventListener('click', closeActiveOverlay)"), 'click outside close missing');
 
 // Manager config single identifier + legacy migration.
 ok(!html.includes('data-field="squadra"') && !app.includes('data-field="squadra"'), 'second participant identifier must be removed');

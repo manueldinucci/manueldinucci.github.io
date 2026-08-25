@@ -1,4 +1,12 @@
-# Fantacalcio Checklist PWA v32
+# Fantacalcio Checklist PWA v32.1
+
+## Novità v32.1
+
+- Marker `1` tra Slot e Target nelle card e controllo rapido `1` nella barra della modal `Assegna giocatore | 1 | ☆ | ×`.
+- `Sx:0` rosso e in grassetto solo quando la fascia è realmente esaurita, indipendentemente dai filtri di visualizzazione.
+- Mappa Slot più compatta: righe testuali, contatori `X/Y`, header Slot sticky, nessuna progress bar e nomi tappabili.
+- Apertura della modal dalla Mappa con ripristino di reparto e posizione di scroll alla chiusura.
+- Cache Service Worker `fantacalcio-checklist-v32.1`; modello dati e backup v5 invariati.
 
 ## Novità v32
 

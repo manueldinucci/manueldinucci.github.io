@@ -1893,3 +1893,133 @@ html { color-scheme: light; }
 @media (max-width: 360px) {
   .player-card .one-credit-badge { padding-inline: 4px; font-size: 8.5px; }
 }
+
+/* v32.1 — UI 1, Slot esauriti e Mappa Slot più compatta/operativa */
+.demand-slot-count.exhausted,
+.slot-map-count.exhausted {
+  color: #c62828;
+  font-weight: 900;
+}
+
+.player-bottom-actions {
+  grid-template-columns: minmax(0,1fr) 46px 46px 46px;
+  gap: 7px;
+}
+.player-icon-action.one-credit-action {
+  font-size: 16px;
+  font-weight: 850;
+}
+.player-icon-action.one-credit-action.active {
+  background: var(--text);
+  color: var(--bg);
+  border-color: var(--text);
+}
+.player-card .one-credit-badge {
+  min-width: 18px;
+  padding-inline: 5px;
+}
+
+.slot-map-content {
+  padding-top: 4px;
+}
+.slot-map-slot {
+  padding: 4px 0 7px;
+}
+.slot-map-slot:first-child {
+  padding-top: 0;
+}
+.slot-map-slot-head {
+  position: sticky;
+  top: 0;
+  z-index: 3;
+  align-items: center;
+  padding: 7px 0 5px;
+  margin-bottom: 0;
+  background: var(--surface);
+  border-bottom: 2px solid #74777c;
+}
+.slot-map-slot-head strong {
+  font-size: 12.5px;
+}
+.slot-map-slot-head span {
+  font-size: 10px;
+}
+.slot-map-band {
+  display: grid;
+  grid-template-columns: 50px minmax(0,1fr);
+  column-gap: 8px;
+  align-items: start;
+  padding: 5px 2px;
+  background: transparent;
+  border-radius: 0;
+  border-bottom: 1px solid #e3e4e6;
+}
+.slot-map-band + .slot-map-band {
+  margin-top: 0;
+}
+.slot-map-band:last-child {
+  border-bottom: 0;
+}
+.slot-map-band-label {
+  margin: 3px 0 0;
+  font-size: 10px;
+  line-height: 1.25;
+  font-weight: 800;
+}
+.slot-map-names {
+  line-height: 1.38;
+}
+.slot-map-player {
+  display: inline;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: var(--text);
+  margin: 0;
+  padding: 3px 1px;
+  font: inherit;
+  font-size: 12px;
+  line-height: 1.55;
+  font-weight: 650;
+  text-align: left;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0,0,0,.08);
+}
+.slot-map-player:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 1px;
+}
+.slot-map-player.taken {
+  color: #9a9ca1;
+  text-decoration: line-through;
+  text-decoration-thickness: 1.4px;
+  opacity: .72;
+}
+.slot-map-separator {
+  color: var(--muted);
+  white-space: nowrap;
+}
+.slot-map-empty-slot {
+  padding: 6px 2px 3px;
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+}
+.slot-map-outside {
+  margin-top: 8px;
+}
+.slot-map-outside .slot-map-names {
+  padding: 6px 8px;
+}
+
+@media (max-width: 360px) {
+  .player-bottom-actions {
+    grid-template-columns: minmax(0,1fr) 43px 43px 43px;
+    gap: 6px;
+  }
+  .player-primary-action { font-size: 12px; }
+  .slot-map-band { grid-template-columns: 46px minmax(0,1fr); column-gap: 6px; }
+  .slot-map-player { font-size: 11.5px; }
+}

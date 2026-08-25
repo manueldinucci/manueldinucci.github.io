@@ -37,6 +37,7 @@
     filtersScrollY: 0,
     overlayView: '',
     overlayScrollY: 0,
+    slotMapReturnContext: null,
     lastImportChanges: null
   };
 
@@ -389,8 +390,8 @@
     const slot = cardSlotLabel(p.slot);
     const target = targetText(p);
     if (slot) parts.push(`<span class="player-slot-badge">${esc(slot)}</span>`);
+    if (p.oneCreditBuy === true) parts.push(`<span class="one-credit-badge" aria-label="Acquisto a 1">1</span>`);
     if (target) parts.push(`<span class="player-target-pill">${esc(target)} cr</span>`);
-    if (p.oneCreditBuy === true) parts.push(`<span class="one-credit-badge" aria-label="Acquisto a 1">(1)</span>`);
     return parts.join('');
   }
 
@@ -506,7 +507,7 @@
     const after = { preso:false, prezzo_acquisto:null, manager_id:'', manager_acquirente:'' };
     Object.assign(p, after);
     await FantaDB.updateAuction(p.key, after);
-    closeAllSheets();
+    if (!restoreSlotMapContext()) closeAllSheets();
     renderPlayers(); renderCountsAndDemand();
     toast(`${p.nome} nuovamente libero`, 'Annulla', async () => {
       Object.assign(p, before);
@@ -646,10 +647,13 @@
     const el = $('demandSummary'); if (!el) return;
     if (state.privacyMode || state.showAll) { el.classList.add('hidden'); return; }
     const model = demandLineModel(rolePlayers);
-    const slotsText = model.slots.map(slot => `${slot}: ${model.counts[slot]}`).join(' | ');
+    const slotsText = model.slots.map(slot => {
+      const count = model.counts[slot];
+      return `<span class="demand-slot-count${count === 0 ? ' exhausted' : ''}">${esc(`${slot}: ${count}`)}</span>`;
+    }).join('<span class="demand-slot-separator"> | </span>');
     const participants = state.participantsVisible ? participantNeedsMarkup(model.needs.rows) : '';
     const maxBids = state.participantsVisible && model.role === 'A' ? participantMaxBidMarkup(model.needs.rows) : '';
-    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${esc(slotsText)}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
+    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${slotsText}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
     el.classList.remove('warning', 'hidden');
   }
 
@@ -688,16 +692,11 @@
 
   function slotMapNameText(p) {
     const taken = p.preso ? ' taken' : '';
-    return `<span class="slot-map-player${taken}">${esc(p.nome)}</span>`;
+    return `<button type="button" class="slot-map-player${taken}" data-slot-map-player-key="${esc(p.key)}">${esc(p.nome)}</button>`;
   }
 
   function slotMapNamesMarkup(players) {
-    return players.map(slotMapNameText).join('&nbsp;· ');
-  }
-
-  function slotMapProgress(remaining,total) {
-    const pct = total ? Math.max(0, Math.min(100, remaining / total * 100)) : 0;
-    return `<div class="slot-map-progress" aria-hidden="true"><span style="width:${pct.toFixed(1)}%"></span></div>`;
+    return players.map(slotMapNameText).join('<span class="slot-map-separator" aria-hidden="true"> · </span>');
   }
 
   function slotMapSectionMarkup(slot, players, privacy) {
@@ -705,7 +704,9 @@
     const remaining = players.filter(p => !p.preso).length;
     const ordered = [...players].sort(slotMapNameSort);
     let body = '';
-    if (privacy) {
+    if (remaining === 0) {
+      body = '<div class="slot-map-empty-slot">Nessun giocatore disponibile</div>';
+    } else if (privacy) {
       body = `<div class="slot-map-names privacy-names">${slotMapNamesMarkup(ordered)}</div>`;
     } else {
       const bands = new Map();
@@ -715,13 +716,9 @@
         bands.get(band.key).players.push(p);
       }
       const grouped = [...bands.values()].sort((a,b) => b.rank - a.rank);
-      body = grouped.map((group, index) => {
-        const denom = Math.max(1, grouped.length - 1);
-        const alpha = grouped.length === 1 ? 0.055 : 0.11 - (index / denom) * 0.065;
-        return `<div class="slot-map-band" style="--slot-map-band-alpha:${alpha.toFixed(3)}"><div class="slot-map-band-label">${esc(group.label)}</div><div class="slot-map-names">${slotMapNamesMarkup(group.players)}</div></div>`;
-      }).join('');
+      body = grouped.map(group => `<div class="slot-map-band"><div class="slot-map-band-label">${esc(group.label)}</div><div class="slot-map-names">${slotMapNamesMarkup(group.players)}</div></div>`).join('');
     }
-    return `<section class="slot-map-slot"><div class="slot-map-slot-head"><strong>${esc(slotMapSlotLabel(slot))}</strong><span>${remaining}/${total} disponibili</span></div>${slotMapProgress(remaining,total)}${body}</section>`;
+    return `<section class="slot-map-slot"><div class="slot-map-slot-head"><strong>${esc(slotMapSlotLabel(slot))}</strong><span class="slot-map-count${remaining === 0 ? ' exhausted' : ''}">${remaining}/${total}</span></div>${body}</section>`;
   }
 
   function renderSlotMapRoleTabs() {
@@ -754,8 +751,10 @@
       if (coverage.length) sections.push(slotMapSectionMarkup('COPERTURE', coverage, state.privacyMode));
     }
     const outside = state.players.filter(p => p.ruolo === role && !String(p.slot || '').trim() && !(role === 'P' && isGoalkeeperCoverage(p)));
-    const outsideMarkup = outside.length ? `<details class="slot-map-outside"><summary>Fuori slot · ${outside.length}</summary><div class="slot-map-names">${slotMapNamesMarkup(outside.slice().sort(slotMapNameSort))}</div></details>` : '';
+    const outsideAvailable = outside.filter(p => !p.preso);
+    const outsideMarkup = outsideAvailable.length ? `<details class="slot-map-outside"><summary>Fuori slot · ${outsideAvailable.length}</summary><div class="slot-map-names">${slotMapNamesMarkup(outsideAvailable.slice().sort(slotMapNameSort))}</div></details>` : '';
     content.innerHTML = `${state.privacyMode ? '<div class="slot-map-privacy-note">Privacy attiva · sottofasce economiche nascoste</div>' : ''}${sections.join('')}${outsideMarkup}`;
+    content.querySelectorAll('[data-slot-map-player-key]').forEach(btn => btn.addEventListener('click', () => openPlayerFromSlotMap(btn.dataset.slotMapPlayerKey)));
   }
 
   function renderSlotMapIfOpen() {
@@ -767,6 +766,54 @@
     state.slotMapRole = state.role || 'C';
     openOnly('slotMapSheet');
     renderSlotMap();
+  }
+
+  function openPlayerFromSlotMap(key) {
+    const content = $('slotMapContent');
+    state.slotMapReturnContext = {
+      role: state.slotMapRole || state.role || 'C',
+      scrollTop: content ? content.scrollTop : 0
+    };
+    openPlayerSheet(key);
+  }
+
+  function restoreSlotMapContext() {
+    const context = state.slotMapReturnContext;
+    if (!context) return false;
+    state.slotMapReturnContext = null;
+    state.selectedKey = null;
+    state.pendingAssignmentKey = null;
+    state.pendingUnassignKey = null;
+    state.slotMapRole = context.role;
+    openOnly('slotMapSheet');
+    renderSlotMap();
+    requestAnimationFrame(() => {
+      const content = $('slotMapContent');
+      if (content) content.scrollTop = context.scrollTop || 0;
+    });
+    return true;
+  }
+
+  async function closePlayerSheet() {
+    if (playerSaveTimer) {
+      clearTimeout(playerSaveTimer);
+      playerSaveTimer = null;
+      await saveSelectedPlayer();
+    }
+    if (restoreSlotMapContext()) return;
+    closeAllSheets();
+  }
+
+  function closeAssignmentSheet() {
+    if (restoreSlotMapContext()) return;
+    closeAllSheets();
+  }
+
+  function closeActiveOverlay() {
+    if (!$('playerSheet').classList.contains('hidden')) { closePlayerSheet(); return; }
+    if (!$('assignmentSheet').classList.contains('hidden') && state.slotMapReturnContext) { closeAssignmentSheet(); return; }
+    if (!$('unassignSheet').classList.contains('hidden') && state.slotMapReturnContext) { closeAssignmentSheet(); return; }
+    closeAllSheets();
   }
 
   function setSearchExpanded(expanded, focus = false) {
@@ -813,17 +860,17 @@
 
     $('menuBtn').addEventListener('click', openTools);
     $('closeToolsBtn').addEventListener('click', closeAllSheets);
-    $('closeSheetBtn').addEventListener('click', closeAllSheets);
-    $('closeSheetBottomBtn').addEventListener('click', closeAllSheets);
+    $('closeSheetBtn').addEventListener('click', closePlayerSheet);
+    $('closeSheetBottomBtn').addEventListener('click', closePlayerSheet);
     $('closeImportBtn').addEventListener('click', closeAllSheets);
     $('closeListoneNewsBtn').addEventListener('click', closeAllSheets);
     $('closeListoneNewsBottomBtn').addEventListener('click', closeAllSheets);
     $('closeSimpleFormBtn').addEventListener('click', closeAllSheets);
-    $('closeAssignmentBtn').addEventListener('click', closeAllSheets);
-    $('cancelAssignmentBtn').addEventListener('click', closeAllSheets);
+    $('closeAssignmentBtn').addEventListener('click', closeAssignmentSheet);
+    $('cancelAssignmentBtn').addEventListener('click', closeAssignmentSheet);
     $('closeViewSheetBtn').addEventListener('click', closeAllSheets);
     $('closeManagerConfigBtn').addEventListener('click', closeAllSheets);
-    $('sheetBackdrop').addEventListener('click', closeAllSheets);
+    $('sheetBackdrop').addEventListener('click', closeActiveOverlay);
 
     $('importListBtn').addEventListener('click', () => $('listFileInput').click());
     $('listFileInput').addEventListener('change', handleListFile);
@@ -859,7 +906,6 @@
     });
     $('editComment').addEventListener('focus', () => schedulePlayerFieldVisibility($('editComment')));
     $('editSlot').addEventListener('change', scheduleSelectedPlayerSave);
-    $('editOneCreditBuy').addEventListener('change', scheduleSelectedPlayerSave);
     $('editSlot').addEventListener('focus', () => schedulePlayerFieldVisibility($('editSlot')));
     $('toggleTakenSheet').addEventListener('click', async () => {
       if (!state.selectedKey) return;
@@ -869,6 +915,7 @@
       await toggleTaken(key);
       if (state.players.find(x=>x.key===key)) openPlayerSheet(key, true);
     });
+    $('toggleOneCreditSheet').addEventListener('click', toggleSelectedOneCredit);
     $('toggleFavoriteSheet').addEventListener('click', async () => { if (state.selectedKey) { await toggleFavorite(state.selectedKey); openPlayerSheet(state.selectedKey, true); } });
     $('savePurchaseBtn').addEventListener('click', savePurchaseAssignment);
 
@@ -962,7 +1009,7 @@
     closeContextPopovers();
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
     ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managerConfigSheet','unassignSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
-    $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null;
+    $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null; state.slotMapReturnContext = null;
     const hadOverlayView = Boolean(state.overlayView); const overlayScrollY = state.overlayScrollY || 0; state.overlayView = '';
     if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
     if (restoreFilters) requestAnimationFrame(() => window.scrollTo(0, state.filtersScrollY || 0));
@@ -1041,8 +1088,6 @@
     $('editTargetMin').value = p.target_min ?? p.prezzo_ideale_min ?? '';
     $('editTargetMax').value = p.target_max ?? p.prezzo_ideale_max ?? '';
     $('editComment').value = p.commento || '';
-    $('editOneCreditBuy').checked = p.oneCreditBuy === true;
-    $('sheetOneCreditBadge').classList.toggle('hidden', p.oneCreditBuy !== true);
     $('editPurchase').value = p.prezzo_acquisto ?? '';
     populateManagerSelects();
     $('editManager').value = p.manager_id || '';
@@ -1052,6 +1097,10 @@
 
   function updateSheetButtons(p) {
     $('toggleTakenSheet').textContent = p.preso ? 'Gestisci assegnazione' : 'Assegna giocatore';
+    const oneCreditBtn = $('toggleOneCreditSheet');
+    oneCreditBtn.classList.toggle('active', p.oneCreditBuy === true);
+    oneCreditBtn.setAttribute('aria-pressed', String(p.oneCreditBuy === true));
+    oneCreditBtn.setAttribute('aria-label', p.oneCreditBuy === true ? 'Rimuovi Acquisto a 1' : 'Imposta Acquisto a 1');
     $('toggleFavoriteSheet').textContent = p.preferito ? '★' : '☆';
     $('toggleFavoriteSheet').setAttribute('aria-label', p.preferito ? 'Rimuovi dai preferiti' : 'Aggiungi ai preferiti');
   }
@@ -1059,7 +1108,10 @@
   function scheduleSelectedPlayerSave() {
     clearTimeout(playerSaveTimer);
     $('sheetSaveStatus').classList.remove('show');
-    playerSaveTimer = setTimeout(saveSelectedPlayer, 180);
+    playerSaveTimer = setTimeout(() => {
+      playerSaveTimer = null;
+      saveSelectedPlayer();
+    }, 180);
   }
 
   async function saveSelectedPlayer() {
@@ -1074,16 +1126,25 @@
       prezzo_ideale_max: num($('editTargetMax').value),
       commento: $('editComment').value,
       preferito: p.preferito,
-      oneCreditBuy: $('editOneCreditBuy').checked
+      oneCreditBuy: p.oneCreditBuy === true
     };
     Object.assign(p, personal);
-    $('sheetOneCreditBadge').classList.toggle('hidden', p.oneCreditBuy !== true);
     await FantaDB.updatePersonal(p.key, personal);
     $('sheetSaveStatus').classList.add('show'); setTimeout(() => $('sheetSaveStatus').classList.remove('show'), 900);
     populateDynamicFilters(); renderPlayers(); renderCountsAndDemand();
   }
 
 
+  async function toggleSelectedOneCredit() {
+    const p = state.players.find(x => x.key === state.selectedKey); if (!p) return;
+    p.oneCreditBuy = !p.oneCreditBuy;
+    await FantaDB.updatePersonal(p.key, { oneCreditBuy: p.oneCreditBuy });
+    updateSheetButtons(p);
+    $('sheetSaveStatus').classList.add('show');
+    setTimeout(() => $('sheetSaveStatus').classList.remove('show'), 900);
+    renderPlayers();
+    renderCountsAndDemand();
+  }
 
   function basePriceForPlayer(player) {
     const mode = String(state.auctionConfig.basePriceMode || '1').toLowerCase();
@@ -1158,7 +1219,7 @@
     const after = { preso:true, prezzo_acquisto:price, manager_id:manager.id, manager_acquirente:manager.nome };
     Object.assign(p, after);
     await FantaDB.updateAuction(p.key, after);
-    closeAllSheets();
+    if (!restoreSlotMapContext()) closeAllSheets();
     state.pendingAssignmentKey = null;
     renderPlayers(); renderCountsAndDemand();
     assignmentFeedbackToast(p, manager, price, async () => {

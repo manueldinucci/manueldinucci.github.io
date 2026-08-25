@@ -7,7 +7,7 @@ assert(app.includes("$('sheetBackdrop')?.classList.add('hidden');"), 'popover op
 assert(app.includes("$('closeSortBtn').addEventListener('click', () => closeContextPopovers());"), 'sort close must be contextual');
 assert(app.includes("$('closeFiltersBtn').addEventListener('click', () => closeContextPopovers());"), 'filters close must be contextual');
 assert(css.includes('z-index: 120;') && css.includes('pointer-events: auto;'), 'popover must sit above content and accept pointer events');
-assert(app.includes("$('sheetBackdrop').addEventListener('click', closeAllSheets);"), 'real modal backdrop behavior must remain');
+assert(app.includes("$('sheetBackdrop').addEventListener('click', closeAllSheets);") || app.includes("$('sheetBackdrop').addEventListener('click', closeActiveOverlay);"), 'real modal backdrop behavior must remain');
 const m = sw.match(/fantacalcio-checklist-v(\d+)(?:\.(\d+))?/);
 assert(m && (Number(m[1]) > 29 || (Number(m[1]) === 29 && Number(m[2] || 0) >= 1)), 'service worker cache/version must be v29.1 or newer');
 console.log('v29.1 static checks OK');

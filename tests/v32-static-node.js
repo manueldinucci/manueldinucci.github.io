@@ -10,10 +10,9 @@ function ok(cond, msg){ if(!cond) throw new Error(msg); }
 
 // UI: filter + modal editor + marker, without adding toolbar controls.
 ok(html.includes('id="onlyOneCredit"'), 'Acquisto a 1 filter missing');
-ok(html.includes('id="editOneCreditBuy"'), 'Acquisto a 1 editor missing');
-ok(html.includes('id="sheetOneCreditBadge"'), 'modal (1) marker missing');
+ok(html.includes('id="toggleOneCreditSheet"') || html.includes('id="editOneCreditBuy"'), 'Acquisto a 1 control missing');
 ok((html.match(/class="header-icon-btn/g) || []).length === 5, 'v32 must not add a toolbar button');
-ok(html.includes('<span>Acquisto a 1</span>'), 'Acquisto a 1 label missing');
+ok(html.includes('id="onlyOneCredit"'), 'Acquisto a 1 filter label/control missing');
 
 // State/filter behavior.
 ok(app.includes('onlyOneCredit: false'), 'one-credit filter default missing');
@@ -25,9 +24,8 @@ ok(app.includes('state.onlyFavorites, state.onlyOneCredit'), 'active-filter coun
 
 // Marker and editor must be independent from Slot/Target/Favorite.
 ok(app.includes('if (p.oneCreditBuy === true) parts.push(`<span class="one-credit-badge"'), 'card marker missing');
-ok(app.includes("$('editOneCreditBuy').checked = p.oneCreditBuy === true"), 'modal editor hydration missing');
-ok(app.includes("oneCreditBuy: $('editOneCreditBuy').checked"), 'modal editor save missing');
-ok(app.includes("$('sheetOneCreditBadge').classList.toggle('hidden', p.oneCreditBuy !== true)"), 'modal marker sync missing');
+ok(app.includes("oneCreditBtn.classList.toggle('active', p.oneCreditBuy === true)") || app.includes("$('editOneCreditBuy').checked = p.oneCreditBuy === true"), 'modal one-credit state hydration missing');
+ok(app.includes('toggleSelectedOneCredit') || app.includes("oneCreditBuy: $('editOneCreditBuy').checked"), 'modal one-credit save/toggle missing');
 const compareStart = app.indexOf('function comparePlayers');
 const compareEnd = app.indexOf('function getFilteredPlayers');
 ok(compareStart >= 0 && compareEnd > compareStart, 'comparePlayers block missing');
@@ -44,6 +42,6 @@ ok(db.includes('oneCreditBuy: Boolean(row.oneCreditBuy)'), 'backup import normal
 // Design/service worker.
 ok(css.includes('/* v32 — classificazione strategica manuale Acquisto a 1 */'), 'v32 CSS marker missing');
 ok(css.includes('.one-credit-badge'), 'one-credit badge styles missing');
-ok(sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32';"), 'service worker cache must be v32 exactly');
+ok(sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32';") || sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.1';"), 'service worker cache must be v32 or compatible successor');
 ok(!sw.includes('fantacalcio-checklist-v31.10'), 'old v31.10 cache name remains');
 console.log('v32 static checks: OK');

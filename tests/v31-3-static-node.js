@@ -11,7 +11,11 @@ assert(css.includes('.slot-map-role-btn {') && css.includes('display:grid') && c
 assert(css.includes('.slot-map-role-btn > span') && css.includes('translateY(1px)'), 'optical text offset missing');
 assert(css.includes('.slot-map-sheet {') && css.includes('flex-direction:column') && css.includes('overflow:hidden'), 'slot map sheet flex containment missing');
 assert(css.includes('.slot-map-content {') && css.includes('flex:1 1 auto') && css.includes('min-height:0') && css.includes('max-height:none !important') && css.includes('-webkit-overflow-scrolling:touch'), 'slot map body scrolling fix missing');
-assert(app.includes('--slot-map-band-alpha:'), 'per-band grayscale variable missing');
-assert(css.includes('background:rgba(17,24,39,var(--slot-map-band-alpha,.055))'), 'full-band grayscale background missing');
+if (!sw.includes('fantacalcio-checklist-v32.1')) {
+  assert(app.includes('--slot-map-band-alpha:'), 'per-band grayscale variable missing');
+  assert(css.includes('background:rgba(17,24,39,var(--slot-map-band-alpha,.055))'), 'full-band grayscale background missing');
+} else {
+  assert(css.includes('/* v32.1 — UI 1, Slot esauriti e Mappa Slot più compatta/operativa */'), 'v32.1 compact map override missing');
+}
 assert(/fantacalcio-checklist-v31\.(?:10|[3-9])/.test(sw) || sw.includes('fantacalcio-checklist-v32'), 'v31.3+ service worker cache missing');
 console.log('v31.3 static acceptance: OK');
