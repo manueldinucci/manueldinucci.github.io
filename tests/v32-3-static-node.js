@@ -8,6 +8,15 @@ const db = fs.readFileSync(path.join(root, 'db.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
 
+if (sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.4';")) {
+  ok(!html.includes('slotMapSlotIndex'), 'v32.4 must keep Slot index removed');
+  ok(app.includes('data-slot-map-toggle='), 'v32.4 must preserve collapsible Slot headers');
+  ok(app.includes("if (slot === 'S1' || slot === 'S2')"), 'v32.4 must preserve deterministic S1/S2 inline layout');
+  ok(css.includes('/* v32.4 — Mappa Slot:'), 'v32.4 CSS block missing');
+  console.log('v32.3 static checks superseded by v32.4 minimal map styling: OK');
+  process.exit(0);
+}
+
 ok(!html.includes('slotMapSlotIndex'), 'v32.3 must remove Slot index container');
 ok(!app.includes('renderSlotMapIndex'), 'v32.3 must remove Slot index renderer');
 ok(!app.includes('data-slot-map-index='), 'v32.3 must remove Slot index controls');

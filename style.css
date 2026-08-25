@@ -2305,3 +2305,165 @@ html { color-scheme: light; }
     font-size: 11.25px;
   }
 }
+
+/* v32.4 — Mappa Slot: listino editoriale minimale, massima densità utile */
+.slot-map-sheet {
+  background: #f1f2f4;
+}
+.slot-map-header,
+.slot-map-role-tabs {
+  background: #fafafa;
+}
+.slot-map-role-tabs {
+  border-bottom-color: #d7dadf;
+  padding-bottom: 7px;
+}
+.slot-map-content {
+  padding: 3px 10px calc(var(--safe-bottom) + 26px);
+  background: #f1f2f4;
+}
+.slot-map-slot {
+  padding: 0;
+  background: #f7f8f9;
+}
+.slot-map-slot + .slot-map-slot {
+  margin-top: 3px;
+}
+.slot-map-slot-head {
+  min-height: 27px;
+  padding: 3px 6px;
+  border-bottom: 0;
+  background: #e9ebee;
+}
+.slot-map-slot-head strong {
+  font-size: 11.75px;
+  line-height: 1.05;
+}
+.slot-map-head-meta {
+  gap: 4px;
+  min-width: 42px;
+}
+.slot-map-slot-head .slot-map-count {
+  font-size: 9.75px;
+}
+.slot-map-chevron {
+  width: 10px;
+  font-size: 12px !important;
+}
+.slot-map-slot-body {
+  background: #f7f8f9;
+}
+
+/* S1/S2: una sola graduatoria tipografica compatta. */
+.slot-map-slot.inline-slot .slot-map-slot-body {
+  padding: 0;
+}
+.slot-map-inline {
+  padding: 3px 6px 4px;
+  background: #f7f8f9;
+  font-size: 11.5px;
+  line-height: 1.34;
+}
+.slot-map-inline-target {
+  font-size: 9.25px;
+  font-weight: 650;
+  color: #62666b;
+}
+
+/* S3+: lista categorizzata, non tabella. */
+.slot-map-band,
+.slot-map-band.odd,
+.slot-map-band.even {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  column-gap: 5px;
+  align-items: start;
+  padding: 2px 5px 2px 4px;
+  border: 0;
+  border-radius: 0;
+  background: #f7f8f9;
+}
+.slot-map-band + .slot-map-band {
+  margin-top: 1px;
+}
+.slot-map-band-label {
+  margin: 0;
+  padding: 1px 0 0;
+  border: 0;
+  color: #62666b;
+  font-size: 9.25px;
+  line-height: 1.25;
+  font-weight: 650;
+  text-align: right;
+  white-space: nowrap;
+}
+.slot-map-names {
+  min-width: 0;
+  padding: 0;
+  color: #111111;
+  line-height: 1.3;
+}
+.slot-map-player {
+  padding: 1px 0;
+  font-size: 11.5px;
+  line-height: 1.32;
+  font-weight: 500;
+}
+.slot-map-separator {
+  color: #7b7e82;
+}
+.slot-map-names.privacy-names {
+  padding: 3px 6px 4px;
+  background: #f7f8f9;
+}
+.slot-map-privacy-note {
+  margin-bottom: 4px;
+  padding: 5px 6px;
+  border-radius: 4px;
+  background: #e9ebee;
+}
+.slot-map-outside {
+  margin-top: 4px;
+  border: 0;
+  border-radius: 0;
+  background: #f7f8f9;
+}
+.slot-map-outside summary {
+  min-height: 29px;
+  padding: 5px 7px;
+  background: #e9ebee;
+}
+.slot-map-outside .slot-map-names {
+  border-top: 0;
+  padding: 3px 6px 4px;
+  background: #f7f8f9;
+}
+
+@media (max-width: 360px) {
+  .slot-map-content {
+    padding-left: 8px;
+    padding-right: 8px;
+  }
+  .slot-map-band,
+  .slot-map-band.odd,
+  .slot-map-band.even {
+    grid-template-columns: 39px minmax(0,1fr);
+    column-gap: 4px;
+    padding-left: 3px;
+    padding-right: 4px;
+  }
+  .slot-map-band-label {
+    font-size: 9px;
+  }
+  .slot-map-inline {
+    padding-left: 5px;
+    padding-right: 5px;
+    font-size: 11.25px;
+  }
+  .slot-map-inline-target {
+    font-size: 9px;
+  }
+  .slot-map-player {
+    font-size: 11.25px;
+  }
+}

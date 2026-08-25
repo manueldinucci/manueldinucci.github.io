@@ -1,3 +1,14 @@
+# Fantacalcio Checklist PWA v32.4
+
+## Novità v32.4
+
+- Mappa Slot ulteriormente minimalizzata: S3/S4/S5 mantengono la categorizzazione per Target ma senza griglia, bordi orizzontali o alternanza da tabella.
+- Colonna Target ridotta e resa puramente tipografica; più larghezza utile destinata ai nomi e wrapping allineato.
+- S1/S2 inline ulteriormente compattati; header Slot più sottili e superfici grayscale meno invasive.
+- Accordion, sticky header, nomi tappabili, ritorno alla posizione, conteggi `X/Y` e alert `0/Y` restano invariati.
+- Bugfix dei separatori `·` preservato; nessun bullet/list marker.
+- Modello dati e backup restano v5; cache Service Worker `fantacalcio-checklist-v32.4`.
+
 # Fantacalcio Checklist PWA v32.3
 
 ## Novità v32.3

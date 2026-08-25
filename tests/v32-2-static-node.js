@@ -8,12 +8,12 @@ const db = fs.readFileSync(path.join(root, 'db.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
 
-if (sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.3';")) {
-  ok(!html.includes('id="slotMapSlotIndex"'), 'v32.3 must remove the superseded Slot index');
-  ok(!app.includes('renderSlotMapIndex') && !app.includes('data-slot-map-index='), 'v32.3 must remove Slot index logic');
-  ok(app.includes('data-slot-map-toggle='), 'v32.3 must preserve collapsible Slot headers');
-  ok(css.includes('/* v32.3 — Mappa Slot:'), 'v32.3 CSS block missing');
-  console.log('v32.2 static checks superseded by v32.3 map simplification: OK');
+if (/const CACHE_NAME = 'fantacalcio-checklist-v32\.(?:3|4)';/.test(sw)) {
+  ok(!html.includes('id="slotMapSlotIndex"'), 'v32.3+ must remove the superseded Slot index');
+  ok(!app.includes('renderSlotMapIndex') && !app.includes('data-slot-map-index='), 'v32.3+ must remove Slot index logic');
+  ok(app.includes('data-slot-map-toggle='), 'v32.3+ must preserve collapsible Slot headers');
+  ok(css.includes('/* v32.3 — Mappa Slot:'), 'v32.3+ baseline CSS block missing');
+  console.log('v32.2 static checks superseded by v32.3+ map simplification: OK');
   process.exit(0);
 }
 

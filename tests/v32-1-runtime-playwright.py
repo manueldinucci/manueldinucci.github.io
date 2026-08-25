@@ -3,7 +3,7 @@ import json, re
 from playwright.sync_api import sync_playwright
 
 ROOT = Path(__file__).resolve().parents[1]
-IS_V323 = 'fantacalcio-checklist-v32.3' in (ROOT / 'service-worker.js').read_text(encoding='utf-8')
+IS_V323 = ('fantacalcio-checklist-v32.3' in (ROOT / 'service-worker.js').read_text(encoding='utf-8') or 'fantacalcio-checklist-v32.4' in (ROOT / 'service-worker.js').read_text(encoding='utf-8'))
 html = (ROOT / 'index.html').read_text(encoding='utf-8')
 html = re.sub(r'<link rel="stylesheet" href="style\.css"\s*/?>', '', html)
 html = re.sub(r'<script src="[^"]+"></script>', '', html)
@@ -84,7 +84,7 @@ with sync_playwright() as pw:
     check(page.locator('.slot-map-progress').count() == 0, 'progress bar remains in Mappa')
     check(page.locator('.slot-map-band').count() > 0, 'compact bands missing')
     bg = page.locator('.slot-map-band').first.evaluate("e => getComputedStyle(e).backgroundColor")
-    check(bg in (('rgb(243, 244, 245)','rgb(247, 247, 248)') if IS_V323 else ('rgba(0, 0, 0, 0)','transparent')), f'band surface unexpected: {bg}')
+    check(bg in (('rgb(243, 244, 245)','rgb(247, 247, 248)','rgb(247, 248, 249)') if IS_V323 else ('rgba(0, 0, 0, 0)','transparent')), f'band surface unexpected: {bg}')
     pos = page.locator('.slot-map-slot-head').first.evaluate("e => getComputedStyle(e).position")
     check(pos == 'sticky', f'Slot header not sticky: {pos}')
     check(page.locator('.slot-map-slot-head').filter(has_text='4° SLOT').locator('.slot-map-count').inner_text() == '19/20', 'X/Y semantics wrong')
