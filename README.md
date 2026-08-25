@@ -1,3 +1,14 @@
+# Fantacalcio Checklist PWA v32.2
+
+## Novità v32.2
+
+- Mappa Slot trasformata in strumento di navigazione: indice rapido `S1–S5` con conteggi residui e salto diretto alla fascia.
+- Slot collassabili; il tap sull’indice riapre automaticamente uno Slot chiuso e lo porta in vista.
+- Header Slot compatti e sticky, con banda neutra e contatore `X/Y`; Slot esauriti evidenziati solo in rosso/grassetto.
+- Sottofasce in vera struttura editoriale `Target │ Giocatori`, con colonna Target stabile, separatori sottili e nomi a peso tipografico ridotto.
+- Stato dello Slot corrente evidenziato nell’indice durante lo scroll; apertura dei giocatori e ritorno alla posizione della Mappa preservati.
+- Cache Service Worker `fantacalcio-checklist-v32.2`; modello dati e backup v5 invariati.
+
 # Fantacalcio Checklist PWA v32.1
 
 ## Novità v32.1

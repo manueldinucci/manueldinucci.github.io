@@ -6,7 +6,7 @@ assert(!html.includes('id="themeHeaderBtn"'), 'dark-theme button must be removed
 assert(!html.includes('prefers-color-scheme: dark'), 'dark theme meta must be removed');
 assert(app.includes('function openSlotMap()') && app.includes('function renderSlotMap()'));
 assert(app.includes('function slotMapBandKey') && app.includes('target_min') && app.includes('target_max'));
-assert(app.includes("const slotOrder = role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5']"));
+assert(app.includes("return role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5'];"));
 assert(app.includes('function isGoalkeeperCoverage'));
 assert(app.includes('Privacy attiva · sottofasce economiche nascoste'));
 assert(app.includes("await FantaDB.setSetting('theme', 'light')"));
