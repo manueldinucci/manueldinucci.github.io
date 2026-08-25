@@ -23,15 +23,10 @@
         </div>
         <div class="header-actions">
           <button id="privacyHeaderBtn" class="header-icon-btn privacy-toggle-btn" type="button" aria-label="Attiva modalità privacy" aria-pressed="false" title="Modalità privacy">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M3 3l18 18M10.6 10.7a2 2 0 0 0 2.7 2.7M9.9 4.2A10.8 10.8 0 0 1 12 4c5 0 8.5 4.2 9.5 6a10.4 10.4 0 0 1-2.7 3.3M6.2 6.2C4.3 7.4 3.1 9 2.5 10c1 1.8 4.5 6 9.5 6 1 0 2-.2 2.9-.5"/></svg>
+            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M12 3.2 19 6v5.1c0 4.5-2.8 7.7-7 9.7-4.2-2-7-5.2-7-9.7V6l7-2.8Z"/><path d="M12 7.5v5.2"/><circle cx="12" cy="16.1" r=".8" fill="currentColor" stroke="none"/></svg>
           </button>
           <button id="commentsHeaderBtn" class="header-icon-btn comments-toggle-btn" type="button" aria-label="Nascondi commenti" aria-pressed="true" title="Commenti visibili">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M5 5h14a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H10l-5 4v-4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2Z"/></svg>
-          </button>
-          <button id="compactHeaderBtn" class="header-icon-btn compact-toggle-btn" type="button" aria-label="Attiva modalità compatta" aria-pressed="false" title="Modalità compatta">
-            <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-              <path d="M7 6h10M7 18h10M9 9l3 3 3-3M9 15l3-3 3 3" />
-            </svg>
           </button>
           <button id="participantsHeaderBtn" class="header-icon-btn participants-toggle-btn active" type="button" aria-label="Nascondi partecipanti" aria-pressed="true" title="Partecipanti visibili">
             <svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"/><circle cx="12" cy="12" r="2.6"/></svg>
@@ -147,9 +142,8 @@
     <div id="slotMapContent" class="sheet-scroll slot-map-content" aria-live="polite"></div>
   </section>
 
-  <section id="playerSheet" class="bottom-sheet player-edit-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="sheetPlayerName">
-    <div class="sheet-handle"></div>
-    <div class="sheet-header">
+  <section id="playerSheet" class="player-modal player-edit-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="sheetPlayerName">
+    <div class="sheet-header player-modal-header">
       <div>
         <h2 id="sheetPlayerName"></h2>
         <div id="sheetPlayerMeta" class="sheet-meta"></div>
@@ -157,7 +151,7 @@
       <button id="closeSheetBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
     <div id="sheetSaveStatus" class="save-status">Salvato</div>
-    <div class="sheet-scroll">
+    <div class="sheet-scroll player-modal-scroll">
       <div class="sheet-info-grid" id="sheetInfoGrid"></div>
 
       <div class="edit-section">
@@ -179,11 +173,6 @@
         <label class="full-field comment-field">Commento<textarea id="editComment" rows="4" placeholder="Nota personale..."></textarea></label>
       </div>
 
-      <section id="competitorsSection" class="competitors-section hidden">
-        <div class="competitors-head"><div><div class="edit-section-title">Possibili competitori</div><div id="competitionPressure" class="competition-pressure"></div></div></div>
-        <div id="competitorsList" class="competitors-list"></div>
-      </section>
-
       <details class="purchase-details">
         <summary>Dati acquisto <span>opzionali</span></summary>
         <div class="edit-grid purchase-grid">
@@ -192,12 +181,11 @@
         </div>
         <button id="savePurchaseBtn" type="button" class="secondary-btn purchase-save-btn">Aggiorna assegnazione</button>
       </details>
-
-      <div class="sheet-actions player-sheet-actions player-bottom-actions">
-        <button id="toggleTakenSheet" class="primary-btn player-primary-action">Assegna giocatore</button>
-        <button id="toggleFavoriteSheet" class="secondary-btn player-icon-action" aria-label="Preferito">☆</button>
-        <button id="closeSheetBottomBtn" class="secondary-btn player-icon-action" aria-label="Chiudi scheda">×</button>
-      </div>
+    </div>
+    <div class="sheet-actions player-sheet-actions player-bottom-actions">
+      <button id="toggleTakenSheet" class="primary-btn player-primary-action">Assegna giocatore</button>
+      <button id="toggleFavoriteSheet" class="secondary-btn player-icon-action" aria-label="Preferito">☆</button>
+      <button id="closeSheetBottomBtn" class="secondary-btn player-icon-action" aria-label="Chiudi scheda">×</button>
     </div>
   </section>
 
@@ -284,13 +272,13 @@
     </div>
   </section>
 
-  <section id="managerConfigSheet" class="bottom-sheet tall-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="managerConfigTitle">
+  <section id="managerConfigSheet" class="bottom-sheet tall-sheet manager-config-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="managerConfigTitle">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
       <div><h2 id="managerConfigTitle">Configura asta</h2><div class="sheet-meta">Regole rosa, budget e partecipanti</div></div>
       <button id="closeManagerConfigBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
-    <div class="sheet-scroll">
+    <div class="sheet-scroll manager-config-scroll">
       <form id="managerConfigForm">
         <div class="auction-config-grid">
           <label>Budget iniziale<input id="configBudget" type="number" inputmode="numeric" min="0" required></label>

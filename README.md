@@ -1,3 +1,15 @@
+# Fantacalcio Checklist PWA — v31.10
+
+Release di rifinitura, consolidamento e semplificazione dell’interfaccia, costruita sulla v31.9 stabile:
+- `Rose` con gerarchia monocromatica di grigi e crediti residui nel formato `XXX CR RIM.`;
+- monitor partecipanti con occupazione dinamica `owned/quota` (es. `4/8`) e rimozione del `FAB` aggregato dalla UI;
+- `Configura asta` mobile resa keyboard-aware con singolo contenitore scrollabile, `100dvh` e `Visual Viewport`;
+- scheda giocatore trasformata da bottom sheet a modal compatta centrata, senza monitor concorrenza;
+- nuova icona lineare scudo + punto esclamativo per la Modalità sicura;
+- precedente Vista compatta resa layout standard permanente e rimosso il controllo `Comprimi`;
+- partecipanti configurabili tramite un solo nome, con abbreviazioni strategiche automatiche a 5 lettere e migrazione legacy che preserva gli ID interni;
+- Service Worker aggiornato alla cache `fantacalcio-checklist-v31.10`.
+
 # Fantacalcio Checklist PWA — v31.9
 
 Release chirurgica UI:

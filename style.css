@@ -73,8 +73,6 @@ input, select, textarea { background: var(--surface); border: 1px solid var(--li
 }
 .header-icon-btn:active { background: var(--surface-2); transform: translateY(1px); }
 #menuBtn { font-size: 19px; }
-.compact-toggle-btn svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }
-.compact-toggle-btn.active { background: var(--text); color: var(--bg); border-color: var(--text); }
 .eyebrow { font-size: 10px; letter-spacing: .12em; color: var(--muted); font-weight: 800; }
 h1 { margin: 1px 0 0; font-size: 22px; line-height: 1.05; }
 h2 { margin: 0; font-size: 20px; }
@@ -144,7 +142,7 @@ h2 { margin: 0; font-size: 20px; }
   min-height: 58px; background: var(--surface); border: 1px solid var(--line); border-radius: 9px;
   overflow: hidden; contain: content;
 }
-.player-card.compact { min-height: 46px; }
+.player-card { min-height: 46px; }
 .player-card.taken { background: color-mix(in srgb, var(--surface) 60%, var(--surface-2)); }
 .player-card.taken .player-line { opacity: .58; }
 .fav-btn {
@@ -174,10 +172,10 @@ html[data-theme="dark"] .assign-btn.assigned { background: #303035; color: #a5a5
 .player-prices { margin-top: 3px; font-size: 12px; font-weight: 700; color: color-mix(in srgb, var(--text) 82%, var(--muted)); }
 .player-purchase { margin-top: 3px; font-size: 12px; font-weight: 820; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .player-comment { margin-top: 2px; color: var(--muted); font-size: 11px; line-height: 1.25; white-space: normal; overflow: visible; overflow-wrap: anywhere; }
-.player-card.compact .player-main { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; padding-top: 3px; padding-bottom: 3px; }
-.player-card.compact .player-line { min-width: 0; }
-.player-card.compact .player-prices, .player-card.compact .player-purchase { margin: 0; white-space: nowrap; font-size: 11px; }
-.player-card.compact .player-comment { font-size: 10px; }
+.player-card .player-main { display: grid; grid-template-columns: minmax(0,1fr) auto; align-items: center; gap: 8px; padding-top: 3px; padding-bottom: 3px; }
+.player-card .player-line { min-width: 0; }
+.player-card .player-prices, .player-card .player-purchase { margin: 0; white-space: nowrap; font-size: 11px; }
+.player-card .player-comment { font-size: 10px; }
 .empty-state { text-align: center; color: var(--muted); padding: 40px 20px; }
 
 .backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.35); z-index: 70; }
@@ -256,8 +254,7 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
 @media (min-width: 700px) {
   .main-content { padding-left: 14px; padding-right: 14px; }
   .top-header { padding-left: 14px; padding-right: 14px; }
-  .player-list { grid-template-columns: 1fr 1fr; }
-  .player-list.compact-grid { grid-template-columns: 1fr; }
+  .player-list { grid-template-columns: 1fr; }
 }
 .bottom-sheet { bottom: var(--keyboard-offset, 0px); }
 
@@ -508,14 +505,14 @@ th { position: sticky; top: 0; background: var(--surface-2); z-index: 1; }
   text-overflow: clip;
   overflow-wrap: anywhere;
 }
-.player-card.compact .player-main {
+.player-card .player-main {
   display: block;
   padding-top: 5px;
   padding-bottom: 5px;
 }
-.player-card.compact .player-primary-meta { font-size: 11px; margin-top: 2px; }
-.player-card.compact .player-secondary-meta { font-size: 9.5px; margin-top: 1px; }
-.player-card.compact .player-purchase { margin-top: 2px; font-size: 11px; }
+.player-card .player-primary-meta { font-size: 11px; margin-top: 2px; }
+.player-card .player-secondary-meta { font-size: 9.5px; margin-top: 1px; }
+.player-card .player-purchase { margin-top: 2px; font-size: 11px; }
 
 /* Slot → intensità neutra dello sfondo per tutti i giocatori liberi, inclusi i preferiti. */
 html[data-theme="light"] .player-card.slot-s1:not(.taken) { background: #e7e7ea; }
@@ -1089,13 +1086,13 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
   font-weight: 520;
   line-height: 1.22;
 }
-.player-card.compact .player-main { display: block; }
-.player-card.compact .player-primary-meta { display: flex; gap: 4px; margin-top: 2px; }
-.player-card.compact .player-slot-badge,
-.player-card.compact .player-target-pill { min-height: 18px; padding: 1px 6px; }
-.player-card.compact .player-slot-badge { font-size: 9px; }
-.player-card.compact .player-target-pill { font-size: 10px; }
-.player-card.compact .player-secondary-meta { font-size: 9px; margin-top: 1px; }
+.player-card .player-main { display: block; }
+.player-card .player-primary-meta { display: flex; gap: 4px; margin-top: 2px; }
+.player-card .player-slot-badge,
+.player-card .player-target-pill { min-height: 18px; padding: 1px 6px; }
+.player-card .player-slot-badge { font-size: 9px; }
+.player-card .player-target-pill { font-size: 10px; }
+.player-card .player-secondary-meta { font-size: 9px; margin-top: 1px; }
 
 @media (max-width: 390px) {
   .player-target-pill { padding-inline: 6px; }
@@ -1123,7 +1120,7 @@ html[data-theme="dark"] .import-list-btn:active { background: #2d6f34; }
 .player-slot-badge { max-width: 100%; }
 @media (max-width: 390px) {
   .player-slot-badge { padding-inline: 6px; font-size: 9.5px; }
-  .player-card.compact .player-slot-badge { padding-inline: 5px; font-size: 8.7px; }
+  .player-card .player-slot-badge { padding-inline: 5px; font-size: 8.7px; }
 }
 
 
@@ -1718,4 +1715,156 @@ html { color-scheme: light; }
 }
 @media (max-width: 360px) {
   .demand-participant-code { font-size: 8px; }
+}
+
+
+/* v31.10 — rifinitura UI, Rose gerarchiche, modal giocatore e tastiera Configura asta */
+
+/* La precedente Vista compatta è ora il layout standard permanente delle card. */
+/* Toolbar: cinque controlli, senza placeholder per la vecchia modalità compatta. */
+.privacy-toggle-btn svg { width:21px; height:21px; }
+@media (max-width: 430px) {
+  .header-actions { gap: 3px; }
+  .header-icon-btn { width: 40px; height: 40px; min-width: 40px; min-height: 40px; }
+}
+@media (max-width: 360px) {
+  .header-actions { gap: 2px; }
+  .header-icon-btn { width: 39px; height: 39px; min-width: 39px; min-height: 39px; }
+}
+
+/* Rose: gerarchia monocromatica a più livelli di grigio. */
+.dashboard-sheet-scroll { background: #F1F2F4; }
+.rose-cards { gap: 7px; }
+.rose-manager,
+.rose-manager.self-manager {
+  background: #FAFAFA;
+  border-color: #D7DADF;
+  box-shadow: none;
+}
+.rose-manager-head {
+  min-height: 40px;
+  padding: 8px 9px;
+  background: #E7E9EC;
+  color: #111111;
+}
+.rose-manager[open] > .rose-manager-head { border-bottom-color: #D7DADF; }
+.rose-manager-head strong { color:#111111; }
+.rose-credits {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 3px;
+  white-space: nowrap;
+  color: #111111;
+  font-variant-numeric: tabular-nums;
+}
+.rose-credit-value { font-size: 13px; font-weight: 850; }
+.rose-credit-label { font-size: 9.5px; font-weight: 720; letter-spacing: .02em; color:#5F6368; }
+.rose-roster-body { padding: 0; background:#FAFAFA; }
+.rose-role-row {
+  padding: 6px 8px;
+  border-top: 1px solid #D7DADF;
+  background: #F3F4F5;
+}
+.rose-role-row:nth-child(even) { background: #F7F7F8; }
+.rose-role-row:first-child { border-top: 0; }
+.rose-role-code,
+.rose-role-players { color:#111111; }
+.rose-player-price,
+.rose-player-separator,
+.rose-role-empty { color:#5F6368; }
+
+/* Scheda giocatore: modal compatta centrata, non bottom sheet. */
+.player-modal {
+  position: fixed;
+  z-index: 80;
+  left: 50%;
+  top: var(--visual-viewport-center, 50%);
+  transform: translate(-50%, -50%);
+  width: min(92vw, 420px);
+  height: auto;
+  max-height: min(75dvh, calc(var(--visual-viewport-height, 100dvh) - 24px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 34px rgba(0,0,0,.18);
+  padding-bottom: 0;
+}
+.player-modal .player-modal-header { flex: 0 0 auto; padding: 9px 11px 8px; }
+.player-modal .player-modal-header h2 { font-size: 18px; }
+.player-modal .save-status { top: 47px; }
+.player-modal .player-modal-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  max-height: min(60dvh, calc(var(--visual-viewport-height, 100dvh) - 150px));
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: 10px 11px 12px;
+  scroll-padding: 12px;
+}
+.player-modal .sheet-info-grid { grid-template-columns: repeat(2, minmax(0,1fr)); margin-bottom: 10px; }
+.player-modal .player-sheet-actions {
+  position: static;
+  flex: 0 0 auto;
+  margin: 0;
+  padding: 9px 10px calc(9px + var(--safe-bottom));
+  border-top: 1px solid var(--line);
+  background: var(--surface);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+.player-modal.keyboard-open {
+  height: auto;
+  max-height: min(75dvh, calc(var(--visual-viewport-height, 100dvh) - 16px));
+}
+.player-modal.keyboard-open .player-modal-scroll {
+  padding-bottom: 12px;
+  scroll-padding-bottom: 14px;
+}
+@media (max-width: 430px) {
+  .player-modal { width: 92vw; border-radius: 13px; }
+}
+
+/* Configura asta mobile: un solo scroller reale, agganciato alla Visual Viewport con tastiera. */
+.manager-editor-fields { grid-template-columns: minmax(0,1fr) 48px; }
+.manager-self-field { grid-row: auto; }
+@media (max-width: 600px) {
+  .manager-config-sheet {
+    bottom: 0;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    max-height: 94dvh;
+  }
+  .manager-config-sheet > .sheet-handle,
+  .manager-config-sheet > .sheet-header { flex: 0 0 auto; }
+  .manager-config-scroll {
+    flex: 1 1 auto;
+    min-height: 0;
+    max-height: none !important;
+    overflow-y: auto;
+    overflow-x: hidden;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+    touch-action: pan-y;
+    scroll-padding: 14px 0 24px;
+  }
+  .manager-config-sheet .sticky-actions { position: static; }
+  .manager-config-sheet input,
+  .manager-config-sheet select { font-size: 16px; }
+  .manager-editor-fields { grid-template-columns: minmax(0,1fr) 46px; }
+  .manager-config-sheet.keyboard-open {
+    top: calc(var(--visual-viewport-top, 0px) + 4px);
+    bottom: auto !important;
+    height: calc(var(--visual-viewport-height, 100dvh) - 8px);
+    max-height: calc(var(--visual-viewport-height, 100dvh) - 8px);
+    padding-bottom: 0;
+  }
+}
+
+@supports not (height: 1dvh) {
+  .player-modal { max-height: min(75vh, calc(var(--visual-viewport-height, 100vh) - 24px)); }
 }

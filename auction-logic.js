@@ -75,7 +75,6 @@
     return {
       id: manager?.id || '',
       nome: manager?.nome || '',
-      squadra: manager?.squadra || '',
       budgetInitial,
       budgetRemaining,
       spent,

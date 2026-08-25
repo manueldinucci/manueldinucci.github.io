@@ -360,18 +360,17 @@
   }
 
   function sanitizeManager(raw = {}) {
-    const budget = raw.budgetInitial === '' || raw.budgetInitial == null || Number.isNaN(Number(raw.budgetInitial)) ? null : Math.max(0, Number(raw.budgetInitial));
     return {
+      // L'id interno resta stabile per preservare tutte le relazioni legacy.
+      // L'unico identificativo configurabile/visibile è il nome.
       id: String(raw.id || makeManagerId()),
-      nome: String(raw.nome || '').trim(),
-      squadra: String(raw.squadra || '').trim(),
-      budgetInitial: budget,
+      nome: String(raw.nome || raw.name || '').trim(),
       isMe: Boolean(raw.isMe)
     };
   }
 
   async function getManagers() {
-    return getAll(STORES.managers);
+    return (await getAll(STORES.managers)).map(sanitizeManager).filter(m => m.nome);
   }
 
   async function putManager(raw) {
@@ -429,7 +428,7 @@
       playersBase: base,
       playersPersonal: personal,
       auctionState: auction,
-      managers,
+      managers: managers.map(sanitizeManager).filter(m => m.nome),
       settings,
       meta
     };
@@ -451,7 +450,7 @@
       [STORES.auction, data.auctionState],
       [STORES.settings, data.settings],
       [STORES.meta, data.meta],
-      [STORES.managers, data.managers || []]
+      [STORES.managers, (data.managers || []).map(sanitizeManager).filter(m => m.nome)]
     ];
     await tx(Object.values(STORES), 'readwrite', stores => {
       for (const [name, rows] of groups) {

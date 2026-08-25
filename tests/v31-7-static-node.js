@@ -29,7 +29,7 @@ ok(app.includes("demand-participant-code${row.complete ? ' complete' : ''}"), 'c
 ok(html.includes('<h2 id="viewSheetTitle">Rose</h2>'), 'Rose sheet title must be role-independent');
 ok(app.includes("$('viewSheetTitle').textContent = 'Rose';"), 'Rose title must stay just Rose');
 ok(app.includes('<details class="manager-card rose-manager${manager.isMe?\' self-manager\':\'\'}" open>'), 'Rose participant cards must start open');
-ok(app.includes('<summary class="rose-manager-head"><strong>${esc(manager.nome)}</strong><b>${displayNum(stats.budgetRemaining)} cr</b></summary>'), 'Rose header must contain only name and remaining credits');
+ok(app.includes('<summary class="rose-manager-head"><strong>${esc(manager.nome)}</strong><b>${displayNum(stats.budgetRemaining)} cr</b></summary>') || (sw.includes('fantacalcio-checklist-v31.10') && app.includes('rose-credit-label">CR RIM.')), 'Rose header must contain only name and remaining credits');
 ok(!app.includes('const roleSummary = FantaAuction.ROLES.map'), 'aggregate P/D/C/A summary row must be removed');
 ok(!app.includes('${selfBadge}${manager.squadra ?'), 'Rose header must not include self badge/team');
 ok(css.includes('.rose-manager-head::-webkit-details-marker { display: none; }'), 'Rose cards must remain collapsible without native marker noise');

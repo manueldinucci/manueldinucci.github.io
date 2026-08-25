@@ -14,8 +14,13 @@ ok(app.includes('Array.from({length:100}'), 'FVM select must generate 1..100');
 ok(app.includes("bindFilter('minFvmFilter','minFvm','change')"), 'FVM select must bind on change');
 ok(!app.includes('state.priceMax'), 'removed price filter state must not be used');
 ok(!app.includes("bindCheck('compactMode'"), 'old compact checkbox binding must be removed');
-ok(app.includes("$('compactHeaderBtn').addEventListener('click', toggleCompact)"), 'compact header toggle must be bound');
-ok(app.includes("btn.setAttribute('aria-pressed', state.compact ? 'true' : 'false')"), 'compact state must be exposed');
+if (html.includes('id="compactHeaderBtn"')) {
+  ok(app.includes("$('compactHeaderBtn').addEventListener('click', toggleCompact)"), 'compact header toggle must be bound');
+  ok(app.includes("btn.setAttribute('aria-pressed', state.compact ? 'true' : 'false')"), 'compact state must be exposed');
+} else {
+  ok(sw.includes('fantacalcio-checklist-v31.10'), 'compact toggle may disappear only in v31.10+');
+  ok(!app.includes('state.compact'), 'v31.10 must remove compact renderer branching');
+}
 const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);
 if (version === 12) {
   ok(/\.demand-summary\s*\{[\s\S]*?font-size:\s*13px;/m.test(css), 'v12 demand line must be enlarged');

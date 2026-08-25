@@ -18,7 +18,6 @@
     minQta: '',
     onlyAvailable: false,
     onlyFavorites: false,
-    compact: false,
     commentsVisible: true,
     privacyMode: false,
     participantsVisible: true,
@@ -52,7 +51,7 @@
   function roleName(r) { return roles.find(x => x[0] === r)?.[1] || r; }
   function money(v) { return Number.isFinite(Number(v)) ? Math.round(Number(v) * 10) / 10 : 0; }
   function getManagerById(id) { return state.managers.find(m => String(m.id) === String(id)); }
-  function managerDisplayName(manager) { return manager ? `${manager.nome}${manager.squadra ? ` · ${manager.squadra}` : ''}` : '—'; }
+  function managerDisplayName(manager) { return manager ? String(manager.nome || '').trim() : '—'; }
 
   function populateManagerSelects() {
     const options = '<option value="">—</option>' + state.managers
@@ -102,7 +101,7 @@
   async function loadSettings() {
     const saved = await FantaDB.getSetting('uiState', null);
     if (saved && typeof saved === 'object') {
-      const { liveMode: _legacyLiveMode, onlyComments: _legacyOnlyComments, priceMax: _removedPriceMax, ...cleanSaved } = saved;
+      const { liveMode: _legacyLiveMode, onlyComments: _legacyOnlyComments, priceMax: _removedPriceMax, compact: _legacyCompact, compactMode: _legacyCompactMode, compactView: _legacyCompactView, isCompact: _legacyIsCompact, ...cleanSaved } = saved;
       Object.assign(state, cleanSaved);
     }
     // v31: tema unico chiaro. Migra/neutralizza eventuali preferenze dark legacy.
@@ -140,7 +139,6 @@
       minQta: state.minQta,
       onlyAvailable: state.onlyAvailable,
       onlyFavorites: state.onlyFavorites,
-      compact: state.compact,
       commentsVisible: state.commentsVisible,
       participantsVisible: state.participantsVisible,
       emphasis: state.emphasis,
@@ -258,7 +256,6 @@
     $('minQtaFilter').value = state.minQta;
     updatePrivacyButton();
     updateCommentsButton();
-    updateCompactButton();
     updateParticipantsButton();
     updateSortControls();
   }
@@ -414,13 +411,12 @@
     const list = getFilteredPlayers();
     const scale = fvmScaleInfo();
     const container = $('playerList');
-    container.classList.toggle('compact-grid', state.compact);
     const frag = document.createDocumentFragment();
     for (const p of list) {
       const card = document.createElement('article');
       card.className = state.privacyMode
-        ? `player-card privacy-card${state.compact?' compact':''}`
-        : `player-card${p.preso?' taken':''}${p.preferito?' favorite':''}${state.compact?' compact':''}${slotClass(p)}`;
+        ? 'player-card privacy-card'
+        : `player-card${p.preso?' taken':''}${p.preferito?' favorite':''}${slotClass(p)}`;
       card.dataset.key = p.key;
       const size = nameFontSize(p.fvm, scale).toFixed(1);
       const weight = nameFontWeight(p.fvm, scale);
@@ -633,7 +629,7 @@
   }
 
   function participantNeedsMarkup(rows) {
-    return participantGridMarkup(rows, row => displayNum(row.owned), 'demand-needs-grid');
+    return participantGridMarkup(rows, row => `${displayNum(row.owned)}/${displayNum(row.quota)}`, 'demand-needs-grid');
   }
 
   function participantMaxBidMarkup(rows) {
@@ -646,10 +642,9 @@
     if (state.privacyMode || state.showAll) { el.classList.add('hidden'); return; }
     const model = demandLineModel(rolePlayers);
     const slotsText = model.slots.map(slot => `${slot}: ${model.counts[slot]}`).join(' | ');
-    const fabText = `FAB: ${model.needs.fab == null ? '—' : model.needs.fab}`;
     const participants = state.participantsVisible ? participantNeedsMarkup(model.needs.rows) : '';
     const maxBids = state.participantsVisible && model.role === 'A' ? participantMaxBidMarkup(model.needs.rows) : '';
-    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${esc(slotsText)}</span><span class="demand-fab">${esc(fabText)}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
+    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${esc(slotsText)}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
     el.classList.remove('warning', 'hidden');
   }
 
@@ -837,7 +832,6 @@
     $('resetAllBtn').addEventListener('click', resetAll);
     $('privacyHeaderBtn').addEventListener('click', togglePrivacy);
     $('commentsHeaderBtn').addEventListener('click', toggleComments);
-    $('compactHeaderBtn').addEventListener('click', toggleCompact);
     $('participantsHeaderBtn').addEventListener('click', toggleParticipants);
     $('slotMapHeaderBtn').addEventListener('click', openSlotMap);
     $('closeSlotMapBtn').addEventListener('click', closeAllSheets);
@@ -1042,7 +1036,6 @@
     populateManagerSelects();
     $('editManager').value = p.manager_id || '';
     updateSheetButtons(p);
-    renderCompetitors(p);
     if (!preserve) openOnly('playerSheet');
   }
 
@@ -1075,29 +1068,9 @@
     await FantaDB.updatePersonal(p.key, personal);
     $('sheetSaveStatus').classList.add('show'); setTimeout(() => $('sheetSaveStatus').classList.remove('show'), 900);
     populateDynamicFilters(); renderPlayers(); renderCountsAndDemand();
-    renderCompetitors(p);
   }
 
 
-  function renderCompetitors(p) {
-    const section = $('competitorsSection');
-    if (!section) return;
-    if (!state.managers.length || p.preso) { section.classList.add('hidden'); return; }
-    const competitors = FantaAuction.getCompetitors(p, FantaAuction.opponentManagers(state.managers), state.players, state.auctionConfig);
-    const pressure = FantaAuction.competitionLevel(p, competitors);
-    section.classList.remove('hidden');
-    const targetMax = num(p.target_max) ?? num(p.prezzo_ideale_max);
-    $('competitionPressure').textContent = targetMax != null
-      ? `Concorrenza ${pressure.label} · ${pressure.count} sopra Target ${displayNum(targetMax)}`
-      : `Concorrenza ${pressure.label} · ${competitors.length} con slot ${p.ruolo}`;
-    $('competitorsList').innerHTML = competitors.length
-      ? competitors.map(({manager,stats}) => {
-          const threat = FantaAuction.threatLevel(stats, p.ruolo, state.auctionConfig, targetMax);
-          const targetText = targetMax == null ? '' : (stats.maxBid > targetMax ? ` · sopra Target ${displayNum(targetMax)}` : ` · sotto Target ${displayNum(targetMax)}`);
-          return `<div class="competitor-row"><strong>${esc(manager.nome)}</strong><span>${displayNum(stats.budgetRemaining)} cr · Max ${displayNum(Math.floor(stats.maxBid))} · ${esc(p.ruolo)} ${stats.roleRemaining[p.ruolo]} · Minaccia ${threat.label}${targetText}</span></div>`;
-        }).join('')
-      : '<div class="competitor-empty">Nessun fantallenatore con slot e capacità economica disponibili.</div>';
-  }
 
   function basePriceForPlayer(player) {
     const mode = String(state.auctionConfig.basePriceMode || '1').toLowerCase();
@@ -1250,7 +1223,7 @@
     );
     const head = inSheet ? '' : `<div class="dashboard-head"><h2>Rose</h2><span>Situazione completa delle squadre</span></div>`;
     dashboard.innerHTML = `${head}<div class="manager-cards rose-cards">${rows.length ? rows.map(({manager,stats}) => {
-      return `<details class="manager-card rose-manager${manager.isMe?' self-manager':''}" open><summary class="rose-manager-head"><strong>${esc(manager.nome)}</strong><b>${displayNum(stats.budgetRemaining)} cr</b></summary>${managerFullRosterDetails(manager,stats)}</details>`;
+      return `<details class="manager-card rose-manager${manager.isMe?' self-manager':''}" open><summary class="rose-manager-head"><strong>${esc(manager.nome)}</strong><b class="rose-credits"><span class="rose-credit-value">${displayNum(stats.budgetRemaining)}</span> <span class="rose-credit-label">CR RIM.</span></b></summary>${managerFullRosterDetails(manager,stats)}</details>`;
     }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>'}</div>`;
   }
 
@@ -1272,7 +1245,7 @@
     const row = document.createElement('div');
     row.className = 'manager-editor-row';
     row.dataset.id = manager.id || '';
-    row.innerHTML = `<div class="manager-editor-fields"><label class="manager-name-field"><span class="manager-field-title">Nome</span><input data-field="nome" value="${esc(manager.nome || '')}" autocomplete="off" required></label><label class="manager-team-field"><span class="manager-field-title">Squadra</span><input data-field="squadra" value="${esc(manager.squadra || '')}" autocomplete="off"></label><label class="manager-self-field"><input class="manager-self-input" data-field="isMe" aria-label="Io" type="checkbox" ${manager.isMe?'checked':''}><span class="manager-self-toggle" aria-hidden="true"><span class="self-check">✓</span><span>Io</span></span></label></div><button type="button" class="manager-remove-btn" aria-label="Rimuovi fantallenatore">×</button>`;
+    row.innerHTML = `<div class="manager-editor-fields"><label class="manager-name-field"><span class="manager-field-title">Nome</span><input data-field="nome" value="${esc(manager.nome || '')}" autocomplete="off" required></label><label class="manager-self-field"><input class="manager-self-input" data-field="isMe" aria-label="Io" type="checkbox" ${manager.isMe?'checked':''}><span class="manager-self-toggle" aria-hidden="true"><span class="self-check">✓</span><span>Io</span></span></label></div><button type="button" class="manager-remove-btn" aria-label="Rimuovi fantallenatore">×</button>`;
     row.querySelector('[data-field="isMe"]').addEventListener('change', e => { if (e.target.checked) $('managerEditorRows').querySelectorAll('[data-field="isMe"]').forEach(x => { if (x !== e.target) x.checked = false; }); });
     row.querySelector('.manager-remove-btn').addEventListener('click', () => row.remove());
     $('managerEditorRows').appendChild(row);
@@ -1289,7 +1262,6 @@
     const rows = [...$('managerEditorRows').querySelectorAll('.manager-editor-row')].map(row => ({
       id:row.dataset.id || undefined,
       nome:row.querySelector('[data-field="nome"]').value.trim(),
-      squadra:row.querySelector('[data-field="squadra"]').value.trim(),
       isMe:Boolean(row.querySelector('[data-field="isMe"]')?.checked)
     })).filter(m => m.nome);
     const normalizedNames = rows.map(m => FantaDB.normalizeText(m.nome));
@@ -1543,7 +1515,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,compact:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 
@@ -1579,21 +1551,6 @@
     renderCountsAndDemand();
   }
 
-  function updateCompactButton() {
-    const btn = $('compactHeaderBtn');
-    if (!btn) return;
-    btn.classList.toggle('active', state.compact);
-    btn.setAttribute('aria-pressed', state.compact ? 'true' : 'false');
-    btn.setAttribute('aria-label', state.compact ? 'Disattiva modalità compatta' : 'Attiva modalità compatta');
-    btn.setAttribute('title', state.compact ? 'Vista normale' : 'Modalità compatta');
-  }
-
-  function toggleCompact() {
-    state.compact = !state.compact;
-    updateCompactButton();
-    scheduleUISave();
-    renderPlayers();
-  }
 
   function participantsIconMarkup(visible) {
     return visible
@@ -1715,11 +1672,32 @@
     setTimeout(() => ensurePlayerFieldVisible(field), 420);
   }
 
+  function ensureConfigFieldVisible(field) {
+    const sheet = $('managerConfigSheet');
+    if (!field || !sheet || sheet.classList.contains('hidden')) return;
+    const scroller = sheet.querySelector('.manager-config-scroll');
+    if (!scroller) return;
+    const fieldRect = field.getBoundingClientRect();
+    const scrollRect = scroller.getBoundingClientRect();
+    const gap = 14;
+    let delta = 0;
+    if (fieldRect.bottom > scrollRect.bottom - gap) delta = fieldRect.bottom - (scrollRect.bottom - gap);
+    else if (fieldRect.top < scrollRect.top + gap) delta = fieldRect.top - (scrollRect.top + gap);
+    if (Math.abs(delta) > 1) scroller.scrollBy({ top:delta, behavior:'smooth' });
+  }
+
+  let configVisibilityFrame = 0;
+  function scheduleConfigFieldVisibility(field) {
+    cancelAnimationFrame(configVisibilityFrame);
+    configVisibilityFrame = requestAnimationFrame(() => ensureConfigFieldVisible(field));
+  }
+
   function setupViewportHandling() {
     const root = document.documentElement;
     const fallback = () => {
       root.style.setProperty('--visual-viewport-height', `${window.innerHeight}px`);
       root.style.setProperty('--visual-viewport-top', '0px');
+      root.style.setProperty('--visual-viewport-center', `${window.innerHeight / 2}px`);
       root.style.setProperty('--keyboard-offset', '0px');
       root.style.setProperty('--keyboard-safe-gap', '18px');
       syncPlayerActionBarHeight();
@@ -1735,6 +1713,7 @@
       const keyboardOpen = keyboardOffset > 80;
       root.style.setProperty('--visual-viewport-height', `${Math.max(240, vv.height)}px`);
       root.style.setProperty('--visual-viewport-top', `${Math.max(0, vv.offsetTop)}px`);
+      root.style.setProperty('--visual-viewport-center', `${Math.max(0, vv.offsetTop) + Math.max(240, vv.height) / 2}px`);
       root.style.setProperty('--keyboard-offset', `${keyboardOffset}px`);
       // Margine extra deliberato: la toolbar accessoria iOS non è sempre
       // rappresentata separatamente dalle metriche della Visual Viewport.
@@ -1744,15 +1723,22 @@
         playerSheet.classList.toggle('keyboard-open', keyboardOpen);
         syncPlayerActionBarHeight();
       }
-      if (keyboardOpen && playerSheet && !playerSheet.classList.contains('hidden')) {
-        const active = document.activeElement;
-        if (active && playerSheet.contains(active)) schedulePlayerFieldVisibility(active);
-      }
+      const managerConfigSheet = $('managerConfigSheet');
+      if (managerConfigSheet) managerConfigSheet.classList.toggle('keyboard-open', keyboardOpen);
+      const active = document.activeElement;
+      if (keyboardOpen && playerSheet && !playerSheet.classList.contains('hidden') && active && playerSheet.contains(active)) schedulePlayerFieldVisibility(active);
+      if (keyboardOpen && managerConfigSheet && !managerConfigSheet.classList.contains('hidden') && active && managerConfigSheet.contains(active)) scheduleConfigFieldVisibility(active);
     };
     window.visualViewport.addEventListener('resize', update, {passive:true});
     window.visualViewport.addEventListener('scroll', update, {passive:true});
     window.addEventListener('orientationchange', () => setTimeout(update, 120), {passive:true});
     window.addEventListener('resize', () => { syncPlayerActionBarHeight(); }, {passive:true});
+
+    const configSheet = $('managerConfigSheet');
+    configSheet?.addEventListener('focusin', event => {
+      const field = event.target?.closest?.('input, select, textarea');
+      if (field) scheduleConfigFieldVisibility(field);
+    });
 
     const actionBar = $('playerSheet')?.querySelector('.player-bottom-actions');
     if (actionBar && 'ResizeObserver' in window) {

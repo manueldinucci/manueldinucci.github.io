@@ -7,11 +7,20 @@ const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
 
-// Toggle in the exact toolbar position.
+// Toolbar position: v31.9 had Comprimi; v31.10 intentionally removes it.
+const privacyPos = html.indexOf('id="privacyHeaderBtn"');
+const commentsPos = html.indexOf('id="commentsHeaderBtn"');
 const compactPos = html.indexOf('id="compactHeaderBtn"');
 const participantsPos = html.indexOf('id="participantsHeaderBtn"');
 const mapPos = html.indexOf('id="slotMapHeaderBtn"');
-ok(compactPos >= 0 && participantsPos > compactPos && mapPos > participantsPos, 'Partecipanti must be between Comprimi and Mappa Slot');
+const menuPos = html.indexOf('id="menuBtn"');
+if (sw.includes('fantacalcio-checklist-v31.10')) {
+  ok(compactPos < 0, 'v31.10 must remove Comprimi');
+  ok(privacyPos >= 0 && commentsPos > privacyPos && participantsPos > commentsPos && mapPos > participantsPos && menuPos > mapPos, 'v31.10 toolbar order must be Sicura, Commenti, Partecipanti, Mappa Slot, Impostazioni');
+  ok(!app.includes('state.compact'), 'v31.10 must remove compact renderer state');
+} else {
+  ok(compactPos >= 0 && participantsPos > compactPos && mapPos > participantsPos, 'Partecipanti must be between Comprimi and Mappa Slot');
+}
 ok(html.includes('class="header-icon-btn participants-toggle-btn active"'), 'participants eye button missing');
 ok(app.includes("$('participantsHeaderBtn').addEventListener('click', toggleParticipants)"), 'participants toggle event missing');
 ok(app.includes('participantsVisible: true'), 'participants default state must be visible');
@@ -36,5 +45,5 @@ ok(css.includes('grid-template-columns: repeat(5, minmax(0, 1fr));'), 'participa
 ok(css.includes('.header-actions { gap: 2px; }'), 'mobile toolbar gap adaptation missing');
 ok(css.includes('.participants-toggle-btn svg'), 'participants eye icon styling missing');
 
-ok(sw.includes("fantacalcio-checklist-v31.9"), 'service worker cache must be v31.9');
+ok(/fantacalcio-checklist-v31\.(?:9|10)/.test(sw), 'service worker cache must be v31.9 or v31.10');
 console.log('v31.9 static checks: OK');
