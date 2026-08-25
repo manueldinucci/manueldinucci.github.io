@@ -13,5 +13,5 @@ assert(app.includes("await FantaDB.setSetting('theme', 'light')"));
 assert(!app.includes('function toggleTheme()'));
 assert(css.includes('/* v31 — Mappa Slot + interfaccia solo chiara */'));
 assert(css.includes('.slot-map-player.taken') && css.includes('text-decoration:line-through'));
-assert(sw.includes('fantacalcio-checklist-v31'));
+assert(sw.includes('fantacalcio-checklist-v31') || sw.includes('fantacalcio-checklist-v32'));
 console.log('v31 static checks OK');

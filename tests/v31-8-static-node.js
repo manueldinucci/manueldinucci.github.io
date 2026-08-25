@@ -36,5 +36,5 @@ ok(app.includes('class="rose-role-players"'), 'Rose inline player area missing')
 ok(app.includes(".join('&nbsp;· ')"), 'Rose player separator / wrap-safe flow missing');
 ok(css.includes('grid-template-columns: 18px minmax(0, 1fr);'), 'Rose role rows must use narrow role column + flexible names');
 
-ok(/fantacalcio-checklist-v31\.(?:[8-9]|[1-9]\d+)/.test(sw), 'service worker cache must be v31.8 or a compatible successor');
+ok(/fantacalcio-checklist-v31\.(?:[8-9]|[1-9]\d+)/.test(sw) || sw.includes('fantacalcio-checklist-v32'), 'service worker cache must be v31.8 or a compatible successor');
 console.log('v31.8 static checks: OK');

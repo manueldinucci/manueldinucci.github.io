@@ -18,6 +18,7 @@
     minQta: '',
     onlyAvailable: false,
     onlyFavorites: false,
+    onlyOneCredit: false,
     commentsVisible: true,
     privacyMode: false,
     participantsVisible: true,
@@ -139,6 +140,7 @@
       minQta: state.minQta,
       onlyAvailable: state.onlyAvailable,
       onlyFavorites: state.onlyFavorites,
+      onlyOneCredit: state.onlyOneCredit,
       commentsVisible: state.commentsVisible,
       participantsVisible: state.participantsVisible,
       emphasis: state.emphasis,
@@ -246,6 +248,7 @@
     setSearchExpanded(Boolean(state.search), false);
     $('onlyAvailable').checked = state.onlyAvailable;
     $('onlyFavorites').checked = state.onlyFavorites;
+    $('onlyOneCredit').checked = state.onlyOneCredit;
     $('emphasisSlider').value = state.emphasis;
     $('emphasisValue').textContent = `${state.emphasis}%`;
     const minFvm = Number(state.minFvm);
@@ -319,6 +322,7 @@
       .filter(p => minQta == null || (num(p.quotazione) ?? -Infinity) >= minQta)
       .filter(p => !state.onlyAvailable || !p.preso)
       .filter(p => !state.onlyFavorites || p.preferito)
+      .filter(p => !state.onlyOneCredit || p.oneCreditBuy === true)
       .sort(comparePlayers);
   }
 
@@ -386,6 +390,7 @@
     const target = targetText(p);
     if (slot) parts.push(`<span class="player-slot-badge">${esc(slot)}</span>`);
     if (target) parts.push(`<span class="player-target-pill">${esc(target)} cr</span>`);
+    if (p.oneCreditBuy === true) parts.push(`<span class="one-credit-badge" aria-label="Acquisto a 1">(1)</span>`);
     return parts.join('');
   }
 
@@ -800,6 +805,7 @@
     bindFilter('minQtaFilter','minQta','change');
     bindCheck('onlyAvailable','onlyAvailable');
     bindCheck('onlyFavorites','onlyFavorites');
+    bindCheck('onlyOneCredit','onlyOneCredit');
     $('resetFiltersBtn').addEventListener('click', resetFilters);
     $('emphasisSlider').addEventListener('input', e => {
       state.emphasis = Number(e.target.value); $('emphasisValue').textContent = `${state.emphasis}%`; scheduleUISave(); renderMainView();
@@ -853,6 +859,7 @@
     });
     $('editComment').addEventListener('focus', () => schedulePlayerFieldVisibility($('editComment')));
     $('editSlot').addEventListener('change', scheduleSelectedPlayerSave);
+    $('editOneCreditBuy').addEventListener('change', scheduleSelectedPlayerSave);
     $('editSlot').addEventListener('focus', () => schedulePlayerFieldVisibility($('editSlot')));
     $('toggleTakenSheet').addEventListener('click', async () => {
       if (!state.selectedKey) return;
@@ -915,6 +922,7 @@
     state.minQta = '';
     state.onlyAvailable = false;
     state.onlyFavorites = false;
+    state.onlyOneCredit = false;
 
     $('teamFilter').value = '';
     $('slotFilter').value = '';
@@ -922,6 +930,7 @@
     $('minQtaFilter').value = '';
     $('onlyAvailable').checked = false;
     $('onlyFavorites').checked = false;
+    $('onlyOneCredit').checked = false;
 
     scheduleUISave();
     renderMainView();
@@ -929,7 +938,7 @@
   }
 
   function activeFilterCount() {
-    return [state.team, state.slot, state.minFvm, state.minQta, state.onlyAvailable, state.onlyFavorites].filter(v => v !== '' && v !== false && v != null).length;
+    return [state.team, state.slot, state.minFvm, state.minQta, state.onlyAvailable, state.onlyFavorites, state.onlyOneCredit].filter(v => v !== '' && v !== false && v != null).length;
   }
 
   function renderFilterButton() {
@@ -1032,6 +1041,8 @@
     $('editTargetMin').value = p.target_min ?? p.prezzo_ideale_min ?? '';
     $('editTargetMax').value = p.target_max ?? p.prezzo_ideale_max ?? '';
     $('editComment').value = p.commento || '';
+    $('editOneCreditBuy').checked = p.oneCreditBuy === true;
+    $('sheetOneCreditBadge').classList.toggle('hidden', p.oneCreditBuy !== true);
     $('editPurchase').value = p.prezzo_acquisto ?? '';
     populateManagerSelects();
     $('editManager').value = p.manager_id || '';
@@ -1062,9 +1073,11 @@
       prezzo_ideale_min: num($('editTargetMin').value),
       prezzo_ideale_max: num($('editTargetMax').value),
       commento: $('editComment').value,
-      preferito: p.preferito
+      preferito: p.preferito,
+      oneCreditBuy: $('editOneCreditBuy').checked
     };
     Object.assign(p, personal);
+    $('sheetOneCreditBadge').classList.toggle('hidden', p.oneCreditBuy !== true);
     await FantaDB.updatePersonal(p.key, personal);
     $('sheetSaveStatus').classList.add('show'); setTimeout(() => $('sheetSaveStatus').classList.remove('show'), 900);
     populateDynamicFilters(); renderPlayers(); renderCountsAndDemand();

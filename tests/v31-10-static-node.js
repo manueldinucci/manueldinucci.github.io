@@ -64,5 +64,5 @@ ok(css.includes('.manager-config-sheet.keyboard-open'), 'mobile keyboard layout 
 ok(css.includes('height: calc(var(--visual-viewport-height, 100dvh) - 8px);'), 'visual viewport height binding missing');
 ok(css.includes('.manager-config-sheet .sticky-actions { position: static; }'), 'mobile config must avoid nested sticky overlay');
 
-ok(sw.includes("fantacalcio-checklist-v31.10"), 'service worker cache must be v31.10 exactly');
+ok(sw.includes("fantacalcio-checklist-v31.10") || sw.includes("fantacalcio-checklist-v32"), 'service worker cache must be v31.10 or its v32 successor');
 console.log('v31.10 static checks: OK');

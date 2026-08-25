@@ -1,3 +1,13 @@
+# Fantacalcio Checklist PWA v32
+
+## Novità v32
+
+- Nuova classificazione strategica manuale `(1)` / `oneCreditBuy`: indica i giocatori che prenderemmo immediatamente se stessero per essere assegnati a 1 credito.
+- Marker `(1)` compatto nelle card e nella scheda giocatore, indipendente da Slot, Target e Preferiti.
+- Nuovo filtro `Acquisto a 1`, combinabile in AND con gli altri filtri senza modificare l’ordinamento tecnico.
+- Persistenza IndexedDB, aggiornamento listone e backup compatibili; i backup v32 usano formato 5 e i backup precedenti migrano `oneCreditBuy` a `false`.
+- Cache Service Worker aggiornata a `fantacalcio-checklist-v32`.
+
 # Fantacalcio Checklist PWA — v31.10
 
 Release di rifinitura, consolidamento e semplificazione dell’interfaccia, costruita sulla v31.9 stabile:

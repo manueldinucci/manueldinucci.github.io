@@ -7,7 +7,7 @@ const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
 const auction = fs.readFileSync(path.join(root, 'auction-logic.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
-const isV317 = /fantacalcio-checklist-v31\.(?:[7-9]|[1-9]\d+)/.test(sw);
+const isV317 = (/fantacalcio-checklist-v31\.(?:[7-9]|[1-9]\d+)/.test(sw) || sw.includes('fantacalcio-checklist-v32'));
 if (isV317) {
   ok(!app.includes('data-view="live"'), 'v31.7 must not expose Live in navigation');
   ok(app.includes("const viewButtons = ['rose']"), 'v31.7 must expose Rose as the only dashboard tab');

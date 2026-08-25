@@ -18,7 +18,7 @@ if (html.includes('id="compactHeaderBtn"')) {
   ok(app.includes("$('compactHeaderBtn').addEventListener('click', toggleCompact)"), 'compact header toggle must be bound');
   ok(app.includes("btn.setAttribute('aria-pressed', state.compact ? 'true' : 'false')"), 'compact state must be exposed');
 } else {
-  ok(sw.includes('fantacalcio-checklist-v31.10'), 'compact toggle may disappear only in v31.10+');
+  ok(sw.includes('fantacalcio-checklist-v31.10') || sw.includes('fantacalcio-checklist-v32'), 'compact toggle may disappear only in v31.10+');
   ok(!app.includes('state.compact'), 'v31.10 must remove compact renderer branching');
 }
 const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);

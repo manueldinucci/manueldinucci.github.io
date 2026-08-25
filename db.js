@@ -115,7 +115,8 @@
       prezzo_ideale_max: numOrNull(raw.prezzo_ideale_max),
       price_cap: numOrNull(raw.price_cap),
       commento: String(raw.commento || ''),
-      preferito: Boolean(raw.preferito)
+      preferito: Boolean(raw.preferito),
+      oneCreditBuy: Boolean(raw.oneCreditBuy)
     };
     const auction = {
       key,
@@ -209,7 +210,7 @@
   }
 
   function defaultPersonal(key) {
-    return { key, slot: '', target_min: null, target_max: null, prezzo_affare: null, prezzo_ideale_min: null, prezzo_ideale_max: null, price_cap: null, commento: '', preferito: false };
+    return { key, slot: '', target_min: null, target_max: null, prezzo_affare: null, prezzo_ideale_min: null, prezzo_ideale_max: null, price_cap: null, commento: '', preferito: false, oneCreditBuy: false };
   }
   function defaultAuction(key) {
     return { key, preso: false, prezzo_acquisto: null, manager_id: '', manager_acquirente: '' };
@@ -423,10 +424,10 @@
     ]);
     return {
       format: 'fantacalcio-checklist-backup',
-      version: 4,
+      version: 5,
       exportedAt: new Date().toISOString(),
       playersBase: base,
-      playersPersonal: personal,
+      playersPersonal: personal.map(row => ({ ...defaultPersonal(row.key), ...row, oneCreditBuy: Boolean(row.oneCreditBuy) })),
       auctionState: auction,
       managers: managers.map(sanitizeManager).filter(m => m.nome),
       settings,
@@ -435,14 +436,15 @@
   }
 
   async function importBackupObject(data) {
-    if (!data || data.format !== 'fantacalcio-checklist-backup' || ![1,2,3,4].includes(data.version)) {
+    if (!data || data.format !== 'fantacalcio-checklist-backup' || ![1,2,3,4,5].includes(data.version)) {
       throw new Error('Backup non riconosciuto o versione non supportata.');
     }
     const migratedPersonal = (data.playersPersonal || []).map(row => ({
       ...defaultPersonal(row.key),
       ...row,
       target_min: numOrNull(row.target_min != null ? row.target_min : row.prezzo_ideale_min),
-      target_max: numOrNull(row.target_max != null ? row.target_max : row.prezzo_ideale_max)
+      target_max: numOrNull(row.target_max != null ? row.target_max : row.prezzo_ideale_max),
+      oneCreditBuy: Boolean(row.oneCreditBuy)
     }));
     const groups = [
       [STORES.base, data.playersBase],

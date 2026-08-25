@@ -14,7 +14,7 @@ const compactPos = html.indexOf('id="compactHeaderBtn"');
 const participantsPos = html.indexOf('id="participantsHeaderBtn"');
 const mapPos = html.indexOf('id="slotMapHeaderBtn"');
 const menuPos = html.indexOf('id="menuBtn"');
-if (sw.includes('fantacalcio-checklist-v31.10')) {
+if (sw.includes('fantacalcio-checklist-v31.10') || sw.includes('fantacalcio-checklist-v32')) {
   ok(compactPos < 0, 'v31.10 must remove Comprimi');
   ok(privacyPos >= 0 && commentsPos > privacyPos && participantsPos > commentsPos && mapPos > participantsPos && menuPos > mapPos, 'v31.10 toolbar order must be Sicura, Commenti, Partecipanti, Mappa Slot, Impostazioni');
   ok(!app.includes('state.compact'), 'v31.10 must remove compact renderer state');
@@ -45,5 +45,5 @@ ok(css.includes('grid-template-columns: repeat(5, minmax(0, 1fr));'), 'participa
 ok(css.includes('.header-actions { gap: 2px; }'), 'mobile toolbar gap adaptation missing');
 ok(css.includes('.participants-toggle-btn svg'), 'participants eye icon styling missing');
 
-ok(/fantacalcio-checklist-v31\.(?:9|10)/.test(sw), 'service worker cache must be v31.9 or v31.10');
+ok(/fantacalcio-checklist-v31\.(?:9|10)/.test(sw) || sw.includes('fantacalcio-checklist-v32'), 'service worker cache must be v31.9 or v31.10');
 console.log('v31.9 static checks: OK');

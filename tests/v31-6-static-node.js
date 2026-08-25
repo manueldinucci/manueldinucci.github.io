@@ -17,10 +17,10 @@ ok(app.includes('const fab = rows.reduce((sum, row) => sum + row.missing, 0);'),
 ok(app.includes('rows.sort((a,b) => b.missing - a.missing || a.index - b.index);'), 'participant dynamic ordering / stable tie-break missing');
 ok(app.includes('function participantAbbreviations(managers)'), 'participant abbreviation logic missing');
 ok(app.includes('demand-participant-code${row.complete ? \' complete\' : \'\'}'), 'completed participant attenuation hook missing');
-if (sw.includes('fantacalcio-checklist-v31.10')) ok(!app.includes('FAB: ${model.needs.fab'), 'v31.10 must hide aggregate FAB from UI');
+if (sw.includes('fantacalcio-checklist-v31.10') || sw.includes('fantacalcio-checklist-v32')) ok(!app.includes('FAB: ${model.needs.fab'), 'v31.10 must hide aggregate FAB from UI');
 else ok(app.includes('model.needs.fab'), 'demand summary does not use aggregate FAB');
 ok(css.includes('.demand-participant-code.complete { opacity:.45; }'), 'completed participant CSS attenuation missing');
 ok(css.includes('.demand-participant-item { display:inline; white-space:nowrap; }'), 'participant wrapping unit missing');
-ok(/fantacalcio-checklist-v31\.(?:[6-9]|[1-9]\d+)/.test(sw), 'service worker cache must be v31.6 or a compatible successor');
+ok(/fantacalcio-checklist-v31\.(?:[6-9]|[1-9]\d+)/.test(sw) || sw.includes('fantacalcio-checklist-v32'), 'service worker cache must be v31.6 or a compatible successor');
 
 console.log('v31.6 static checks: OK');
