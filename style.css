@@ -2467,3 +2467,180 @@ html { color-scheme: light; }
     font-size: 11.25px;
   }
 }
+
+/* v32.5 — Mappa Slot: griglia invisibile, simmetria e ritmo editoriale */
+.slot-map-sheet {
+  --map-target-width: 42px;
+  --map-target-gap: 5px;
+  --map-header-count-width: 42px;
+  --map-chevron-width: 12px;
+  --map-header-gap: 4px;
+  --map-header-pad-x: 6px;
+  --map-header-pad-y: 3px;
+  --map-row-pad-x: 4px;
+  --map-row-pad-y: 2px;
+  --map-row-gap: 2px;
+  --map-slot-gap: 3px;
+  --map-content-inset: 4px;
+}
+
+.slot-map-slot + .slot-map-slot {
+  margin-top: var(--map-slot-gap);
+}
+
+/* Header: titolo + colonna conteggio + colonna chevron, sempre sugli stessi assi. */
+.slot-map-slot-head {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0;
+  min-height: 27px;
+  padding: var(--map-header-pad-y) var(--map-header-pad-x);
+}
+.slot-map-slot-head strong {
+  min-width: 0;
+  align-self: center;
+}
+.slot-map-head-meta {
+  display: grid;
+  grid-template-columns: var(--map-header-count-width) var(--map-chevron-width);
+  column-gap: var(--map-header-gap);
+  align-items: center;
+  justify-items: stretch;
+  width: calc(var(--map-header-count-width) + var(--map-chevron-width) + var(--map-header-gap));
+  min-width: 0;
+}
+.slot-map-slot-head .slot-map-count {
+  width: var(--map-header-count-width);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.slot-map-chevron {
+  width: var(--map-chevron-width);
+  min-width: var(--map-chevron-width);
+  text-align: center;
+  justify-self: center;
+}
+.slot-map-chevron-placeholder {
+  visibility: hidden;
+}
+
+/* S1/S2: stesso inset ottico, gruppi regolari; Target + primo nome restano uniti. */
+.slot-map-inline {
+  padding: 3px var(--map-header-pad-x) 4px var(--map-content-inset);
+}
+.slot-map-inline-group {
+  display: inline;
+}
+.slot-map-inline-lead {
+  display: inline-block;
+  white-space: nowrap;
+}
+.slot-map-inline-target {
+  font-variant-numeric: tabular-nums;
+}
+.slot-map-group-separator {
+  color: #7b7e82;
+  white-space: nowrap;
+  margin-right: .18em;
+}
+
+/* S3+: un'unica griglia invisibile Target/Nomi per tutte le fasce. */
+.slot-map-band,
+.slot-map-band.odd,
+.slot-map-band.even,
+.slot-map-outside-band {
+  display: grid;
+  grid-template-columns: var(--map-target-width) minmax(0, 1fr);
+  column-gap: var(--map-target-gap);
+  align-items: start;
+  padding: var(--map-row-pad-y) var(--map-row-pad-x);
+  border: 0;
+  background: #f7f8f9;
+}
+.slot-map-band + .slot-map-band {
+  margin-top: var(--map-row-gap);
+}
+.slot-map-band-label {
+  width: var(--map-target-width);
+  margin: 0;
+  padding: 1px 0 0;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+.slot-map-names {
+  min-width: 0;
+  padding: 0;
+}
+
+/* Fuori Slot: stesso linguaggio e stesse colonne degli header, non più bottone separato. */
+.slot-map-outside {
+  margin-top: var(--map-slot-gap);
+  border: 0;
+  border-radius: 0;
+  background: #f7f8f9;
+}
+.slot-map-outside summary {
+  box-sizing: border-box;
+  min-height: 27px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) var(--map-header-count-width) var(--map-chevron-width);
+  column-gap: var(--map-header-gap);
+  align-items: center;
+  padding: var(--map-header-pad-y) var(--map-header-pad-x);
+  border: 0;
+  border-radius: 0;
+  background: #e9ebee;
+  color: #111111;
+  cursor: pointer;
+}
+.slot-map-outside summary strong {
+  font-size: 11.75px;
+  font-weight: 850;
+  letter-spacing: .025em;
+  line-height: 1.05;
+}
+.slot-map-outside-count {
+  width: var(--map-header-count-width);
+  color: #5f6368;
+  font-size: 9.75px;
+  font-weight: 700;
+  line-height: 1;
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.slot-map-outside summary::after {
+  content: '⌄';
+  width: var(--map-chevron-width);
+  min-width: var(--map-chevron-width);
+  margin: 0;
+  color: #55595e;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  text-align: center;
+  justify-self: center;
+}
+.slot-map-outside[open] summary::after {
+  content: '⌃';
+}
+.slot-map-outside .slot-map-names {
+  border: 0;
+  padding: 0;
+  background: transparent;
+}
+.slot-map-outside-band {
+  margin: 0;
+}
+
+@media (max-width: 360px) {
+  .slot-map-sheet {
+    --map-target-width: 40px;
+    --map-target-gap: 4px;
+    --map-header-count-width: 40px;
+    --map-header-pad-x: 5px;
+    --map-row-pad-x: 3px;
+    --map-content-inset: 3px;
+  }
+}

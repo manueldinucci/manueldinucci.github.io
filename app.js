@@ -720,14 +720,19 @@
   }
 
   function slotMapInlineGroupsMarkup(groups) {
-    const flat = [];
-    for (const group of groups) {
-      group.players.forEach((p, index) => flat.push({ p, label: index === 0 ? group.label : '' }));
-    }
-    return `<div class="slot-map-inline">${flat.map((item, index) => {
-      const target = item.label ? `<span class="slot-map-inline-target">${esc(item.label)}</span> ` : '';
-      const separator = index < flat.length - 1 ? '<span class="slot-map-separator" aria-hidden="true"> ·</span>' : '';
-      return `<span class="${item.label ? 'slot-map-inline-lead' : 'slot-map-player-unit'}">${target}${slotMapNameText(item.p)}${separator}</span>`;
+    return `<div class="slot-map-inline">${groups.map((group, groupIndex) => {
+      const players = group.players.map((p, playerIndex) => {
+        const isLastPlayer = playerIndex === group.players.length - 1;
+        const hasFollowing = !isLastPlayer || groupIndex < groups.length - 1;
+        const separatorClass = isLastPlayer && groupIndex < groups.length - 1 ? 'slot-map-group-separator' : 'slot-map-separator';
+        const separator = hasFollowing ? `<span class="${separatorClass}" aria-hidden="true"> ·</span>` : '';
+        if (playerIndex === 0) {
+          const target = group.label ? `<span class="slot-map-inline-target">${esc(group.label)}</span> ` : '';
+          return `<span class="slot-map-inline-lead">${target}${slotMapNameText(p)}${separator}</span>`;
+        }
+        return `<span class="slot-map-player-unit">${slotMapNameText(p)}${separator}</span>`;
+      }).join(' ');
+      return `<span class="slot-map-inline-group">${players}</span>`;
     }).join(' ')}</div>`;
   }
 
@@ -757,7 +762,7 @@
     const collapsible = /^S[1-5]$/i.test(slot);
     const head = collapsible
       ? `<button type="button" class="slot-map-slot-head" data-slot-map-toggle="${esc(slot)}" aria-expanded="${collapsed ? 'false' : 'true'}" aria-controls="slotMapBody-${esc(slot)}"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron" aria-hidden="true">${collapsed ? '›' : '⌄'}</span></span></button>`
-      : `<div class="slot-map-slot-head static"><strong>${esc(label)}</strong><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span></div>`;
+      : `<div class="slot-map-slot-head static"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron slot-map-chevron-placeholder" aria-hidden="true"></span></span></div>`;
     const inlineClass = slot === 'S1' || slot === 'S2' ? ' inline-slot' : '';
     const emptyClass = exhausted ? ' exhausted-slot' : '';
     return `<section class="slot-map-slot${inlineClass}${emptyClass}${collapsed ? ' collapsed' : ''}" data-slot-map-slot="${esc(slot)}" id="slotMapSlot-${esc(slot)}">${head}<div class="slot-map-slot-body" id="slotMapBody-${esc(slot)}"${collapsed || exhausted ? ' hidden' : ''}>${body}</div></section>`;
@@ -810,7 +815,7 @@
     }
     const outside = state.players.filter(p => p.ruolo === role && !String(p.slot || '').trim() && !(role === 'P' && isGoalkeeperCoverage(p)));
     const outsideAvailable = outside.filter(p => !p.preso);
-    const outsideMarkup = outsideAvailable.length ? `<details class="slot-map-outside"><summary>Fuori slot · ${outsideAvailable.length}</summary><div class="slot-map-names">${slotMapNamesMarkup(outsideAvailable.slice().sort(slotMapNameSort))}</div></details>` : '';
+    const outsideMarkup = outsideAvailable.length ? `<details class="slot-map-outside"><summary><strong>FUORI SLOT</strong><span class="slot-map-outside-count">${outsideAvailable.length}</span></summary><div class="slot-map-band slot-map-outside-band"><div class="slot-map-band-label">n.c.</div><div class="slot-map-names">${slotMapNamesMarkup(outsideAvailable.slice().sort(slotMapNameSort))}</div></div></details>` : '';
     content.innerHTML = `${state.privacyMode ? '<div class="slot-map-privacy-note">Privacy attiva · sottofasce economiche nascoste</div>' : ''}${sections.join('')}${outsideMarkup}`;
     bindSlotMapInteractions();
   }

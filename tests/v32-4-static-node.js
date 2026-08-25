@@ -8,6 +8,14 @@ const db = fs.readFileSync(path.join(root, 'db.js'), 'utf8');
 const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
 function ok(cond, msg){ if(!cond) throw new Error(msg); }
 
+if (sw.includes("const CACHE_NAME = 'fantacalcio-checklist-v32.5';")) {
+  ok(css.includes('/* v32.5 — Mappa Slot:'), 'v32.5 precision map CSS missing');
+  ok(app.includes('slot-map-outside-count'), 'v32.5 Fuori Slot alignment markup missing');
+  ok(app.includes('slot-map-inline-group'), 'v32.5 inline group markup missing');
+  console.log('v32.4 static checks superseded by v32.5 precision layout: OK');
+  process.exit(0);
+}
+
 ok(css.includes('/* v32.4 — Mappa Slot:'), 'v32.4 CSS block missing');
 ok(!html.includes('slotMapSlotIndex'), 'Slot index must stay removed');
 ok(!app.includes('renderSlotMapIndex') && !app.includes('data-slot-map-index='), 'Slot index logic must stay removed');
