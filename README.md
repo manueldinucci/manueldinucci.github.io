@@ -1,3 +1,13 @@
+# Fantacalcio Checklist PWA v32.9
+
+## v32.9 — nuova identità visiva dell’app
+
+- Sostituita l’icona PWA con il nuovo emblema approvato: metà pallone stilizzato grigio a sinistra e metà destra di Uomo Vitruviano oro a destra, racchiusi in una circonferenza continua.
+- Palette limitata a bianco/quasi bianco, grigi e oro; resa flat, senza profondità, ombre o nuovi elementi grafici.
+- Aggiornati `icon-192.png`, `icon-512.png`, `icon-maskable-512.png`, `apple-touch-icon.png` e `favicon.png`; la variante maskable usa una safe area più conservativa.
+- Nessuna modifica funzionale: UI v32.8, Mappa Slot, dati, backup v5, IndexedDB, import XLSX e logiche d’asta restano invariati.
+- Cache aggiornata a `fantacalcio-checklist-v32.9`.
+
 # Fantacalcio Checklist PWA v32.8
 
 ## v32.8 — microfasce più leggibili
