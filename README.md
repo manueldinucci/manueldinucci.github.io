@@ -1,4 +1,11 @@
-# Fantacalcio Checklist PWA v32.6
+# Fantacalcio Checklist PWA v32.6.1
+
+
+## Hotfix v32.6.1
+
+- Mappa Slot: allineamento verticale dei Target di S3/S4/S5 e `n.c.` Fuori Slot sulla baseline della prima riga dei nomi.
+- Nessun cambio a struttura, assi orizzontali, wrapping, densità, modello dati o backup v5.
+- Cache aggiornata a `fantacalcio-checklist-v32.6.1`.
 
 ## Novità v32.6
 - Mappa Slot rifinita senza redesign: stessa densità/minimalità, ma assi tipografici più rigorosi.

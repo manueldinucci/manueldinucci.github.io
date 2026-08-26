@@ -2744,6 +2744,7 @@ html { color-scheme: light; }
   margin-right: .42em;
 }
 
+/* v32.6.1 — hotfix: Target sulla baseline della prima riga nomi. */
 /* S3/S4/S5/Fuori Slot condividono la stessa griglia invisibile. */
 .slot-map-band,
 .slot-map-band.odd,
@@ -2753,7 +2754,7 @@ html { color-scheme: light; }
   display: grid;
   grid-template-columns: var(--map-target-width) minmax(0, 1fr);
   column-gap: var(--map-target-gap);
-  align-items: start;
+  align-items: baseline;
   padding: var(--map-row-pad-y) var(--map-row-pad-x);
   margin: 0;
   border: 0;
@@ -2767,7 +2768,7 @@ html { color-scheme: light; }
   width: var(--map-target-width);
   min-width: var(--map-target-width);
   margin: 0;
-  padding: 1px 0 0;
+  padding: 0;
   text-align: right;
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
