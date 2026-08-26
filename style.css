@@ -2912,3 +2912,52 @@ html { color-scheme: light; }
     padding: 0;
   }
 }
+
+/* v32.7.2 — hotfix semantico: microfasce compatte consapevoli delle righe fisiche. */
+.slot-map-inline-layout {
+  box-sizing: border-box;
+  position: relative;
+  padding: 3px var(--map-row-pad-x) 4px;
+  margin: 0;
+  background: #f7f8f9;
+}
+.slot-map-inline-layout .slot-map-inline-row {
+  padding: 0;
+}
+.slot-map-inline-layout .slot-map-inline-row + .slot-map-inline-row {
+  margin-top: 0;
+}
+.slot-map-inline-first-target,
+.slot-map-inline-target,
+.slot-map-band-label {
+  font-family: inherit;
+  font-size: 9.25px;
+  font-weight: 650;
+  line-height: 1.28;
+  color: #62666b;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: normal;
+}
+.slot-map-inline-first-target.empty {
+  color: transparent;
+}
+.slot-map-inline-measure-row {
+  position: absolute;
+  left: var(--map-row-pad-x);
+  top: 0;
+  z-index: -1;
+  visibility: hidden;
+  pointer-events: none;
+}
+.slot-map-inline-measure-row .slot-map-inline {
+  white-space: nowrap;
+  overflow: visible;
+}
+
+@media (max-width: 360px) {
+  .slot-map-inline-first-target,
+  .slot-map-inline-target,
+  .slot-map-band-label {
+    font-size: 9px;
+  }
+}

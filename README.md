@@ -1,4 +1,12 @@
-# Fantacalcio Checklist PWA v32.7.1
+# Fantacalcio Checklist PWA v32.7.2
+
+## v32.7.2 — hotfix microfasce compatte
+
+- I Target iniziali, inline e verticali condividono la stessa tipografia.
+- Il layout compatto conserva la struttura semantica `Target + giocatori`: se una nuova microfascia apre una nuova riga fisica, il suo Target torna nella colonna Target.
+- Se va a capo soltanto l’elenco dei giocatori della stessa microfascia, la continuazione resta nella colonna Nomi senza ripetere il Target.
+- Nessuna modifica a dati, backup v5, IndexedDB, classificazioni o logiche d’asta.
+
 
 ## Hotfix Mappa Slot v32.7.1
 

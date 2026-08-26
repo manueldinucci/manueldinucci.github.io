@@ -735,25 +735,162 @@
     }).join('');
   }
 
+  let slotMapInlineLayoutQueue = [];
+  let slotMapInlineLayoutId = 0;
+  let slotMapInlineResizeObserver = null;
+
   function slotMapInlineGroupsMarkup(groups) {
-    if (!groups.length) return '<div class="slot-map-inline-row"></div>';
-    const firstTarget = groups[0].label || 'n.c.';
-    const names = groups.map((group, groupIndex) => {
-      const players = group.players.map((p, playerIndex) => {
-        const isLastPlayer = playerIndex === group.players.length - 1;
-        const hasFollowing = !isLastPlayer || groupIndex < groups.length - 1;
-        const separatorClass = isLastPlayer && groupIndex < groups.length - 1 ? 'slot-map-group-separator' : 'slot-map-separator';
-        const separator = hasFollowing ? `<span class="${separatorClass}" aria-hidden="true">·</span>` : '';
-        if (playerIndex === 0) {
-          // v32.7.1: il primo Target vive nella colonna Target comune; i successivi restano inline.
-          const target = groupIndex > 0 && group.label ? `<span class="slot-map-inline-target">${esc(group.label)}</span> ` : '';
-          return `<span class="slot-map-inline-lead">${target}${slotMapNameText(p)}${separator}</span>`;
+    if (!groups.length) return '<div class="slot-map-inline-layout"></div>';
+    const id = `slotMapInlineLayout-${++slotMapInlineLayoutId}`;
+    slotMapInlineLayoutQueue.push({ id, groups });
+    return `<div class="slot-map-inline-layout" id="${id}" data-slot-map-inline-layout></div>`;
+  }
+
+  function slotMapInlineMeasureNameText(p) {
+    const taken = p.preso ? ' taken' : '';
+    const favorite = p.preferito ? ' favorite' : '';
+    return `<span class="slot-map-player${taken}${favorite}">${esc(p.nome)}</span>`;
+  }
+
+  function slotMapInlineSeparatorMarkup(groupBoundary = false) {
+    return `<span class="${groupBoundary ? 'slot-map-group-separator' : 'slot-map-separator'}" aria-hidden="true">·</span>`;
+  }
+
+  function slotMapInlineLeadMarkup(group, p, measure = false, includeTarget = true) {
+    const target = includeTarget && group.label ? `<span class="slot-map-inline-target">${esc(group.label)}</span> ` : '';
+    const player = measure ? slotMapInlineMeasureNameText(p) : slotMapNameText(p);
+    return `<span class="slot-map-inline-lead">${target}${player}</span>`;
+  }
+
+  function slotMapInlinePlayerUnitMarkup(p, measure = false) {
+    const player = measure ? slotMapInlineMeasureNameText(p) : slotMapNameText(p);
+    return `<span class="slot-map-player-unit">${player}</span>`;
+  }
+
+  function slotMapInlinePhysicalRowMarkup(row) {
+    const target = row.target ? esc(row.target) : '';
+    const empty = row.target ? '' : ' empty';
+    return `<div class="slot-map-inline-row" data-slot-map-inline-physical-row><div class="slot-map-inline-first-target${empty}"${row.target ? '' : ' aria-hidden="true"'}>${target}</div><div class="slot-map-inline">${row.html}</div></div>`;
+  }
+
+  function layoutSlotMapInlineGroups(root, groups) {
+    if (!root || !groups?.length) return;
+    root.innerHTML = '';
+
+    const rootStyle = getComputedStyle(root);
+    const padLeft = parseFloat(rootStyle.paddingLeft) || 0;
+    const padRight = parseFloat(rootStyle.paddingRight) || 0;
+    const contentWidth = Math.max(0, root.clientWidth - padLeft - padRight);
+    if (!contentWidth) return;
+
+    const probe = document.createElement('div');
+    probe.className = 'slot-map-inline-row slot-map-inline-measure-row';
+    probe.style.width = `${contentWidth}px`;
+    probe.innerHTML = '<div class="slot-map-inline-first-target empty" aria-hidden="true"></div><div class="slot-map-inline"></div>';
+    root.appendChild(probe);
+    const probeNames = probe.querySelector('.slot-map-inline');
+
+    const rows = [];
+    let row = { target:'', html:'', measureHtml:'', hasContent:false };
+
+    const fits = measureHtml => {
+      probeNames.innerHTML = measureHtml;
+      return probeNames.scrollWidth <= probeNames.clientWidth + 0.75;
+    };
+    const pushRow = () => {
+      if (!row.hasContent) return;
+      rows.push(row);
+      row = { target:'', html:'', measureHtml:'', hasContent:false };
+    };
+    const startRow = (target, html, measureHtml) => {
+      row.target = target || 'n.c.';
+      row.html = html;
+      row.measureHtml = measureHtml;
+      row.hasContent = true;
+    };
+    const startContinuationRow = (html, measureHtml) => {
+      row.target = '';
+      row.html = html;
+      row.measureHtml = measureHtml;
+      row.hasContent = true;
+    };
+    const append = (html, measureHtml) => {
+      row.html += html;
+      row.measureHtml += measureHtml;
+      row.hasContent = true;
+    };
+
+    groups.forEach(group => {
+      const players = Array.isArray(group.players) ? group.players : [];
+      if (!players.length) return;
+      players.forEach((p, playerIndex) => {
+        const firstPlayer = playerIndex === 0;
+        if (firstPlayer) {
+          if (!row.hasContent) {
+            startRow(group.label || 'n.c.', slotMapInlineLeadMarkup(group, p, false, false), slotMapInlineLeadMarkup(group, p, true, false));
+            return;
+          }
+          const sep = slotMapInlineSeparatorMarkup(true);
+          const finalToken = sep + slotMapInlineLeadMarkup(group, p, false, true);
+          const measureToken = sep + slotMapInlineLeadMarkup(group, p, true, true);
+          if (fits(row.measureHtml + measureToken)) {
+            append(finalToken, measureToken);
+          } else {
+            pushRow();
+            startRow(group.label || 'n.c.', slotMapInlineLeadMarkup(group, p, false, false), slotMapInlineLeadMarkup(group, p, true, false));
+          }
+          return;
         }
-        return `<span class="slot-map-player-unit">${slotMapNameText(p)}${separator}</span>`;
-      }).join('');
-      return `<span class="slot-map-inline-group">${players}</span>`;
-    }).join('');
-    return `<div class="slot-map-inline-row"><div class="slot-map-inline-first-target">${esc(firstTarget)}</div><div class="slot-map-inline">${names}</div></div>`;
+
+        const sep = slotMapInlineSeparatorMarkup(false);
+        const finalToken = sep + slotMapInlinePlayerUnitMarkup(p, false);
+        const measureToken = sep + slotMapInlinePlayerUnitMarkup(p, true);
+        if (!row.hasContent) {
+          startContinuationRow(slotMapInlinePlayerUnitMarkup(p, false), slotMapInlinePlayerUnitMarkup(p, true));
+        } else if (fits(row.measureHtml + measureToken)) {
+          append(finalToken, measureToken);
+        } else {
+          pushRow();
+          startContinuationRow(slotMapInlinePlayerUnitMarkup(p, false), slotMapInlinePlayerUnitMarkup(p, true));
+        }
+      });
+    });
+    pushRow();
+    probe.remove();
+    root.innerHTML = rows.map(slotMapInlinePhysicalRowMarkup).join('');
+  }
+
+  function layoutSlotMapInlineQueue() {
+    if (slotMapInlineResizeObserver) {
+      slotMapInlineResizeObserver.disconnect();
+      slotMapInlineResizeObserver = null;
+    }
+    for (const item of slotMapInlineLayoutQueue) {
+      const root = document.getElementById(item.id);
+      if (!root) continue;
+      layoutSlotMapInlineGroups(root, item.groups);
+    }
+    if ('ResizeObserver' in window && slotMapInlineLayoutQueue.length) {
+      slotMapInlineResizeObserver = new ResizeObserver(entries => {
+        for (const entry of entries) {
+          const item = slotMapInlineLayoutQueue.find(x => x.id === entry.target.id);
+          if (!item) continue;
+          const width = entry.contentRect.width;
+          const prev = Number(entry.target.dataset.slotMapLayoutWidth || 0);
+          if (Math.abs(width - prev) <= 0.75) continue;
+          entry.target.dataset.slotMapLayoutWidth = String(width);
+          layoutSlotMapInlineGroups(entry.target, item.groups);
+          bindSlotMapPlayerButtons(entry.target);
+        }
+      });
+      for (const item of slotMapInlineLayoutQueue) {
+        const root = document.getElementById(item.id);
+        if (root) {
+          root.dataset.slotMapLayoutWidth = String(root.getBoundingClientRect().width);
+          slotMapInlineResizeObserver.observe(root);
+        }
+      }
+    }
   }
 
   function slotMapSectionMarkup(role, slot, players, privacy, collapsed = false) {
@@ -798,9 +935,14 @@
     }));
   }
 
+  function bindSlotMapPlayerButtons(root) {
+    if (!root) return;
+    root.querySelectorAll('[data-slot-map-player-key]').forEach(btn => btn.addEventListener('click', () => openPlayerFromSlotMap(btn.dataset.slotMapPlayerKey)));
+  }
+
   function bindSlotMapInteractions() {
     const content = $('slotMapContent'); if (!content) return;
-    content.querySelectorAll('[data-slot-map-player-key]').forEach(btn => btn.addEventListener('click', () => openPlayerFromSlotMap(btn.dataset.slotMapPlayerKey)));
+    bindSlotMapPlayerButtons(content);
     content.querySelectorAll('[data-slot-map-toggle]').forEach(btn => btn.addEventListener('click', () => {
       const slot = btn.dataset.slotMapToggle;
       const role = state.slotMapRole || state.role || 'C';
@@ -824,6 +966,7 @@
 
   function renderSlotMap() {
     const content = $('slotMapContent'); if (!content) return;
+    slotMapInlineLayoutQueue = [];
     const role = state.slotMapRole || state.role || 'C';
     state.slotMapRole = role;
     renderSlotMapRoleTabs();
@@ -840,6 +983,7 @@
     const outsideOpen = state.slotMapOutsideOpen && state.slotMapOutsideOpen[role] === true;
     const outsideMarkup = outsideAvailable.length ? `<details class="slot-map-outside"${outsideOpen ? ' open' : ''}><summary><strong>FUORI SLOT</strong><span class="slot-map-outside-count">${outsideAvailable.length}</span></summary><div class="slot-map-band slot-map-outside-band"><div class="slot-map-band-label">n.c.</div><div class="slot-map-names">${slotMapNamesMarkup(outsideAvailable.slice().sort(slotMapNameSort))}</div></div></details>` : '';
     content.innerHTML = `${state.privacyMode ? '<div class="slot-map-privacy-note">Privacy attiva · sottofasce economiche nascoste</div>' : ''}${sections.join('')}${outsideMarkup}`;
+    layoutSlotMapInlineQueue();
     bindSlotMapInteractions();
   }
 
