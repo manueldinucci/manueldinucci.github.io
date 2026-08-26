@@ -1,3 +1,13 @@
+# Fantacalcio Checklist PWA v32.7.1
+
+## Hotfix Mappa Slot v32.7.1
+
+- Le righe compatte usano ora la stessa griglia invisibile `Target | Nomi` delle righe verticali.
+- Il primo Target del blocco compatto occupa la colonna Target comune; i Target successivi restano inline nel flusso dei nomi.
+- Il wrapping resta confinato nella colonna Nomi: ogni riga di continuazione riparte dalla stessa ascissa del primo nome e non invade mai la colonna Target.
+- Layout per ruolo, Preferiti oro + 700, accordion, stati iniziali, Coperture nascoste nei Portieri e modello dati della v32.7 restano invariati.
+- Cache aggiornata a `fantacalcio-checklist-v32.7.1`; formato backup invariato.
+
 # Fantacalcio Checklist PWA v32.7
 
 ## Mappa Slot v32.7

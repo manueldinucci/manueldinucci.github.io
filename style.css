@@ -2869,3 +2869,46 @@ html { color-scheme: light; }
   color: var(--favorite-star);
   font-weight: 700;
 }
+
+/* v32.7.1 — hotfix geometrico: le righe compatte condividono la griglia Target | Nomi. */
+.slot-map-inline-row {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: var(--map-target-width) minmax(0, 1fr);
+  column-gap: var(--map-target-gap);
+  align-items: baseline;
+  padding: 3px var(--map-row-pad-x) 4px;
+  margin: 0;
+}
+.slot-map-inline-first-target {
+  box-sizing: border-box;
+  width: var(--map-target-width);
+  min-width: var(--map-target-width);
+  margin: 0;
+  padding: 0;
+  text-align: right;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.28;
+}
+.slot-map-inline-row .slot-map-inline {
+  min-width: 0;
+  margin: 0;
+  padding: 0;
+  line-height: 1.38;
+}
+.slot-map-inline-row,
+.slot-map-inline-first-target {
+  list-style: none !important;
+}
+.slot-map-inline-row::marker,
+.slot-map-inline-first-target::marker {
+  content: '' !important;
+  display: none !important;
+}
+
+@media (max-width: 360px) {
+  .slot-map-inline-row .slot-map-inline {
+    padding: 0;
+  }
+}

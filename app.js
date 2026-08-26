@@ -736,20 +736,24 @@
   }
 
   function slotMapInlineGroupsMarkup(groups) {
-    return `<div class="slot-map-inline">${groups.map((group, groupIndex) => {
+    if (!groups.length) return '<div class="slot-map-inline-row"></div>';
+    const firstTarget = groups[0].label || 'n.c.';
+    const names = groups.map((group, groupIndex) => {
       const players = group.players.map((p, playerIndex) => {
         const isLastPlayer = playerIndex === group.players.length - 1;
         const hasFollowing = !isLastPlayer || groupIndex < groups.length - 1;
         const separatorClass = isLastPlayer && groupIndex < groups.length - 1 ? 'slot-map-group-separator' : 'slot-map-separator';
         const separator = hasFollowing ? `<span class="${separatorClass}" aria-hidden="true">·</span>` : '';
         if (playerIndex === 0) {
-          const target = group.label ? `<span class="slot-map-inline-target">${esc(group.label)}</span> ` : '';
+          // v32.7.1: il primo Target vive nella colonna Target comune; i successivi restano inline.
+          const target = groupIndex > 0 && group.label ? `<span class="slot-map-inline-target">${esc(group.label)}</span> ` : '';
           return `<span class="slot-map-inline-lead">${target}${slotMapNameText(p)}${separator}</span>`;
         }
         return `<span class="slot-map-player-unit">${slotMapNameText(p)}${separator}</span>`;
       }).join('');
       return `<span class="slot-map-inline-group">${players}</span>`;
-    }).join('')}</div>`;
+    }).join('');
+    return `<div class="slot-map-inline-row"><div class="slot-map-inline-first-target">${esc(firstTarget)}</div><div class="slot-map-inline">${names}</div></div>`;
   }
 
   function slotMapSectionMarkup(role, slot, players, privacy, collapsed = false) {
