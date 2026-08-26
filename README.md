@@ -1,4 +1,15 @@
-# Fantacalcio Checklist PWA v32.6.1
+# Fantacalcio Checklist PWA v32.7
+
+## Mappa Slot v32.7
+
+- Rendering differenziato per ruolo: Por S1/S2 verticali; Dif/Cen/Att S1 inline e S2 verticale.
+- Stati iniziali accordion: Por S3/S4 chiusi; Cen/Att S5 chiusi.
+- La categoria portieri `COPERTURE` resta nei dati ma non viene mostrata nella Mappa Slot.
+- I Preferiti sono evidenziati nella Mappa con lo stesso oro della stella attiva e `font-weight: 700`, senza icone o badge aggiuntivi.
+- Geometria, baseline, wrapping, conteggi, sticky header e modello dati restano quelli consolidati in v32.6.1.
+- Cache aggiornata a `fantacalcio-checklist-v32.7`; formato backup invariato.
+
+# Fantacalcio Checklist PWA v32.6.1 (storico)
 
 
 ## Hotfix v32.6.1

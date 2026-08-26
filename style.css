@@ -2862,3 +2862,10 @@ html { color-scheme: light; }
     padding-right: var(--map-header-pad-x);
   }
 }
+
+/* v32.7 — Mappa Slot: layout per ruolo e Preferiti tipografici. */
+/* Il nome Preferito riusa esattamente il colore della stella attiva già definito dall'app. */
+.slot-map-player.favorite {
+  color: var(--favorite-star);
+  font-weight: 700;
+}

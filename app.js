@@ -39,6 +39,7 @@
     overlayScrollY: 0,
     slotMapReturnContext: null,
     slotMapCollapsed: {},
+    slotMapOutsideOpen: {},
     lastImportChanges: null
   };
 
@@ -671,8 +672,22 @@
     return role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5'];
   }
 
+  function slotMapDefaultCollapsed(role) {
+    if (role === 'P') return ['S3','S4'];
+    if (role === 'C' || role === 'A') return ['S5'];
+    return [];
+  }
+
+  function slotMapUsesInlineLayout(role, slot) {
+    return role !== 'P' && slot === 'S1';
+  }
+
   function slotMapCollapsedSet(role) {
-    const saved = state.slotMapCollapsed && Array.isArray(state.slotMapCollapsed[role]) ? state.slotMapCollapsed[role] : [];
+    if (!state.slotMapCollapsed || typeof state.slotMapCollapsed !== 'object') state.slotMapCollapsed = {};
+    if (!Object.prototype.hasOwnProperty.call(state.slotMapCollapsed, role)) {
+      state.slotMapCollapsed[role] = slotMapDefaultCollapsed(role);
+    }
+    const saved = Array.isArray(state.slotMapCollapsed[role]) ? state.slotMapCollapsed[role] : [];
     return new Set(saved);
   }
 
@@ -709,7 +724,8 @@
 
   function slotMapNameText(p) {
     const taken = p.preso ? ' taken' : '';
-    return `<button type="button" class="slot-map-player${taken}" data-slot-map-player-key="${esc(p.key)}">${esc(p.nome)}</button>`;
+    const favorite = p.preferito ? ' favorite' : '';
+    return `<button type="button" class="slot-map-player${taken}${favorite}" data-slot-map-player-key="${esc(p.key)}">${esc(p.nome)}</button>`;
   }
 
   function slotMapNamesMarkup(players) {
@@ -736,7 +752,7 @@
     }).join('')}</div>`;
   }
 
-  function slotMapSectionMarkup(slot, players, privacy, collapsed = false) {
+  function slotMapSectionMarkup(role, slot, players, privacy, collapsed = false) {
     const total = players.length;
     const remaining = players.filter(p => !p.preso).length;
     const ordered = [...players].sort(slotMapNameSort);
@@ -752,7 +768,7 @@
         bands.get(band.key).players.push(p);
       }
       const grouped = [...bands.values()].sort((a,b) => b.rank - a.rank);
-      if (slot === 'S1' || slot === 'S2') {
+      if (slotMapUsesInlineLayout(role, slot)) {
         body = slotMapInlineGroupsMarkup(grouped);
       } else {
         body = grouped.map((group, index) => `<div class="slot-map-band ${index % 2 ? 'even' : 'odd'}"><div class="slot-map-band-label">${esc(group.label)}</div><div class="slot-map-names">${slotMapNamesMarkup(group.players)}</div></div>`).join('');
@@ -763,7 +779,7 @@
     const head = collapsible
       ? `<button type="button" class="slot-map-slot-head" data-slot-map-toggle="${esc(slot)}" aria-expanded="${collapsed ? 'false' : 'true'}" aria-controls="slotMapBody-${esc(slot)}"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron" aria-hidden="true">${collapsed ? '›' : '⌄'}</span></span></button>`
       : `<div class="slot-map-slot-head static"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron slot-map-chevron-placeholder" aria-hidden="true"></span></span></div>`;
-    const inlineClass = slot === 'S1' || slot === 'S2' ? ' inline-slot' : '';
+    const inlineClass = slotMapUsesInlineLayout(role, slot) ? ' inline-slot' : '';
     const emptyClass = exhausted ? ' exhausted-slot' : '';
     return `<section class="slot-map-slot${inlineClass}${emptyClass}${collapsed ? ' collapsed' : ''}" data-slot-map-slot="${esc(slot)}" id="slotMapSlot-${esc(slot)}">${head}<div class="slot-map-slot-body" id="slotMapBody-${esc(slot)}"${collapsed || exhausted ? ' hidden' : ''}>${body}</div></section>`;
   }
@@ -794,6 +810,12 @@
       const chevron = btn.querySelector('.slot-map-chevron');
       if (chevron) chevron.textContent = willCollapse ? '›' : '⌄';
     }));
+    const outside = content.querySelector('.slot-map-outside');
+    if (outside) outside.addEventListener('toggle', () => {
+      if (!state.slotMapOutsideOpen || typeof state.slotMapOutsideOpen !== 'object') state.slotMapOutsideOpen = {};
+      const role = state.slotMapRole || state.role || 'C';
+      state.slotMapOutsideOpen[role] = outside.open;
+    });
   }
 
   function renderSlotMap() {
@@ -807,15 +829,12 @@
     const sections = [];
     for (const slot of slotOrder) {
       const players = rolePlayers.filter(p => String(p.slot || '').trim().toUpperCase() === slot);
-      sections.push(slotMapSectionMarkup(slot, players, state.privacyMode, collapsed.has(slot)));
-    }
-    if (role === 'P') {
-      const coverage = rolePlayers.filter(isGoalkeeperCoverage);
-      if (coverage.length) sections.push(slotMapSectionMarkup('COPERTURE', coverage, state.privacyMode, false));
+      sections.push(slotMapSectionMarkup(role, slot, players, state.privacyMode, collapsed.has(slot)));
     }
     const outside = state.players.filter(p => p.ruolo === role && !String(p.slot || '').trim() && !(role === 'P' && isGoalkeeperCoverage(p)));
     const outsideAvailable = outside.filter(p => !p.preso);
-    const outsideMarkup = outsideAvailable.length ? `<details class="slot-map-outside"><summary><strong>FUORI SLOT</strong><span class="slot-map-outside-count">${outsideAvailable.length}</span></summary><div class="slot-map-band slot-map-outside-band"><div class="slot-map-band-label">n.c.</div><div class="slot-map-names">${slotMapNamesMarkup(outsideAvailable.slice().sort(slotMapNameSort))}</div></div></details>` : '';
+    const outsideOpen = state.slotMapOutsideOpen && state.slotMapOutsideOpen[role] === true;
+    const outsideMarkup = outsideAvailable.length ? `<details class="slot-map-outside"${outsideOpen ? ' open' : ''}><summary><strong>FUORI SLOT</strong><span class="slot-map-outside-count">${outsideAvailable.length}</span></summary><div class="slot-map-band slot-map-outside-band"><div class="slot-map-band-label">n.c.</div><div class="slot-map-names">${slotMapNamesMarkup(outsideAvailable.slice().sort(slotMapNameSort))}</div></div></details>` : '';
     content.innerHTML = `${state.privacyMode ? '<div class="slot-map-privacy-note">Privacy attiva · sottofasce economiche nascoste</div>' : ''}${sections.join('')}${outsideMarkup}`;
     bindSlotMapInteractions();
   }
@@ -828,6 +847,7 @@
     closeContextPopovers();
     state.slotMapRole = state.role || 'C';
     state.slotMapCollapsed = {};
+    state.slotMapOutsideOpen = {};
     openOnly('slotMapSheet');
     renderSlotMap();
     requestAnimationFrame(() => { const content = $('slotMapContent'); if (content) content.scrollTop = 0; });
