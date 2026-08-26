@@ -770,7 +770,8 @@
   function slotMapInlinePhysicalRowMarkup(row) {
     const target = row.target ? esc(row.target) : '';
     const empty = row.target ? '' : ' empty';
-    return `<div class="slot-map-inline-row" data-slot-map-inline-physical-row><div class="slot-map-inline-first-target${empty}"${row.target ? '' : ' aria-hidden="true"'}>${target}</div><div class="slot-map-inline">${row.html}</div></div>`;
+    const semanticClass = row.target ? ' microtier-start' : ' microtier-continuation';
+    return `<div class="slot-map-inline-row${semanticClass}" data-slot-map-inline-physical-row><div class="slot-map-inline-first-target${empty}"${row.target ? '' : ' aria-hidden="true"'}>${target}</div><div class="slot-map-inline">${row.html}</div></div>`;
   }
 
   function layoutSlotMapInlineGroups(root, groups) {

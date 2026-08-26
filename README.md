@@ -1,3 +1,13 @@
+# Fantacalcio Checklist PWA v32.8
+
+## v32.8 — microfasce più leggibili
+
+- Uniformato il ritmo verticale tra nuove microfasce nei layout compatti e quello già consolidato nelle righe verticali.
+- Aggiunto un separatore ultra-light (`1px`, `rgba(0, 0, 0, 0.05)`) limitato alla sola colonna Nomi: non attraversa mai la colonna Target.
+- Il separatore compare soltanto tra microfasce differenti; il normale wrapping della stessa microfascia resta privo di linea e spacing extra.
+- Packing semantico v32.7.2, Target, Preferiti, accordion, dati, backup v5 e IndexedDB restano invariati.
+- Cache aggiornata a `fantacalcio-checklist-v32.8`.
+
 # Fantacalcio Checklist PWA v32.7.2
 
 ## v32.7.2 — hotfix microfasce compatte

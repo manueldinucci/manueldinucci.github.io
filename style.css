@@ -2961,3 +2961,44 @@ html { color-scheme: light; }
     font-size: 9px;
   }
 }
+
+/* v32.8 — microfasce: ritmo verticale coerente + separatore ultra-light solo nella colonna Nomi. */
+.slot-map-sheet {
+  --map-microtier-divider: rgba(0, 0, 0, 0.05);
+  --map-microtier-compact-gap: calc(var(--map-row-pad-y) + var(--map-row-pad-y) + var(--map-row-gap) + 5px);
+  --map-microtier-divider-offset: 3px;
+  --map-microtier-compact-divider-offset: 5px;
+}
+
+/* Le righe verticali mantengono la densità v32.7.2: il separatore vive nel vuoto già esistente. */
+.slot-map-band + .slot-map-band .slot-map-names {
+  position: relative;
+}
+.slot-map-band + .slot-map-band .slot-map-names::before {
+  content: "" !important;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(0px - var(--map-microtier-divider-offset));
+  height: 1px;
+  background: var(--map-microtier-divider);
+  pointer-events: none;
+}
+
+/* Nel layout compatto lo spacing extra esiste solo quando una NUOVA microfascia apre una riga fisica. */
+.slot-map-inline-layout .slot-map-inline-row + .slot-map-inline-row.microtier-start {
+  margin-top: var(--map-microtier-compact-gap);
+}
+.slot-map-inline-layout .slot-map-inline-row + .slot-map-inline-row.microtier-start .slot-map-inline {
+  position: relative;
+}
+.slot-map-inline-layout .slot-map-inline-row + .slot-map-inline-row.microtier-start .slot-map-inline::before {
+  content: "" !important;
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(0px - var(--map-microtier-compact-divider-offset));
+  height: 1px;
+  background: var(--map-microtier-divider);
+  pointer-events: none;
+}
