@@ -1,4 +1,12 @@
-# Aurea XI — PWA Fantacalcio v33.1
+# Aurea XI — PWA Fantacalcio v33.1.1
+
+
+## v33.1.1 — Correzione filtri
+
+- Il filtro `Target max ≥` usa ora la soglia minima corretta: include i giocatori con `target_max >=` al valore selezionato; i profili senza Target restano esclusi quando il filtro è attivo.
+- Le checkbox `Solo liberi`, `Preferiti` e `Acq. a 1` sono distribuite uniformemente sulla stessa riga, senza raggruppamenti visivi.
+- Nessun'altra modifica funzionale: dati, backup v5, Mappa Slot, branding e logiche d'asta restano invariati.
+- Cache aggiornata a `fantacalcio-checklist-v33.1.1`.
 
 ## v33.1 — Filtri operativi
 

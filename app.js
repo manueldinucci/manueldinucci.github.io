@@ -351,7 +351,7 @@
       .filter(p => {
         if (targetMax == null) return true;
         const value = num(p.target_max) ?? num(p.prezzo_ideale_max);
-        return value != null && value <= targetMax;
+        return value != null && value >= targetMax;
       })
       .filter(p => !state.onlyAvailable || !p.preso)
       .filter(p => !(wantsFav || wantsOne) || (wantsFav && p.preferito) || (wantsOne && p.oneCreditBuy === true))
