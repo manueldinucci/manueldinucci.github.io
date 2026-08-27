@@ -16,6 +16,7 @@
     slot: '',
     minFvm: '',
     minQta: '',
+    targetMax: '',
     onlyAvailable: false,
     onlyFavorites: false,
     onlyOneCredit: false,
@@ -141,6 +142,7 @@
       slot: state.slot,
       minFvm: state.minFvm,
       minQta: state.minQta,
+      targetMax: state.targetMax,
       onlyAvailable: state.onlyAvailable,
       onlyFavorites: state.onlyFavorites,
       onlyOneCredit: state.onlyOneCredit,
@@ -229,20 +231,30 @@
       .map(v => `<option value="${v}">${v}</option>`).join('');
   }
 
+  function populateTargetMaxFilter() {
+    const base = state.players.filter(p => state.showAll || p.ruolo === state.role);
+    const values = [...new Set(base.map(p => num(p.target_max) ?? num(p.prezzo_ideale_max)).filter(v => v != null))].sort((a,b)=>a-b);
+    const current = num(state.targetMax);
+    if (current != null && !values.includes(current)) values.push(current);
+    values.sort((a,b)=>a-b);
+    $('targetMaxFilter').innerHTML = '<option value="">—</option>' + values.map(v => `<option value="${esc(displayNum(v))}">${esc(displayNum(v))}</option>`).join('');
+    $('targetMaxFilter').value = state.targetMax || '';
+  }
+
   function populateDynamicFilters() {
-    // v29: Squadra e Slot sono filtri globali del listone, non dipendono dal reparto corrente.
-    // Così il cambio Por/Dif/Cen/Att/Tutti non azzera mai una selezione valida.
+    // Squadra resta globale; Slot usa una tassonomia operativa fissa v33.1.
     const teams = [...new Set(state.players.map(p => p.squadra).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it'));
-    const slots = [...new Set(state.players.map(p => p.slot).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'it',{numeric:true}));
     const teamValue = state.team;
-    const slotValue = state.slot;
     const teamOptions = teamValue && !teams.includes(teamValue) ? [teamValue, ...teams] : teams;
-    const slotOptions = slotValue && !slots.includes(slotValue) && !['S1-S2','S1-S3'].includes(slotValue) ? [slotValue, ...slots] : slots;
     $('teamFilter').innerHTML = '<option value="">Tutte</option>' + teamOptions.map(t => `<option value="${esc(t)}">${esc(t)}</option>`).join('');
-    const cumulativeSlots = '<option value="S1-S2">S1-S2</option><option value="S1-S3">S1-S3</option>';
-    $('slotFilter').innerHTML = '<option value="">Tutti</option>' + cumulativeSlots + slotOptions.map(s => `<option value="${esc(s)}">${esc(s)}</option>`).join('');
+    const slotOptions = [
+      ['', 'Tutti'], ['S1-S2','S1-S2'], ['S1-S3','S1-S3'], ['S1-S4','S1-S4'], ['S1-S5','S1-S5'],
+      ['S1','S1'], ['S2','S2'], ['S3','S3'], ['S4','S4'], ['S5','S5'], ['OUT','Fuori Slot']
+    ];
+    $('slotFilter').innerHTML = slotOptions.map(([value,label]) => `<option value="${esc(value)}">${esc(label)}</option>`).join('');
     $('teamFilter').value = teamValue || '';
-    $('slotFilter').value = slotValue || '';
+    $('slotFilter').value = slotOptions.some(([value]) => value === state.slot) ? state.slot : '';
+    if ($('targetMaxFilter')) populateTargetMaxFilter();
   }
 
   function applyStateToControls() {
@@ -260,6 +272,9 @@
     const minQta = Number(state.minQta);
     state.minQta = Number.isInteger(minQta) && minQta >= 1 && minQta <= 30 ? String(minQta) : '';
     $('minQtaFilter').value = state.minQta;
+    const targetMax = num(state.targetMax);
+    state.targetMax = targetMax == null ? '' : displayNum(targetMax);
+    if ($('targetMaxFilter')) { populateTargetMaxFilter(); $('targetMaxFilter').value = state.targetMax; }
     updatePrivacyButton();
     updateCommentsButton();
     updateParticipantsButton();
@@ -279,12 +294,19 @@
     return (letters.indexOf(ch) - start + 26) % 26;
   }
 
-  function slotMatchesFilter(playerSlot, filter) {
+  function slotMatchesFilter(player, filter) {
     if (!filter) return true;
-    const slot = String(playerSlot || '').trim().toUpperCase();
-    if (filter === 'S1-S2') return ['S1','S2'].includes(slot);
-    if (filter === 'S1-S3') return ['S1','S2','S3'].includes(slot);
-    return slot === String(filter).trim().toUpperCase();
+    const slot = String(player?.slot || '').trim().toUpperCase();
+    const selected = String(filter || '').trim().toUpperCase();
+    if (selected === 'OUT') return !/^S[1-5]$/.test(slot) && !(player?.ruolo === 'P' && isGoalkeeperCoverage(player));
+    const cumulative = {
+      'S1-S2':['S1','S2'],
+      'S1-S3':['S1','S2','S3'],
+      'S1-S4':['S1','S2','S3','S4'],
+      'S1-S5':['S1','S2','S3','S4','S5']
+    };
+    if (cumulative[selected]) return cumulative[selected].includes(slot);
+    return slot === selected;
   }
 
   function slotSortRank(slot) {
@@ -316,16 +338,23 @@
     const q = FantaDB.normalizeText(state.search);
     const minFvm = num(state.minFvm);
     const minQta = num(state.minQta);
+    const targetMax = num(state.targetMax);
+    const wantsFav = state.onlyFavorites === true;
+    const wantsOne = state.onlyOneCredit === true;
     return state.players
       .filter(p => state.showAll || p.ruolo === state.role)
       .filter(p => !q || FantaDB.normalizeText(`${p.nome} ${p.squadra}`).includes(q))
       .filter(p => !state.team || p.squadra === state.team)
-      .filter(p => slotMatchesFilter(p.slot, state.slot))
+      .filter(p => slotMatchesFilter(p, state.slot))
       .filter(p => minFvm == null || (num(p.fvm) ?? -Infinity) >= minFvm)
       .filter(p => minQta == null || (num(p.quotazione) ?? -Infinity) >= minQta)
+      .filter(p => {
+        if (targetMax == null) return true;
+        const value = num(p.target_max) ?? num(p.prezzo_ideale_max);
+        return value != null && value <= targetMax;
+      })
       .filter(p => !state.onlyAvailable || !p.preso)
-      .filter(p => !state.onlyFavorites || p.preferito)
-      .filter(p => !state.onlyOneCredit || p.oneCreditBuy === true)
+      .filter(p => !(wantsFav || wantsOne) || (wantsFav && p.preferito) || (wantsOne && p.oneCreditBuy === true))
       .sort(comparePlayers);
   }
 
@@ -449,6 +478,7 @@
       frag.appendChild(card);
     }
     container.replaceChildren(frag);
+    renderVisiblePlayerCount(list.length);
     const empty = $('emptyState');
     empty.textContent = state.players.length === 0
       ? 'Nessun giocatore nel listone. Importa un file .xlsx dalle Impostazioni.'
@@ -645,6 +675,17 @@
     return participantGridMarkup(ordered, row => displayNum(Math.floor(row.maxBid)), 'demand-max-bid-grid');
   }
 
+  function currentRoleTotal() {
+    return state.showAll ? state.players.length : state.players.filter(p => p.ruolo === state.role).length;
+  }
+
+  function renderVisiblePlayerCount(visibleCount = null) {
+    const el = $('visiblePlayerCount');
+    if (!el) return;
+    const visible = visibleCount == null ? getFilteredPlayers().length : visibleCount;
+    el.textContent = `${visible} / ${currentRoleTotal()}`;
+  }
+
   function renderDemandSummary(rolePlayers) {
     const el = $('demandSummary'); if (!el) return;
     if (state.privacyMode || state.showAll) { el.classList.add('hidden'); return; }
@@ -655,7 +696,8 @@
     }).join('<span class="demand-slot-separator"> | </span>');
     const participants = state.participantsVisible ? participantNeedsMarkup(model.needs.rows) : '';
     const maxBids = state.participantsVisible && model.role === 'A' ? participantMaxBidMarkup(model.needs.rows) : '';
-    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${slotsText}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
+    const visibleCount = getFilteredPlayers().length;
+    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${slotsText}</span><span id="visiblePlayerCount" class="demand-visible-count">${visibleCount} / ${rolePlayers.length}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
     el.classList.remove('warning', 'hidden');
   }
 
@@ -1084,6 +1126,7 @@
     bindFilter('slotFilter','slot','change');
     bindFilter('minFvmFilter','minFvm','change');
     bindFilter('minQtaFilter','minQta','change');
+    bindFilter('targetMaxFilter','targetMax','change');
     bindCheck('onlyAvailable','onlyAvailable');
     bindCheck('onlyFavorites','onlyFavorites');
     bindCheck('onlyOneCredit','onlyOneCredit');
@@ -1201,6 +1244,7 @@
     state.slot = '';
     state.minFvm = '';
     state.minQta = '';
+    state.targetMax = '';
     state.onlyAvailable = false;
     state.onlyFavorites = false;
     state.onlyOneCredit = false;
@@ -1209,6 +1253,7 @@
     $('slotFilter').value = '';
     $('minFvmFilter').value = '';
     $('minQtaFilter').value = '';
+    $('targetMaxFilter').value = '';
     $('onlyAvailable').checked = false;
     $('onlyFavorites').checked = false;
     $('onlyOneCredit').checked = false;
@@ -1219,17 +1264,15 @@
   }
 
   function activeFilterCount() {
-    return [state.team, state.slot, state.minFvm, state.minQta, state.onlyAvailable, state.onlyFavorites, state.onlyOneCredit].filter(v => v !== '' && v !== false && v != null).length;
+    return [state.team, state.slot, state.minFvm, state.minQta, state.targetMax, state.onlyAvailable, state.onlyFavorites, state.onlyOneCredit]
+      .filter(v => v !== '' && v !== false && v != null).length;
   }
 
   function renderFilterButton() {
-    const count = activeFilterCount();
-    const badge = $('filtersCountBadge');
-    if (!badge) return;
-    badge.textContent = count ? String(count) : '';
-    badge.classList.toggle('hidden', !count);
-    $('filtersBtn').setAttribute('aria-label', count ? `Filtri, ${count} attivi` : 'Filtri');
-    $('filtersBtn').title = count ? `Filtri · ${count} attivi` : 'Filtri';
+    const active = activeFilterCount() > 0;
+    $('filtersBtn').setAttribute('aria-label', 'Filtri');
+    $('filtersBtn').title = 'Filtri';
+    if ($('resetFiltersBtn')) $('resetFiltersBtn').disabled = !active;
   }
 
 
@@ -1823,7 +1866,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',onlyAvailable:false,onlyFavorites:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',targetMax:'',onlyAvailable:false,onlyFavorites:false,onlyOneCredit:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 

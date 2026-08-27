@@ -1,4 +1,14 @@
-# Aurea XI — PWA Fantacalcio v33
+# Aurea XI — PWA Fantacalcio v33.1
+
+## v33.1 — Filtri operativi
+
+- Slot cumulativi `S1-S2`, `S1-S3`, `S1-S4`, `S1-S5`, più filtri singoli `S1`–`S5` e `Fuori Slot`.
+- `Preferiti` e `Acq. a 1` funzionano singolarmente e, se selezionati insieme, come unione OR; `Solo liberi` resta indipendente in AND.
+- Aggiunto `Target max`, popolato dai tetti effettivamente presenti nel ruolo corrente.
+- Pannello Filtri più ampio e compatto, con le tre spunte sulla stessa riga.
+- A destra del riepilogo Slot compare il contatore permanente `X / Y`: risultati visibili sul totale del ruolo.
+- Nessuna modifica a dati, backup v5, IndexedDB, Mappa Slot, branding o logiche d'asta.
+- Cache aggiornata a `fantacalcio-checklist-v33.1`.
 
 ## v33 — Aurea XI
 

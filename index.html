@@ -62,7 +62,6 @@
           </label>
           <button id="filtersBtn" class="secondary-btn tool-icon-btn filters-trigger" type="button" aria-label="Filtri" aria-expanded="false" aria-controls="filtersPanel" title="Filtri">
             <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16l-6.2 7.1v5.3l-3.6 1.8v-7.1L4 5Z"/></svg>
-            <span id="filtersCountBadge" class="tool-count-badge hidden" aria-hidden="true"></span>
           </button>
         </div>
         <div id="demandSummary" class="demand-summary"></div>
@@ -97,16 +96,19 @@
           <button id="closeFiltersBtn" class="icon-btn" aria-label="Chiudi">×</button>
         </div>
         <div class="sheet-scroll">
-          <div class="filter-grid">
+          <div class="filter-grid filters-main-grid">
             <label>Squadra<select id="teamFilter"><option value="">Tutte</option></select></label>
             <label>Slot<select id="slotFilter"><option value="">Tutti</option></select></label>
             <label>FVM minimo<select id="minFvmFilter" aria-label="FVM minimo"><option value="">—</option></select></label>
             <label>Qt.A minima<select id="minQtaFilter" aria-label="Quotazione attuale minima"><option value="">—</option></select></label>
+            <label>Target max<select id="targetMaxFilter" aria-label="Target massimo"><option value="">—</option></select></label>
           </div>
-          <div class="toggle-grid">
+          <div class="filters-toggle-row">
             <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
-            <label class="switch-line"><input id="onlyFavorites" type="checkbox" /><span>Solo preferiti</span></label>
-            <label class="switch-line"><input id="onlyOneCredit" type="checkbox" /><span>Acquisto a 1</span></label>
+            <div class="filters-personal-group">
+              <label class="switch-line"><input id="onlyFavorites" type="checkbox" /><span>Preferiti</span></label>
+              <label class="switch-line"><input id="onlyOneCredit" type="checkbox" /><span>Acq. a 1</span></label>
+            </div>
           </div>
           <div class="filters-reset-row">
             <button id="resetFiltersBtn" class="secondary-btn filters-reset-btn" type="button">Reset filtri</button>
