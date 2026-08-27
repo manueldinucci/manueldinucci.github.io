@@ -1,4 +1,13 @@
-# Aurea XI — PWA Fantacalcio v33.1.1
+# Aurea XI — PWA Fantacalcio v33.1.2
+
+
+## v33.1.2 — Monitor Preferiti e Mappa Slot
+
+- La Mappa Slot mostra un micro-indicatore `(1)` accanto ai giocatori con `oneCreditBuy=true`, senza badge o variazioni del packing semantico.
+- La barra di monitoraggio diventa `★: n | S1: x | S2: y | S3: z`, con `★: n` pari ai Preferiti ancora liberi del ruolo corrente.
+- `★: n` diventa rosso soltanto quando la nostra rosa ha ancora posti liberi nel ruolo e i Preferiti disponibili sono meno dei posti da riempire; l'uguaglianza non attiva l'allarme.
+- Rimossi esclusivamente dalla barra i conteggi `S4` e `S5`; `X / Y`, classificazioni, filtri, dati e backup v5 restano invariati.
+- Cache aggiornata a `fantacalcio-checklist-v33.1.2`.
 
 
 ## v33.1.1 — Correzione filtri

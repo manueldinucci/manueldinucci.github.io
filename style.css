@@ -3023,3 +3023,30 @@ html { color-scheme: light; }
   .filters-toggle-row .switch-line { gap:4px; font-size:11.5px; }
   .filters-toggle-row .switch-line input { width:17px; height:17px; }
 }
+
+/* v33.1.2 — micro-indicatore Acq. a 1 in Mappa Slot + monitor Preferiti */
+.slot-map-one-credit {
+  display: inline;
+  margin-left: .22em;
+  color: var(--muted);
+  font-size: .72em;
+  font-weight: 400;
+  line-height: inherit;
+  white-space: nowrap;
+}
+.demand-favorite-count {
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  white-space: nowrap;
+}
+.demand-favorite-star {
+  display: inline-block;
+  font-size: .96em;
+  line-height: 1;
+  vertical-align: .01em;
+}
+.demand-favorite-count.alert {
+  color: #c62828;
+  font-weight: inherit;
+}

@@ -650,10 +650,14 @@
   function demandLineModel(rolePlayers) {
     const role = state.role;
     const available = rolePlayers.filter(p => !p.preso);
-    const slots = role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5'];
+    const slots = ['S1','S2','S3'];
     const counts = Object.fromEntries(slots.map(slot => [slot, slotCount(available, [slot])]));
     const needs = getRoleNeeds(role);
-    return { role, slots, counts, needs };
+    const favoriteAvailable = available.filter(p => p.preferito === true).length;
+    const selfRow = needs.rows.find(row => row.manager?.isMe === true);
+    const selfMissing = selfRow ? Number(selfRow.missing || 0) : null;
+    const favoriteAlert = selfMissing != null && selfMissing > 0 && favoriteAvailable < selfMissing;
+    return { role, slots, counts, needs, favoriteAvailable, selfMissing, favoriteAlert };
   }
 
   function participantGridMarkup(rows, valueGetter, extraClass = '') {
@@ -694,10 +698,12 @@
       const count = model.counts[slot];
       return `<span class="demand-slot-count${count === 0 ? ' exhausted' : ''}">${esc(`${slot}: ${count}`)}</span>`;
     }).join('<span class="demand-slot-separator"> | </span>');
+    const favoriteText = `<span class="demand-favorite-count${model.favoriteAlert ? ' alert' : ''}"><span class="demand-favorite-star" aria-hidden="true">★</span>: ${esc(displayNum(model.favoriteAvailable))}</span>`;
+    const monitorText = `${favoriteText}<span class="demand-slot-separator"> | </span>${slotsText}`;
     const participants = state.participantsVisible ? participantNeedsMarkup(model.needs.rows) : '';
     const maxBids = state.participantsVisible && model.role === 'A' ? participantMaxBidMarkup(model.needs.rows) : '';
     const visibleCount = getFilteredPlayers().length;
-    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${slotsText}</span><span id="visiblePlayerCount" class="demand-visible-count">${visibleCount} / ${rolePlayers.length}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
+    el.innerHTML = `<div class="demand-primary"><span class="demand-slots">${monitorText}</span><span id="visiblePlayerCount" class="demand-visible-count">${visibleCount} / ${rolePlayers.length}</span></div>${participants}${maxBids ? `<div class="demand-max-bid-label">MAX BID</div>${maxBids}` : ''}`;
     el.classList.remove('warning', 'hidden');
   }
 
@@ -764,10 +770,14 @@
     return (num(b.fvm) || 0) - (num(a.fvm) || 0) || a.nome.localeCompare(b.nome,'it',{sensitivity:'base'});
   }
 
+  function slotMapOneCreditMarkup(p) {
+    return p.oneCreditBuy === true ? '<span class="slot-map-one-credit" aria-label="Acquisto a 1">(1)</span>' : '';
+  }
+
   function slotMapNameText(p) {
     const taken = p.preso ? ' taken' : '';
     const favorite = p.preferito ? ' favorite' : '';
-    return `<button type="button" class="slot-map-player${taken}${favorite}" data-slot-map-player-key="${esc(p.key)}">${esc(p.nome)}</button>`;
+    return `<button type="button" class="slot-map-player${taken}${favorite}" data-slot-map-player-key="${esc(p.key)}">${esc(p.nome)}${slotMapOneCreditMarkup(p)}</button>`;
   }
 
   function slotMapNamesMarkup(players) {
@@ -791,7 +801,7 @@
   function slotMapInlineMeasureNameText(p) {
     const taken = p.preso ? ' taken' : '';
     const favorite = p.preferito ? ' favorite' : '';
-    return `<span class="slot-map-player${taken}${favorite}">${esc(p.nome)}</span>`;
+    return `<span class="slot-map-player${taken}${favorite}">${esc(p.nome)}${slotMapOneCreditMarkup(p)}</span>`;
   }
 
   function slotMapInlineSeparatorMarkup(groupBoundary = false) {
