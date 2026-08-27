@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fantacalcio-checklist-v32.9';
+const CACHE_NAME = 'fantacalcio-checklist-v33';
 const APP_SHELL = [
   './',
   './index.html',

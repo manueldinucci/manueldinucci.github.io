@@ -1,3 +1,14 @@
+# Aurea XI — PWA Fantacalcio v33
+
+## v33 — Aurea XI
+
+- Nuovo brand dell'app: `Aurea XI`.
+- `Direttore's` diventa la firma/kicker dell'header, in corsivo sobrio e visivamente secondario.
+- PWA long name: `Direttore's Aurea XI`; short name: `Aurea XI`; titolo browser: `Aurea XI — Fantacalcio`.
+- Confermata senza modifiche l'icona introdotta nella v32.9.
+- Nessuna modifica funzionale: dati, backup v5, IndexedDB, localStorage, import XLSX, Mappa Slot e logiche d'asta restano compatibili e invariati.
+- Cache aggiornata a `fantacalcio-checklist-v33`.
+
 # Fantacalcio Checklist PWA v32.9
 
 ## v32.9 — nuova identità visiva dell’app

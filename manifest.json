@@ -1,7 +1,7 @@
 {
-  "name": "Fantacalcio — Live Asta",
-  "short_name": "Asta Live",
-  "description": "Live Asta offline-first per Fantacalcio.",
+  "name": "Direttore's Aurea XI",
+  "short_name": "Aurea XI",
+  "description": "Aurea XI, strumento offline-first per Fantacalcio.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
