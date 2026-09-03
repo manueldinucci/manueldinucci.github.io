@@ -1,6 +1,15 @@
-# Aurea XI — PWA Fantacalcio v33.1.3
+# Aurea XI — PWA Fantacalcio v33.2
 
 
+
+## v33.2 — Rose interattive e Mappa Slot completa
+
+- Corretto il `+` accanto a `CR RIM.`: apre la rettifica crediti senza interferire con l’accordion della rosa.
+- Rifiniti i modal Crediti e Svincola con input full-width, gerarchia e spaziatura coerenti.
+- I giocatori nelle Rose sono ora cliccabili e riaprono la scheda giocatore esistente preservando scroll e accordion.
+- Le sezioni Mappa Slot `0/X` con `X > 0` restano espandibili e consultabili anche quando tutti i giocatori sono assegnati.
+- Contabilità v33.1.3, backup v5, database, filtri e packing Mappa Slot invariati.
+- Cache aggiornata a `fantacalcio-checklist-v33.2`.
 
 ## v33.1.3 — Gestione crediti e svincoli
 

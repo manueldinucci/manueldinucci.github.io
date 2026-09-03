@@ -3050,4 +3050,229 @@ html { color-scheme: light; }
   color: #c62828;
   font-weight: inherit;
 }
-\n\n/* v33.1.3 — rettifica crediti e svincoli */\n.rose-credit-cluster { display:inline-flex; align-items:center; gap:2px; flex:none; }\n.rose-credit-toggle { appearance:none; border:0; background:transparent; padding:0; margin:0; font:inherit; color:inherit; cursor:pointer; }\n.rose-credit-add {\n  appearance:none; border:0; background:transparent; color:#6B7075; padding:0; margin:0 0 0 1px;\n  width:28px; height:28px; min-width:28px; display:inline-grid; place-items:center;\n  font:500 15px/1 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; cursor:pointer; border-radius:7px;\n}\n.rose-credit-add:active { background:rgba(0,0,0,.055); }\n.rose-credit-add:focus-visible { outline:2px solid currentColor; outline-offset:-3px; }\n\n.credit-modal { position:fixed; inset:0; z-index:92; display:grid; place-items:center; padding:16px; pointer-events:none; }\n.credit-modal.hidden { display:none; }\n.credit-modal-card {\n  pointer-events:auto; width:min(340px,calc(100vw - 28px)); background:var(--surface); border:1px solid var(--line);\n  border-radius:16px; box-shadow:var(--shadow); overflow:hidden;\n}\n.credit-modal-header { display:flex; align-items:center; justify-content:space-between; gap:10px; padding:10px 11px 8px; border-bottom:1px solid var(--line); }\n.credit-modal-header h2 { margin:0; font-size:15px; }\n.credit-modal-body,.credit-operation-body { display:grid; gap:11px; padding:12px; }\n.credit-balance-row { display:flex; align-items:baseline; justify-content:space-between; gap:14px; color:var(--muted); font-size:12px; font-variant-numeric:tabular-nums; }\n.credit-balance-row strong { color:var(--text); font-size:14px; font-weight:780; }\n.credit-new-balance strong { font-size:15px; }\n.credit-input-block { display:grid; gap:5px; }\n.credit-input-block > label,.credit-input-label-row label { color:var(--muted); font-size:11px; font-weight:700; }\n.credit-input-label-row { display:flex; align-items:center; justify-content:space-between; gap:10px; }\n.credit-number-input {\n  width:100%; min-height:44px; box-sizing:border-box; border:1px solid var(--line); border-radius:9px; background:var(--surface);\n  color:var(--text); padding:8px 10px; font-size:18px; font-weight:720; text-align:center; font-variant-numeric:tabular-nums;\n}\n.credit-number-input:focus { outline:2px solid color-mix(in srgb,var(--text) 20%,transparent); outline-offset:1px; }\n.credit-micro-action,.credit-modify-link { appearance:none; border:0; background:transparent; color:var(--muted); cursor:pointer; }\n.credit-micro-action { min-width:42px; min-height:30px; padding:4px 6px; font-size:10.5px; font-weight:750; text-decoration:underline; text-underline-offset:2px; }\n.credit-operation-info { display:grid; gap:2px; padding:1px 0 2px; }\n.credit-operation-info strong { font-size:14px; }\n.credit-operation-info span { color:var(--muted); font-size:11px; }\n.credit-modify-link { justify-self:start; padding:3px 0; min-height:28px; font-size:10.5px; text-decoration:underline; text-underline-offset:2px; }\n.credit-primary-actions { margin-top:1px; }\n.credit-operation-sheet { width:min(420px,100%); }\n@media (max-width:390px) {\n  .rose-credit-add { width:27px; min-width:27px; height:27px; }\n  .credit-modal { padding:12px; }\n  .credit-modal-card { width:min(330px,calc(100vw - 22px)); }\n}\n
+
+/* v33.2 — Rose interattive, modal crediti/svincolo rifiniti, Mappa Slot 0/X consultabile */
+.rose-credit-cluster {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+}
+.rose-credit-add {
+  appearance: none;
+  -webkit-appearance: none;
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  display: inline-grid;
+  place-items: center;
+  margin: 0 0 0 1px;
+  padding: 0;
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: #6b7075;
+  font: 500 15px/1 system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0,0,0,.06);
+}
+.rose-credit-add:active { background: rgba(0,0,0,.055); }
+.rose-credit-add:focus-visible { outline: 2px solid currentColor; outline-offset: -3px; }
+
+/* I token nome + prezzo diventano interattivi senza cambiare la densità visiva delle Rose. */
+.rose-player-entry {
+  appearance: none;
+  -webkit-appearance: none;
+  display: inline;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 3px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  line-height: inherit;
+  text-align: left;
+  white-space: normal;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0,0,0,.06);
+}
+.rose-player-entry:active { opacity: .62; }
+.rose-player-entry:focus-visible { outline: 1px solid currentColor; outline-offset: 1px; }
+
+/* Modal giocatore / operazioni aperti dalla vista Rose: la Rose rimane sotto, intatta. */
+.player-modal.rose-nested-sheet { z-index: 101; }
+.bottom-sheet.rose-nested-sheet { z-index: 103; }
+
+/* Rettifica crediti: modal globale centrato, piatto e compatto. */
+.credit-modal {
+  position: fixed;
+  inset: 0;
+  z-index: 105;
+  display: grid;
+  place-items: center;
+  padding: 16px;
+  pointer-events: none;
+}
+.credit-modal.hidden { display: none; }
+.credit-modal-card {
+  pointer-events: auto;
+  width: min(360px, calc(100vw - 28px));
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  box-shadow: 0 12px 34px rgba(0,0,0,.18);
+}
+.credit-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 10px 11px 9px;
+  border-bottom: 1px solid var(--line);
+}
+.credit-modal-header h2 { margin: 0; font-size: 16px; line-height: 1.15; }
+.credit-modal-body,
+.credit-operation-body {
+  display: grid;
+  gap: 13px;
+  padding: 14px 14px 15px;
+}
+.credit-balance-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 18px;
+  min-width: 0;
+  color: var(--muted);
+  font-size: 12px;
+  line-height: 1.25;
+  font-variant-numeric: tabular-nums;
+}
+.credit-balance-row strong {
+  flex: none;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 730;
+  line-height: 1.2;
+}
+.credit-new-balance strong { font-size: 15px; font-weight: 820; }
+.credit-input-block { display: grid; gap: 6px; min-width: 0; }
+.credit-input-block > label,
+.credit-input-label-row label {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 720;
+  line-height: 1.2;
+}
+.credit-input-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 28px;
+}
+.credit-number-input {
+  appearance: textfield;
+  -moz-appearance: textfield;
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  box-sizing: border-box;
+  padding: 9px 11px;
+  border: 1px solid #cfd2d6;
+  border-radius: 9px;
+  background: var(--surface);
+  color: var(--text);
+  font: inherit;
+  font-size: 17px;
+  font-weight: 700;
+  line-height: 1.2;
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+}
+.credit-number-input::-webkit-outer-spin-button,
+.credit-number-input::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+.credit-number-input:focus {
+  outline: 2px solid color-mix(in srgb, var(--text) 18%, transparent);
+  outline-offset: 1px;
+}
+.credit-micro-action {
+  appearance: none;
+  -webkit-appearance: none;
+  min-width: 44px;
+  min-height: 30px;
+  margin: 0;
+  padding: 4px 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: #666a70;
+  font: inherit;
+  font-size: 10.5px;
+  font-weight: 760;
+  line-height: 1;
+  cursor: pointer;
+  -webkit-tap-highlight-color: rgba(0,0,0,.06);
+}
+.credit-micro-action:active { background: rgba(0,0,0,.05); }
+.credit-micro-action:focus-visible { outline: 1px solid currentColor; outline-offset: -2px; }
+.credit-primary-actions { margin-top: 2px; }
+.credit-primary-actions > button { min-height: 44px; }
+
+/* Svincolo: gerarchia verticale pulita e metadati separati. */
+.credit-operation-sheet {
+  width: min(430px, 100%);
+  max-height: min(82dvh, 610px);
+}
+.credit-operation-sheet .sheet-header { padding-bottom: 9px; }
+.credit-operation-info {
+  display: grid;
+  gap: 3px;
+  min-width: 0;
+  padding: 0 0 1px;
+}
+.credit-operation-info strong {
+  min-width: 0;
+  color: var(--text);
+  font-size: 14px;
+  font-weight: 780;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.credit-operation-info span {
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 560;
+  line-height: 1.25;
+}
+.credit-operation-sheet .credit-balance-row {
+  padding-top: 1px;
+}
+.credit-operation-sheet .credit-balance-row strong {
+  font-size: 15px;
+  font-weight: 800;
+}
+
+/* Slot esaurito: rosso informativo, mai stato disabilitato. */
+.slot-map-slot.exhausted-slot { padding-bottom: 0; }
+.slot-map-slot.exhausted-slot:not(.collapsed) { padding-bottom: 2px; }
+
+@media (max-width: 390px) {
+  .rose-credit-add { width: 27px; min-width: 27px; height: 27px; }
+  .credit-modal { padding: 12px; }
+  .credit-modal-card { width: min(350px, calc(100vw - 22px)); }
+  .credit-modal-body,
+  .credit-operation-body { padding: 13px 12px 14px; gap: 12px; }
+}
+
+@media (max-width: 360px) {
+  .credit-modal { padding: 10px; }
+  .credit-modal-card { width: calc(100vw - 18px); }
+  .credit-number-input { min-height: 43px; font-size: 16px; }
+  .credit-primary-actions { gap: 7px; }
+}
+.rose-nested-underlay,
+.player-modal.nested-underlay { pointer-events: none; }
+.credit-modal { pointer-events: auto; }

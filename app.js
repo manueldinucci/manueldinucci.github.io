@@ -41,6 +41,7 @@
     overlayView: '',
     overlayScrollY: 0,
     slotMapReturnContext: null,
+    roseReturnContext: null,
     slotMapCollapsed: {},
     slotMapOutsideOpen: {},
     lastImportChanges: null
@@ -575,7 +576,11 @@
     $('unassignRefundInput').value = qta == null ? '0' : String(Math.max(0, Math.round(qta)));
     $('resetRefundQtaBtn').dataset.qta = qta == null ? '0' : String(Math.max(0, Math.round(qta)));
     updateUnassignPreview();
-    openOnly('unassignSheet');
+    if (state.roseReturnContext) {
+      openNestedRoseSheet('unassignSheet');
+    } else {
+      openOnly('unassignSheet');
+    }
   }
 
   async function confirmUnassign() {
@@ -594,9 +599,10 @@
     state.creditAdjustments = nextAdjustments;
     if (manager) manager.creditAdjustment = nextAdjustment;
     Object.assign(p, after);
-    if (!restoreSlotMapContext()) closeAllSheets();
+    const returnedToRose = !state.slotMapReturnContext && Boolean(state.roseReturnContext);
+    if (!restoreSlotMapContext() && !restoreRoseContext({ rerender:true })) closeAllSheets();
     renderPlayers(); renderCountsAndDemand();
-    if (!$('viewSheet').classList.contains('hidden')) renderManagerDashboard('viewSheetContent', 'rose');
+    if (!returnedToRose && !$('viewSheet').classList.contains('hidden')) renderManagerDashboard('viewSheetContent', 'rose');
     toast(`${p.nome} svincolato · +${refund} cr`, 'Annulla', async () => {
       const restoredAdjustments = { ...state.creditAdjustments, [managerId]: previousAdjustment };
       await FantaDB.updateAuctionAndSetting(p.key, before, 'creditAdjustments', restoredAdjustments);
@@ -604,6 +610,7 @@
       if (manager) manager.creditAdjustment = previousAdjustment;
       Object.assign(p, before);
       renderPlayers(); renderCountsAndDemand();
+      if (!$('viewSheet').classList.contains('hidden')) renderManagerDashboard('viewSheetContent', 'rose');
       toast('Svincolo annullato');
     }, 4800);
   }
@@ -1010,11 +1017,11 @@
     const total = players.length;
     const remaining = players.filter(p => !p.preso).length;
     const ordered = [...players].sort(slotMapNameSort);
-    const exhausted = remaining === 0;
+    const exhausted = total > 0 && remaining === 0;
     let body = '';
-    if (!exhausted && privacy) {
+    if (total > 0 && privacy) {
       body = `<div class="slot-map-names privacy-names">${slotMapNamesMarkup(ordered)}</div>`;
-    } else if (!exhausted) {
+    } else if (total > 0) {
       const bands = new Map();
       for (const p of ordered) {
         const band = slotMapBandKey(p);
@@ -1029,13 +1036,14 @@
       }
     }
     const label = slotMapSlotLabel(slot);
-    const collapsible = /^S[1-5]$/i.test(slot);
+    const collapsible = total > 0 && /^S[1-5]$/i.test(slot);
+    const effectiveCollapsed = collapsible ? collapsed : true;
     const head = collapsible
-      ? `<button type="button" class="slot-map-slot-head" data-slot-map-toggle="${esc(slot)}" aria-expanded="${collapsed ? 'false' : 'true'}" aria-controls="slotMapBody-${esc(slot)}"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron" aria-hidden="true">${collapsed ? '›' : '⌄'}</span></span></button>`
+      ? `<button type="button" class="slot-map-slot-head" data-slot-map-toggle="${esc(slot)}" aria-expanded="${effectiveCollapsed ? 'false' : 'true'}" aria-controls="slotMapBody-${esc(slot)}"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron" aria-hidden="true">${effectiveCollapsed ? '›' : '⌄'}</span></span></button>`
       : `<div class="slot-map-slot-head static"><strong>${esc(label)}</strong><span class="slot-map-head-meta"><span class="slot-map-count${exhausted ? ' exhausted' : ''}">${remaining}/${total}</span><span class="slot-map-chevron slot-map-chevron-placeholder" aria-hidden="true"></span></span></div>`;
     const inlineClass = slotMapUsesInlineLayout(role, slot) ? ' inline-slot' : '';
     const emptyClass = exhausted ? ' exhausted-slot' : '';
-    return `<section class="slot-map-slot${inlineClass}${emptyClass}${collapsed ? ' collapsed' : ''}" data-slot-map-slot="${esc(slot)}" id="slotMapSlot-${esc(slot)}">${head}<div class="slot-map-slot-body" id="slotMapBody-${esc(slot)}"${collapsed || exhausted ? ' hidden' : ''}>${body}</div></section>`;
+    return `<section class="slot-map-slot${inlineClass}${emptyClass}${effectiveCollapsed ? ' collapsed' : ''}" data-slot-map-slot="${esc(slot)}" id="slotMapSlot-${esc(slot)}">${head}<div class="slot-map-slot-body" id="slotMapBody-${esc(slot)}"${effectiveCollapsed ? ' hidden' : ''}>${body}</div></section>`;
   }
 
   function renderSlotMapRoleTabs() {
@@ -1140,6 +1148,63 @@
     return true;
   }
 
+  function captureRoseReturnContext() {
+    const content = $('viewSheetContent');
+    state.roseReturnContext = {
+      scrollTop: content ? content.scrollTop : 0,
+      openManagers: Array.from(content?.querySelectorAll('.rose-manager[data-manager-id][open]') || []).map(el => String(el.dataset.managerId || ''))
+    };
+  }
+
+  function openPlayerFromRose(key) {
+    if ($('viewSheet').classList.contains('hidden')) return openPlayerSheet(key);
+    captureRoseReturnContext();
+    openPlayerSheet(key, true);
+    $('viewSheet').classList.add('rose-nested-underlay');
+    $('playerSheet').classList.add('rose-nested-sheet');
+    $('playerSheet').classList.remove('hidden');
+    showBackdrop();
+    document.body.style.overflow = 'hidden';
+  }
+
+  function restoreRoseContext({ rerender = false } = {}) {
+    const context = state.roseReturnContext;
+    if (!context) return false;
+    $('playerSheet').classList.add('hidden');
+    $('playerSheet').classList.remove('rose-nested-sheet', 'nested-underlay');
+    $('viewSheet').classList.remove('rose-nested-underlay');
+    $('assignmentSheet').classList.add('hidden');
+    $('assignmentSheet').classList.remove('rose-nested-sheet');
+    $('unassignSheet').classList.add('hidden');
+    $('unassignSheet').classList.remove('rose-nested-sheet');
+    $('creditSheet').classList.add('hidden');
+    state.selectedKey = null;
+    state.pendingAssignmentKey = null;
+    state.pendingUnassignKey = null;
+    state.creditManagerId = '';
+    state.overlayView = 'rose';
+    $('viewSheet').classList.remove('hidden');
+    if (rerender) renderManagerDashboard('viewSheetContent', 'rose');
+    const content = $('viewSheetContent');
+    const openSet = new Set(context.openManagers || []);
+    content?.querySelectorAll('.rose-manager[data-manager-id]').forEach(el => { el.open = openSet.has(String(el.dataset.managerId || '')); });
+    requestAnimationFrame(() => { if (content) content.scrollTop = context.scrollTop || 0; });
+    state.roseReturnContext = null;
+    showBackdrop();
+    document.body.style.overflow = 'hidden';
+    return true;
+  }
+
+  function openNestedRoseSheet(id) {
+    if (!state.roseReturnContext || $('viewSheet').classList.contains('hidden')) return false;
+    $('playerSheet').classList.add('nested-underlay');
+    $(id).classList.add('rose-nested-sheet');
+    $(id).classList.remove('hidden');
+    showBackdrop();
+    document.body.style.overflow = 'hidden';
+    return true;
+  }
+
   async function closePlayerSheet() {
     if (playerSaveTimer) {
       clearTimeout(playerSaveTimer);
@@ -1147,16 +1212,36 @@
       await saveSelectedPlayer();
     }
     if (restoreSlotMapContext()) return;
+    if (restoreRoseContext({ rerender:true })) return;
     closeAllSheets();
   }
 
   function closeAssignmentSheet() {
     if (restoreSlotMapContext()) return;
+    if (state.roseReturnContext) {
+      $('assignmentSheet').classList.add('hidden');
+      $('assignmentSheet').classList.remove('rose-nested-sheet');
+      $('playerSheet').classList.remove('hidden', 'nested-underlay');
+      return;
+    }
+    closeAllSheets();
+  }
+
+  function closeUnassignSheet() {
+    if (state.roseReturnContext) {
+      $('unassignSheet').classList.add('hidden');
+      $('unassignSheet').classList.remove('rose-nested-sheet');
+      $('playerSheet').classList.remove('hidden', 'nested-underlay');
+      state.pendingUnassignKey = null;
+      return;
+    }
     closeAllSheets();
   }
 
   function closeActiveOverlay() {
     if (!$('creditSheet').classList.contains('hidden')) { closeCreditSheet(); return; }
+    if (!$('unassignSheet').classList.contains('hidden') && state.roseReturnContext) { closeUnassignSheet(); return; }
+    if (!$('assignmentSheet').classList.contains('hidden') && state.roseReturnContext) { closeAssignmentSheet(); return; }
     if (!$('playerSheet').classList.contains('hidden')) { closePlayerSheet(); return; }
     if (!$('assignmentSheet').classList.contains('hidden') && state.slotMapReturnContext) { closeAssignmentSheet(); return; }
     if (!$('unassignSheet').classList.contains('hidden') && state.slotMapReturnContext) { closeAssignmentSheet(); return; }
@@ -1273,8 +1358,8 @@
     $('toastClose').addEventListener('click', () => { clearTimeout(toastTimer); $('toast').classList.add('hidden'); });
     $('addManagerRowBtn').addEventListener('click', () => addManagerEditorRow({}));
     $('managerConfigForm').addEventListener('submit', saveManagerConfig);
-    $('closeUnassignBtn').addEventListener('click', closeAllSheets);
-    $('cancelUnassignBtn').addEventListener('click', closeAllSheets);
+    $('closeUnassignBtn').addEventListener('click', closeUnassignSheet);
+    $('cancelUnassignBtn').addEventListener('click', closeUnassignSheet);
     $('unassignRefundInput').addEventListener('input', updateUnassignPreview);
     $('resetRefundQtaBtn').addEventListener('click', () => {
       $('unassignRefundInput').value = $('resetRefundQtaBtn').dataset.qta || '0';
@@ -1285,11 +1370,6 @@
     $('cancelCreditBtn').addEventListener('click', closeCreditSheet);
     $('creditAmountInput').addEventListener('input', updateCreditPreview);
     $('confirmCreditBtn').addEventListener('click', confirmCreditAdjustment);
-    $('modifyAssignmentBtn').addEventListener('click', () => {
-      const key = state.pendingUnassignKey;
-      state.pendingUnassignKey = null;
-      if (key) openAssignmentSheet(key, true);
-    });
     $('confirmUnassignBtn').addEventListener('click', confirmUnassign);
 
     // v30: il primo click fuori da Ordina/Filtri viene consumato interamente.
@@ -1368,7 +1448,11 @@
     closeContextPopovers();
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
     ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managerConfigSheet','unassignSheet','creditSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
-    $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null; state.slotMapReturnContext = null;
+    $('playerSheet').classList.remove('rose-nested-sheet', 'nested-underlay');
+    $('assignmentSheet').classList.remove('rose-nested-sheet');
+    $('unassignSheet').classList.remove('rose-nested-sheet');
+    $('viewSheet').classList.remove('rose-nested-underlay');
+    $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null; state.slotMapReturnContext = null; state.roseReturnContext = null;
     const hadOverlayView = Boolean(state.overlayView); const overlayScrollY = state.overlayScrollY || 0; state.overlayView = '';
     if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
     if (restoreFilters) requestAnimationFrame(() => window.scrollTo(0, state.filtersScrollY || 0));
@@ -1535,7 +1619,11 @@
     $('forceAssignment').checked = false;
     $('forceAssignmentWrap').classList.add('hidden');
     updateAssignmentPreview();
-    openOnly('assignmentSheet');
+    if (state.roseReturnContext) {
+      openNestedRoseSheet('assignmentSheet');
+    } else {
+      openOnly('assignmentSheet');
+    }
     setTimeout(() => $('assignmentPrice').focus(), 180);
   }
 
@@ -1578,7 +1666,7 @@
     const after = { preso:true, prezzo_acquisto:price, manager_id:manager.id, manager_acquirente:manager.nome };
     Object.assign(p, after);
     await FantaDB.updateAuction(p.key, after);
-    if (!restoreSlotMapContext()) closeAllSheets();
+    if (!restoreSlotMapContext() && !restoreRoseContext({ rerender:true })) closeAllSheets();
     state.pendingAssignmentKey = null;
     renderPlayers(); renderCountsAndDemand();
     assignmentFeedbackToast(p, manager, price, async () => {
@@ -1624,7 +1712,7 @@
     return players.map(p => {
       const price = num(p.prezzo_acquisto);
       const priceMarkup = price != null ? `<span class="rose-player-price"> ${displayNum(price)} cr</span>` : '';
-      return `<span class="rose-player-entry">${esc(p.nome)}${priceMarkup}</span>`;
+      return `<button type="button" class="rose-player-entry" data-rose-player-key="${esc(p.key)}" aria-label="Apri ${esc(p.nome)}">${esc(p.nome)}${priceMarkup}</button>`;
     }).join('&nbsp;· ');
   }
 
@@ -1666,6 +1754,13 @@
         openCreditSheet(btn.dataset.creditManager);
       });
     });
+    dashboard.querySelectorAll('[data-rose-player-key]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        openPlayerFromRose(btn.dataset.rosePlayerKey);
+      });
+    });
   }
 
   function creditAmountValue() {
@@ -1690,7 +1785,6 @@
     updateCreditPreview();
     $('creditSheet').classList.remove('hidden');
     showBackdrop();
-    requestAnimationFrame(() => $('creditAmountInput')?.focus({ preventScroll:true }));
   }
 
   function closeCreditSheet() {
@@ -1704,9 +1798,12 @@
     if (!manager || amount == null) return;
     const next = managerCreditAdjustment(manager.id) + amount;
     await setManagerCreditAdjustment(manager.id, next);
+    const content = $('viewSheetContent');
+    const scrollTop = content ? content.scrollTop : 0;
     closeCreditSheet();
     renderCountsAndDemand();
     renderManagerDashboard('viewSheetContent', 'rose');
+    requestAnimationFrame(() => { if (content) content.scrollTop = scrollTop; });
     toast(`+${amount} crediti a ${manager.nome}`);
   }
 
@@ -2002,7 +2099,7 @@
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',targetMax:'',onlyAvailable:false,onlyFavorites:false,onlyOneCredit:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],creditAdjustments:{},creditManagerId:'',auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',targetMax:'',onlyAvailable:false,onlyFavorites:false,onlyOneCredit:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],creditAdjustments:{},creditManagerId:'',auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players',roseReturnContext:null});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 
