@@ -297,18 +297,44 @@
     </div>
   </section>
 
-  <section id="unassignSheet" class="bottom-sheet confirm-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="unassignTitle">
+  <section id="unassignSheet" class="bottom-sheet confirm-sheet credit-operation-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="unassignTitle">
     <div class="sheet-handle"></div>
     <div class="sheet-header">
-      <div><h2 id="unassignTitle">Annullare assegnazione?</h2><div class="sheet-meta">Conferma necessaria</div></div>
+      <div><h2 id="unassignTitle">Svincola</h2><div class="sheet-meta">Rimborso configurabile</div></div>
       <button id="closeUnassignBtn" class="icon-btn" aria-label="Chiudi">×</button>
     </div>
-    <div class="sheet-scroll">
-      <div id="unassignPlayerInfo" class="assignment-player-card"></div>
-      <p class="confirm-copy">Vuoi rendere nuovamente libero questo giocatore? Budget, slot e statistiche verranno ricalcolati automaticamente.</p>
-      <div class="sheet-actions">
-        <button id="modifyAssignmentBtn" class="secondary-btn">Modifica assegnazione</button>
-        <button id="confirmUnassignBtn" class="secondary-btn danger">Annulla assegnazione</button>
+    <div class="sheet-scroll credit-operation-body">
+      <div id="unassignPlayerInfo" class="credit-operation-info"></div>
+      <div class="credit-input-block">
+        <div class="credit-input-label-row"><label for="unassignRefundInput">Crediti restituiti</label><button id="resetRefundQtaBtn" type="button" class="credit-micro-action">Q.At</button></div>
+        <input id="unassignRefundInput" class="credit-number-input" type="number" inputmode="numeric" min="0" step="1" autocomplete="off">
+      </div>
+      <div class="credit-balance-row"><span>Saldo</span><strong id="unassignBalancePreview">—</strong></div>
+      <button id="modifyAssignmentBtn" type="button" class="credit-modify-link">Modifica assegnazione</button>
+      <div class="sheet-actions credit-primary-actions">
+        <button id="cancelUnassignBtn" class="secondary-btn">Annulla</button>
+        <button id="confirmUnassignBtn" class="secondary-btn danger">Svincola</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="creditSheet" class="credit-modal hidden" aria-modal="true" role="dialog" aria-labelledby="creditSheetTitle">
+    <div class="credit-modal-card">
+      <div class="credit-modal-header">
+        <div><h2 id="creditSheetTitle">Crediti</h2><div class="sheet-meta">Rettifica manuale</div></div>
+        <button id="closeCreditSheetBtn" class="icon-btn" aria-label="Chiudi">×</button>
+      </div>
+      <div class="credit-modal-body">
+        <div class="credit-balance-row"><span>Saldo attuale</span><strong id="creditCurrentBalance">—</strong></div>
+        <div class="credit-input-block">
+          <label for="creditAmountInput">Aggiungi crediti</label>
+          <input id="creditAmountInput" class="credit-number-input" type="number" inputmode="numeric" min="0" step="1" autocomplete="off">
+        </div>
+        <div class="credit-balance-row credit-new-balance"><span>Nuovo saldo</span><strong id="creditNewBalance">—</strong></div>
+        <div class="sheet-actions credit-primary-actions">
+          <button id="cancelCreditBtn" class="secondary-btn">Annulla</button>
+          <button id="confirmCreditBtn" class="primary-btn" disabled>Aggiungi</button>
+        </div>
       </div>
     </div>
   </section>

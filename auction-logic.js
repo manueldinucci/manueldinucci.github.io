@@ -63,7 +63,8 @@
     const roleRemaining = {};
     for (const role of ROLES) roleRemaining[role] = Math.max(0, c.roster[role] - roleBought[role]);
     const slotsRemaining = ROLES.reduce((sum, role) => sum + roleRemaining[role], 0);
-    const budgetRemaining = Math.max(0, budgetInitial - spent);
+    const creditAdjustment = numberOr(manager?.creditAdjustment, 0);
+    const budgetRemaining = Math.max(0, budgetInitial - spent + creditAdjustment);
     let maxBid = 0;
     if (slotsRemaining > 0) {
       maxBid = budgetRemaining - Math.max(0, slotsRemaining - 1) * c.minPrice;
@@ -77,6 +78,7 @@
       nome: manager?.nome || '',
       budgetInitial,
       budgetRemaining,
+      creditAdjustment,
       spent,
       bought,
       roleBought,

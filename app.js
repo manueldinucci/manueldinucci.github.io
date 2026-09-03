@@ -28,6 +28,8 @@
     importModel: null,
     importMode: 'replace',
     managers: [],
+    creditAdjustments: {},
+    creditManagerId: '',
     auctionConfig: FantaAuction.makeDefaultConfig(),
     managerSort: 'slots',
     managerView: 'unified',
@@ -122,8 +124,29 @@
 
 
   async function loadAuctionContext() {
-    state.managers = await FantaDB.getManagers();
+    const managers = await FantaDB.getManagers();
+    const savedAdjustments = await FantaDB.getSetting('creditAdjustments', {});
+    state.creditAdjustments = savedAdjustments && typeof savedAdjustments === 'object' ? { ...savedAdjustments } : {};
+    state.managers = managers.map(manager => ({
+      ...manager,
+      creditAdjustment: Number(state.creditAdjustments[String(manager.id)] || 0)
+    }));
     state.auctionConfig = FantaAuction.makeDefaultConfig(await FantaDB.getSetting('auctionConfig', null) || {});
+  }
+
+  function managerCreditAdjustment(managerId) {
+    const value = Number(state.creditAdjustments[String(managerId)] || 0);
+    return Number.isFinite(value) ? value : 0;
+  }
+
+  async function setManagerCreditAdjustment(managerId, value) {
+    const id = String(managerId || '');
+    if (!id) return;
+    const numeric = Number(value);
+    state.creditAdjustments = { ...state.creditAdjustments, [id]: Number.isFinite(numeric) ? numeric : 0 };
+    const manager = getManagerById(id);
+    if (manager) manager.creditAdjustment = state.creditAdjustments[id];
+    await FantaDB.setSetting('creditAdjustments', state.creditAdjustments);
   }
 
   async function refreshAuctionContext() {
@@ -525,27 +548,64 @@
     }
   }
 
+  function unassignRefundValue() {
+    const value = Number($('unassignRefundInput')?.value);
+    return Number.isFinite(value) && value >= 0 && Number.isInteger(value) ? value : null;
+  }
+
+  function updateUnassignPreview() {
+    const p = state.players.find(x => x.key === state.pendingUnassignKey);
+    if (!p || !p.preso) return;
+    const manager = getManagerById(p.manager_id);
+    const current = manager ? managerStats(manager).budgetRemaining : 0;
+    const refund = unassignRefundValue();
+    $('unassignBalancePreview').textContent = refund == null ? `${displayNum(current)} → —` : `${displayNum(current)} → ${displayNum(current + refund)}`;
+    $('confirmUnassignBtn').disabled = refund == null;
+  }
+
   function openUnassignSheet(key) {
     const p = state.players.find(x => x.key === key); if (!p || !p.preso) return;
     state.pendingUnassignKey = key;
-    const purchase = purchaseText(p);
-    $('unassignPlayerInfo').innerHTML = `<strong>${esc(p.nome)}</strong><span>${esc([p.squadra, purchase].filter(Boolean).join(' · '))}</span>`;
+    const manager = getManagerById(p.manager_id);
+    const owner = managerDisplayName(manager) || p.manager_acquirente || '—';
+    const purchase = num(p.prezzo_acquisto);
+    const qta = num(p.quotazione);
+    $('unassignTitle').textContent = `Svincola — ${p.nome}`;
+    $('unassignPlayerInfo').innerHTML = `<strong>${esc(owner)}</strong><span>Acquistato ${esc(displayNum(purchase))} · Q.At ${esc(displayNum(qta))}</span>`;
+    $('unassignRefundInput').value = qta == null ? '0' : String(Math.max(0, Math.round(qta)));
+    $('resetRefundQtaBtn').dataset.qta = qta == null ? '0' : String(Math.max(0, Math.round(qta)));
+    updateUnassignPreview();
     openOnly('unassignSheet');
   }
 
   async function confirmUnassign() {
     const p = state.players.find(x => x.key === state.pendingUnassignKey); if (!p || !p.preso) { closeAllSheets(); return; }
+    const refund = unassignRefundValue();
+    if (refund == null) { toast('Inserisci un rimborso valido'); return; }
+    const managerId = String(p.manager_id || '');
+    const manager = getManagerById(managerId);
+    const purchasePrice = Math.max(0, Number(p.prezzo_acquisto || 0));
+    const previousAdjustment = managerCreditAdjustment(managerId);
+    const nextAdjustment = previousAdjustment + refund - purchasePrice;
     const before = { preso:true, prezzo_acquisto:p.prezzo_acquisto, manager_id:p.manager_id || '', manager_acquirente:p.manager_acquirente || '' };
     const after = { preso:false, prezzo_acquisto:null, manager_id:'', manager_acquirente:'' };
+    const nextAdjustments = { ...state.creditAdjustments, [managerId]: nextAdjustment };
+    await FantaDB.updateAuctionAndSetting(p.key, after, 'creditAdjustments', nextAdjustments);
+    state.creditAdjustments = nextAdjustments;
+    if (manager) manager.creditAdjustment = nextAdjustment;
     Object.assign(p, after);
-    await FantaDB.updateAuction(p.key, after);
     if (!restoreSlotMapContext()) closeAllSheets();
     renderPlayers(); renderCountsAndDemand();
-    toast(`${p.nome} nuovamente libero`, 'Annulla', async () => {
+    if (!$('viewSheet').classList.contains('hidden')) renderManagerDashboard('viewSheetContent', 'rose');
+    toast(`${p.nome} svincolato · +${refund} cr`, 'Annulla', async () => {
+      const restoredAdjustments = { ...state.creditAdjustments, [managerId]: previousAdjustment };
+      await FantaDB.updateAuctionAndSetting(p.key, before, 'creditAdjustments', restoredAdjustments);
+      state.creditAdjustments = restoredAdjustments;
+      if (manager) manager.creditAdjustment = previousAdjustment;
       Object.assign(p, before);
-      await FantaDB.updateAuction(p.key, before);
       renderPlayers(); renderCountsAndDemand();
-      }, 4800);
+      toast('Svincolo annullato');
+    }, 4800);
   }
 
   async function toggleFavorite(key) {
@@ -1096,6 +1156,7 @@
   }
 
   function closeActiveOverlay() {
+    if (!$('creditSheet').classList.contains('hidden')) { closeCreditSheet(); return; }
     if (!$('playerSheet').classList.contains('hidden')) { closePlayerSheet(); return; }
     if (!$('assignmentSheet').classList.contains('hidden') && state.slotMapReturnContext) { closeAssignmentSheet(); return; }
     if (!$('unassignSheet').classList.contains('hidden') && state.slotMapReturnContext) { closeAssignmentSheet(); return; }
@@ -1213,6 +1274,17 @@
     $('addManagerRowBtn').addEventListener('click', () => addManagerEditorRow({}));
     $('managerConfigForm').addEventListener('submit', saveManagerConfig);
     $('closeUnassignBtn').addEventListener('click', closeAllSheets);
+    $('cancelUnassignBtn').addEventListener('click', closeAllSheets);
+    $('unassignRefundInput').addEventListener('input', updateUnassignPreview);
+    $('resetRefundQtaBtn').addEventListener('click', () => {
+      $('unassignRefundInput').value = $('resetRefundQtaBtn').dataset.qta || '0';
+      updateUnassignPreview();
+      $('unassignRefundInput').focus({ preventScroll:true });
+    });
+    $('closeCreditSheetBtn').addEventListener('click', closeCreditSheet);
+    $('cancelCreditBtn').addEventListener('click', closeCreditSheet);
+    $('creditAmountInput').addEventListener('input', updateCreditPreview);
+    $('confirmCreditBtn').addEventListener('click', confirmCreditAdjustment);
     $('modifyAssignmentBtn').addEventListener('click', () => {
       const key = state.pendingUnassignKey;
       state.pendingUnassignKey = null;
@@ -1289,13 +1361,13 @@
   function showBackdrop() { $('sheetBackdrop').classList.remove('hidden'); }
   function openOnly(id) {
     closeContextPopovers();
-    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managerConfigSheet','unassignSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managerConfigSheet','unassignSheet','creditSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
     $(id).classList.remove('hidden'); showBackdrop(); document.body.style.overflow = 'hidden';
   }
   function closeAllSheets() {
     closeContextPopovers();
     const restoreFilters = !$('filtersPanel').classList.contains('hidden');
-    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managerConfigSheet','unassignSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
+    ['sortSheet','filtersPanel','playerSheet','toolsSheet','importSheet','listoneNewsSheet','simpleFormSheet','assignmentSheet','managerConfigSheet','unassignSheet','creditSheet','viewSheet','slotMapSheet'].forEach(x => $(x).classList.add('hidden'));
     $('sheetBackdrop').classList.add('hidden'); document.body.style.overflow = ''; state.selectedKey = null; state.pendingAssignmentKey = null; state.pendingUnassignKey = null; state.slotMapReturnContext = null;
     const hadOverlayView = Boolean(state.overlayView); const overlayScrollY = state.overlayScrollY || 0; state.overlayView = '';
     if (hadOverlayView) { renderRoleTabs(); requestAnimationFrame(() => window.scrollTo(0, overlayScrollY)); }
@@ -1567,6 +1639,7 @@
   function renderManagerDashboard(targetId = 'viewSheetContent', view = 'rose') {
     const dashboard = $(targetId);
     if (!dashboard || view !== 'rose') return;
+    const previousOpen = new Map(Array.from(dashboard.querySelectorAll('.rose-manager[data-manager-id]')).map(el => [el.dataset.managerId, el.open]));
     const inSheet = targetId === 'viewSheetContent';
     const baseRows = FantaAuction.computeAllManagerStats(state.managers, state.players, state.auctionConfig)
       .map((row, index) => ({...row, originalIndex:index}));
@@ -1584,8 +1657,57 @@
     );
     const head = inSheet ? '' : `<div class="dashboard-head"><h2>Rose</h2><span>Situazione completa delle squadre</span></div>`;
     dashboard.innerHTML = `${head}<div class="manager-cards rose-cards">${rows.length ? rows.map(({manager,stats}) => {
-      return `<details class="manager-card rose-manager${manager.isMe?' self-manager':''}" open><summary class="rose-manager-head"><strong>${esc(manager.nome)}</strong><b class="rose-credits"><span class="rose-credit-value">${displayNum(stats.budgetRemaining)}</span> <span class="rose-credit-label">CR RIM.</span></b></summary>${managerFullRosterDetails(manager,stats)}</details>`;
+      return `<details class="manager-card rose-manager${manager.isMe?' self-manager':''}" data-manager-id="${esc(manager.id)}" ${previousOpen.has(String(manager.id)) ? (previousOpen.get(String(manager.id)) ? 'open' : '') : 'open'}><summary class="rose-manager-head"><strong>${esc(manager.nome)}</strong><span class="rose-credit-cluster"><span class="rose-credits"><span class="rose-credit-value">${displayNum(stats.budgetRemaining)}</span> <span class="rose-credit-label">CR RIM.</span></span><button type="button" class="rose-credit-add" data-credit-manager="${esc(manager.id)}" aria-label="Aggiungi crediti a ${esc(manager.nome)}">+</button></span></summary>${managerFullRosterDetails(manager,stats)}</details>`;
     }).join('') : '<div class="manager-empty">Nessun fantallenatore configurato.</div>'}</div>`;
+    dashboard.querySelectorAll('[data-credit-manager]').forEach(btn => {
+      btn.addEventListener('click', event => {
+        event.preventDefault();
+        event.stopPropagation();
+        openCreditSheet(btn.dataset.creditManager);
+      });
+    });
+  }
+
+  function creditAmountValue() {
+    const value = Number($('creditAmountInput')?.value);
+    return Number.isFinite(value) && value >= 0 && Number.isInteger(value) ? value : null;
+  }
+
+  function updateCreditPreview() {
+    const manager = getManagerById(state.creditManagerId);
+    const current = manager ? managerStats(manager).budgetRemaining : 0;
+    const amount = creditAmountValue();
+    $('creditCurrentBalance').textContent = displayNum(current);
+    $('creditNewBalance').textContent = amount == null ? '—' : displayNum(current + amount);
+    $('confirmCreditBtn').disabled = amount == null;
+  }
+
+  function openCreditSheet(managerId) {
+    const manager = getManagerById(managerId); if (!manager) return;
+    state.creditManagerId = String(manager.id);
+    $('creditSheetTitle').textContent = `Crediti — ${manager.nome}`;
+    $('creditAmountInput').value = '';
+    updateCreditPreview();
+    $('creditSheet').classList.remove('hidden');
+    showBackdrop();
+    requestAnimationFrame(() => $('creditAmountInput')?.focus({ preventScroll:true }));
+  }
+
+  function closeCreditSheet() {
+    $('creditSheet').classList.add('hidden');
+    state.creditManagerId = '';
+  }
+
+  async function confirmCreditAdjustment() {
+    const manager = getManagerById(state.creditManagerId);
+    const amount = creditAmountValue();
+    if (!manager || amount == null) return;
+    const next = managerCreditAdjustment(manager.id) + amount;
+    await setManagerCreditAdjustment(manager.id, next);
+    closeCreditSheet();
+    renderCountsAndDemand();
+    renderManagerDashboard('viewSheetContent', 'rose');
+    toast(`+${amount} crediti a ${manager.nome}`);
   }
 
   function openManagerConfig() {
@@ -1870,13 +1992,17 @@
 
   async function resetAuction() {
     if (!confirm('Reset asta: azzerare giocatori presi, prezzi di acquisto e manager? Prezzi personali, commenti, slot e preferiti resteranno invariati.')) return;
-    await FantaDB.resetAuction(); await refreshPlayers(); closeAllSheets(); toast('Asta resettata: budget e slot sono tornati ai valori iniziali');
+    await FantaDB.resetAuction();
+    state.creditAdjustments = {};
+    state.managers.forEach(manager => { manager.creditAdjustment = 0; });
+    await FantaDB.setSetting('creditAdjustments', {});
+    await refreshPlayers(); closeAllSheets(); toast('Asta resettata: budget e slot sono tornati ai valori iniziali');
   }
 
   async function resetAll() {
     const typed = prompt('RESET COMPLETO: cancella listone e tutte le personalizzazioni. Scrivi RESET per confermare.');
     if (typed !== 'RESET') return;
-    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',targetMax:'',onlyAvailable:false,onlyFavorites:false,onlyOneCredit:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
+    await FantaDB.resetAll(); Object.assign(state, {role:'C',startLetter:'M',sortMode:'alpha',showAll:false,search:'',team:'',slot:'',minFvm:'',minQta:'',targetMax:'',onlyAvailable:false,onlyFavorites:false,onlyOneCredit:false,commentsVisible:true,privacyMode:false,participantsVisible:true,emphasis:65,managers:[],creditAdjustments:{},creditManagerId:'',auctionConfig:FantaAuction.makeDefaultConfig(),managerSort:'slots',managerView:'unified',slotDisplayMode:'remaining',mainView:'players'});
     await FantaDB.setSetting('uiState', getPersistableUI()); await FantaDB.setSetting('theme','light'); applyStateToControls(); applyTheme(); await refreshPlayers(); closeAllSheets(); toast('Reset completo eseguito');
   }
 

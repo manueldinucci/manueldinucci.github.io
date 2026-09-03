@@ -403,6 +403,17 @@
     await put(STORES.settings, { key, value });
   }
 
+  async function updateAuctionAndSetting(playerKey, auctionPatch, settingKey, settingValue) {
+    await tx([STORES.auction, STORES.settings], 'readwrite', stores => {
+      const req = stores[STORES.auction].get(playerKey);
+      req.onsuccess = () => {
+        const current = req.result || defaultAuction(playerKey);
+        stores[STORES.auction].put({ ...current, ...auctionPatch, key: playerKey });
+        stores[STORES.settings].put({ key: settingKey, value: settingValue });
+      };
+    });
+  }
+
   async function resetAuction() {
     const base = await getAll(STORES.base);
     await tx([STORES.auction], 'readwrite', stores => {
@@ -482,6 +493,7 @@
     replaceManagers,
     getSetting,
     setSetting,
+    updateAuctionAndSetting,
     resetAuction,
     resetAll,
     exportBackupObject,

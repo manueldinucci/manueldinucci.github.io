@@ -1,5 +1,14 @@
-# Aurea XI — PWA Fantacalcio v33.1.2
+# Aurea XI — PWA Fantacalcio v33.1.3
 
+
+
+## v33.1.3 — Gestione crediti e svincoli
+
+- Rettifica manuale dei crediti dalla vista Rose tramite un piccolo `+` indipendente dal tap su `CR RIM.`.
+- Svincolo con rimborso configurabile, precompilato con la Q.At. corrente e modificabile liberamente.
+- Correttivo economico persistente per partecipante, incluso nei backup v5 e retrocompatibile con backup precedenti.
+- `CR RIM.`, Max Bid e validazione degli acquisti usano il saldo corretto centralmente.
+- Cache aggiornata a `fantacalcio-checklist-v33.1.3`.
 
 ## v33.1.2 — Monitor Preferiti e Mappa Slot
 
