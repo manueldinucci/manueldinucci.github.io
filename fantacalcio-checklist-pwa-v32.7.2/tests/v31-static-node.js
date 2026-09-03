@@ -1,0 +1,17 @@
+const fs=require('fs'),assert=require('assert');
+const html=fs.readFileSync('index.html','utf8'), app=fs.readFileSync('app.js','utf8'), css=fs.readFileSync('style.css','utf8'), sw=fs.readFileSync('service-worker.js','utf8');
+assert(html.includes('id="slotMapHeaderBtn"') && html.includes('aria-label="Mappa Slot"'));
+assert(html.includes('id="slotMapSheet"') && html.includes('id="slotMapRoleTabs"') && html.includes('id="slotMapContent"'));
+assert(!html.includes('id="themeHeaderBtn"'), 'dark-theme button must be removed');
+assert(!html.includes('prefers-color-scheme: dark'), 'dark theme meta must be removed');
+assert(app.includes('function openSlotMap()') && app.includes('function renderSlotMap()'));
+assert(app.includes('function slotMapBandKey') && app.includes('target_min') && app.includes('target_max'));
+assert(app.includes("return role === 'P' ? ['S1','S2','S3','S4'] : ['S1','S2','S3','S4','S5'];"));
+assert(app.includes('function isGoalkeeperCoverage'));
+assert(app.includes('Privacy attiva · sottofasce economiche nascoste'));
+assert(app.includes("await FantaDB.setSetting('theme', 'light')"));
+assert(!app.includes('function toggleTheme()'));
+assert(css.includes('/* v31 — Mappa Slot + interfaccia solo chiara */'));
+assert(css.includes('.slot-map-player.taken') && css.includes('text-decoration:line-through'));
+assert(sw.includes('fantacalcio-checklist-v31') || sw.includes('fantacalcio-checklist-v32'));
+console.log('v31 static checks OK');

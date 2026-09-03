@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#f4f4f5" media="(prefers-color-scheme: light)" />
+  <meta name="theme-color" content="#111113" media="(prefers-color-scheme: dark)" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="default" />
+  <meta name="apple-mobile-web-app-title" content="Fanta Checklist" />
+  <link rel="apple-touch-icon" href="icons/icon-192.png" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="stylesheet" href="style.css" />
+  <title>Fantacalcio — Checklist Asta</title>
+</head>
+<body>
+  <div id="app" class="app-shell">
+    <header class="top-header">
+      <div class="title-row">
+        <div>
+          <div class="eyebrow">FANTACALCIO</div>
+          <h1>Checklist Asta</h1>
+        </div>
+        <button id="menuBtn" class="icon-btn" aria-label="Apri strumenti">•••</button>
+      </div>
+
+      <nav id="roleTabs" class="role-tabs" aria-label="Ruoli"></nav>
+
+      <div class="sticky-tools">
+        <div class="control-row compact-row">
+          <label class="select-wrap small-select">
+            <span>Lettera</span>
+            <select id="startLetter" aria-label="Lettera iniziale"></select>
+          </label>
+          <div class="search-wrap">
+            <input id="searchInput" type="search" placeholder="Cerca giocatore" autocomplete="off" spellcheck="false" />
+          </div>
+          <button id="liveModeBtn" class="secondary-btn live-mode-btn" aria-pressed="false">ASTA</button>
+          <button id="filtersBtn" class="secondary-btn">Filtri</button>
+        </div>
+        <div class="status-row">
+          <div id="counts" class="counts"></div>
+          <div id="scarcitySummary" class="scarcity-summary"></div>
+        </div>
+      </div>
+    </header>
+
+    <main class="main-content">
+      <section id="filtersPanel" class="panel filters-panel hidden" aria-label="Filtri avanzati">
+        <div class="filter-grid">
+          <label>Squadra<select id="teamFilter"><option value="">Tutte</option></select></label>
+          <label>Slot<select id="slotFilter"><option value="">Tutti</option></select></label>
+          <label>FVM minimo<input id="minFvmFilter" type="number" inputmode="numeric" min="0" placeholder="0" /></label>
+          <label>Prezzo max<input id="priceMaxFilter" type="number" inputmode="numeric" min="0" placeholder="—" /></label>
+        </div>
+        <div class="toggle-grid">
+          <label class="switch-line"><input id="onlyAvailable" type="checkbox" /><span>Solo liberi</span></label>
+          <label class="switch-line"><input id="onlyFavorites" type="checkbox" /><span>Solo preferiti</span></label>
+          <label class="switch-line"><input id="onlyComments" type="checkbox" /><span>Solo con commento</span></label>
+          <label class="switch-line"><input id="compactMode" type="checkbox" /><span>Modalità compatta</span></label>
+          <label class="switch-line"><input id="liveModeCheck" type="checkbox" /><span>Modalità asta live</span></label>
+        </div>
+        <label class="slider-field">Enfasi dimensione <span id="emphasisValue">65%</span>
+          <input id="emphasisSlider" type="range" min="0" max="100" step="1" value="65" />
+        </label>
+      </section>
+
+      <section class="market-strip">
+        <div>
+          <span class="muted">Pressione mercato</span>
+          <strong id="marketPressure">—</strong>
+        </div>
+        <div id="slotSummary" class="slot-summary"></div>
+      </section>
+
+      <section id="playerList" class="player-list" aria-live="polite"></section>
+      <div id="emptyState" class="empty-state hidden">Nessun giocatore corrisponde ai filtri.</div>
+    </main>
+  </div>
+
+  <div id="sheetBackdrop" class="backdrop hidden"></div>
+
+  <section id="playerSheet" class="bottom-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="sheetPlayerName">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div>
+        <h2 id="sheetPlayerName"></h2>
+        <div id="sheetPlayerMeta" class="sheet-meta"></div>
+      </div>
+      <button id="closeSheetBtn" class="icon-btn" aria-label="Chiudi">×</button>
+    </div>
+    <div id="sheetSaveStatus" class="save-status">Salvato</div>
+    <div class="sheet-scroll">
+      <div class="sheet-info-grid" id="sheetInfoGrid"></div>
+      <div class="edit-grid">
+        <label>Slot<input id="editSlot" type="text" autocomplete="off" placeholder="S1" /></label>
+        <label>Affare ≤<input id="editDeal" type="number" inputmode="numeric" min="0" /></label>
+        <label>Ideale min<input id="editIdealMin" type="number" inputmode="numeric" min="0" /></label>
+        <label>Ideale max<input id="editIdealMax" type="number" inputmode="numeric" min="0" /></label>
+        <label>Price cap<input id="editCap" type="number" inputmode="numeric" min="0" /></label>
+        <label>Prezzo acquisto<input id="editPurchase" type="number" inputmode="numeric" min="0" /></label>
+      </div>
+      <label class="full-field">Manager acquirente<input id="editManager" type="text" autocomplete="off" /></label>
+      <label class="full-field">Commento<textarea id="editComment" rows="5" placeholder="Nota personale..."></textarea></label>
+      <div class="sheet-actions">
+        <button id="toggleTakenSheet" class="secondary-btn">Segna preso</button>
+        <button id="toggleFavoriteSheet" class="secondary-btn">☆ Preferito</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="toolsSheet" class="bottom-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="toolsTitle">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div><h2 id="toolsTitle">Strumenti</h2><div class="sheet-meta">Import, backup e gestione dati</div></div>
+      <button id="closeToolsBtn" class="icon-btn" aria-label="Chiudi">×</button>
+    </div>
+    <div class="sheet-scroll tool-list">
+      <button id="importListBtn" class="primary-btn">IMPORTA LISTONE XLSX</button>
+      <input id="listFileInput" type="file" accept=".xlsx,.xls,.csv,.json,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv,application/json" hidden />
+      <button id="exportBackupBtn" class="secondary-btn">Esporta backup</button>
+      <button id="importBackupBtn" class="secondary-btn">Importa backup</button>
+      <input id="backupFileInput" type="file" accept=".json,application/json" hidden />
+      <button id="addPlayerBtn" class="secondary-btn">Aggiungi giocatore</button>
+      <button id="removePlayerBtn" class="secondary-btn">Rimuovi giocatore</button>
+      <label class="full-field">Tema
+        <select id="themeSelect">
+          <option value="system">Sistema</option>
+          <option value="light">Chiaro</option>
+          <option value="dark">Scuro</option>
+        </select>
+      </label>
+      <button id="resetAuctionBtn" class="secondary-btn danger-soft">Reset asta</button>
+      <button id="resetAllBtn" class="secondary-btn danger">Reset completo</button>
+      <p class="tool-note">I dati restano sul dispositivo. Prima di sostituire il listone è consigliato esportare un backup.</p>
+    </div>
+  </section>
+
+  <section id="importSheet" class="bottom-sheet tall-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="importTitle">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div><h2 id="importTitle">Importa listone</h2><div id="importFileMeta" class="sheet-meta"></div></div>
+      <button id="closeImportBtn" class="icon-btn" aria-label="Chiudi">×</button>
+    </div>
+    <div class="sheet-scroll">
+      <div class="warning-box">Puoi caricare il listone aggiornato anche poco prima dell’asta: quotazioni, FVM, squadra e ruoli vengono aggiornati, mentre commenti, prezzi personali, preferiti e stato asta restano separati e vengono conservati.</div>
+      <div class="segmented" id="importModeSegment">
+        <button data-mode="replace" class="active">Sincronizza listone</button>
+        <button data-mode="update">Aggiorna senza rimuovere</button>
+      </div>
+      <div id="mappingGrid" class="mapping-grid"></div>
+      <div id="importStats" class="import-stats"></div>
+      <div id="importChanges" class="import-changes"></div>
+      <div class="preview-wrap">
+        <table id="importPreviewTable"><thead></thead><tbody></tbody></table>
+      </div>
+      <div id="importIssues" class="issues"></div>
+      <div class="sheet-actions sticky-actions">
+        <button id="backupBeforeImportBtn" class="secondary-btn">Esporta backup</button>
+        <button id="confirmImportBtn" class="primary-btn">Conferma importazione</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="simpleFormSheet" class="bottom-sheet hidden" aria-modal="true" role="dialog" aria-labelledby="simpleFormTitle">
+    <div class="sheet-handle"></div>
+    <div class="sheet-header">
+      <div><h2 id="simpleFormTitle">Giocatore</h2><div id="simpleFormSubtitle" class="sheet-meta"></div></div>
+      <button id="closeSimpleFormBtn" class="icon-btn" aria-label="Chiudi">×</button>
+    </div>
+    <div id="simpleFormBody" class="sheet-scroll"></div>
+  </section>
+
+  <div id="toast" class="toast hidden" role="status"><span id="toastMessage"></span><button id="toastAction" class="toast-action hidden" type="button"></button></div>
+
+  <script src="vendor/xlsx-local-reader.js"></script>
+  <script src="players.js"></script>
+  <script src="db.js"></script>
+  <script src="xlsx-import.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

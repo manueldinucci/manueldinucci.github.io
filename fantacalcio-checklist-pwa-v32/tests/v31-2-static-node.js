@@ -1,0 +1,12 @@
+const fs=require('fs'),assert=require('assert');
+const app=fs.readFileSync('app.js','utf8'), css=fs.readFileSync('style.css','utf8'), sw=fs.readFileSync('service-worker.js','utf8');
+assert(app.includes('${remaining}/${total} disponibili'), 'Mappa Slot must use disponibili');
+assert(!app.includes('${remaining}/${total} rimasti'), 'Mappa Slot must not use rimasti');
+assert(app.includes('function slotMapNameText(p)'), 'static slot-map name renderer missing');
+assert(!app.includes('data-slot-map-key='), 'slot-map names must not be clickable');
+assert(!app.includes("querySelectorAll('[data-slot-map-key]')"), 'slot-map click binding must be removed');
+assert(css.includes('.slot-map-role-btn') && css.includes('align-items:center') && css.includes('justify-content:center'), 'role tabs centering missing');
+assert(css.includes('grid-template-columns:48px minmax(0,1fr)'), 'horizontal band layout missing');
+assert(!css.includes('cursor:pointer; }\n.slot-map-player'), 'slot-map player pointer styling remains');
+assert(/fantacalcio-checklist-v31\.(?:10|[2-9])/.test(sw) || sw.includes('fantacalcio-checklist-v32'), 'v31.2+ cache key missing');
+console.log('v31.2 static checks OK');

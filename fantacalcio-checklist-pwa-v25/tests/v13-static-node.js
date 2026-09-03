@@ -1,0 +1,24 @@
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
+function ok(cond, msg){ if(!cond) throw new Error(msg); }
+const version = Number((sw.match(/fantacalcio-checklist-v(\d+)/) || [])[1] || 0);
+const assignSize = css.match(/\.assign-btn\s*\{[\s\S]*?width:\s*(\d+)px;\s*height:\s*(\d+)px;/m);
+ok(assignSize && Number(assignSize[1]) <= 38 && Number(assignSize[2]) <= 38, 'assign button must remain 38x38 or smaller after v13');
+ok(/\.assign-btn::after\s*\{[^}]*inset:\s*-\d+px/.test(css), 'extended touch target must be preserved');
+ok(!app.includes("['Stato',p.preso?'PRESO':'LIBERO']"), 'status chip must be removed from player sheet');
+ok(/\.target-grid\s*\{[\s\S]*?grid-template-columns:\s*minmax\(0, 1fr\) minmax\(0, 1fr\) minmax\(0, 1fr\)/m.test(css), 'target controls must use one three-column row');
+ok(html.includes('<select id="assignmentPrice"'), 'assignment price must be a select');
+ok(!html.includes('id="assignmentPrice" type="number"'), 'numeric assignment price input must be removed');
+ok(app.includes('Array.from({length:300}'), 'price select must generate 1..300');
+ok(app.includes("$('assignmentPrice').addEventListener('change', updateAssignmentPreview)"), 'price select must update validation on change');
+ok(!html.includes('id="assignmentManagerInfo"'), 'manager summary container must be removed');
+ok(!app.includes("$('assignmentManagerInfo')"), 'manager summary rendering must be removed');
+ok(app.includes("$('assignmentValidation').textContent = validation.ok ? 'Assegnazione valida' : validation.reason"), 'assignment validation feedback must remain');
+ok(app.includes('FantaAuction.validateAssignment'), 'assignment validation logic must remain');
+ok(version >= 13, 'service worker cache version must be at least v13');
+console.log('v13 static tests: OK');

@@ -1,0 +1,23 @@
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+const html = fs.readFileSync(path.join(root, 'index.html'), 'utf8');
+const css = fs.readFileSync(path.join(root, 'style.css'), 'utf8');
+const app = fs.readFileSync(path.join(root, 'app.js'), 'utf8');
+const sw = fs.readFileSync(path.join(root, 'service-worker.js'), 'utf8');
+function ok(cond, msg){ if(!cond) throw new Error(msg); }
+ok(html.indexOf('id="compactHeaderBtn"') < html.indexOf('id="themeHeaderBtn"'), 'compact button must be left of theme');
+ok(!html.includes('id="compactMode"'), 'compact mode must be removed from filters');
+ok(!html.includes('id="priceMaxFilter"'), 'Target max filter must be removed');
+ok(html.includes('<select id="minFvmFilter"'), 'FVM minimo must be a select');
+ok(app.includes('Array.from({length:100}'), 'FVM select must generate 1..100');
+ok(app.includes("bindFilter('minFvmFilter','minFvm','change')"), 'FVM select must bind on change');
+ok(!app.includes('state.priceMax'), 'removed price filter state must not be used');
+ok(!app.includes("bindCheck('compactMode'"), 'old compact checkbox binding must be removed');
+ok(app.includes("$('compactHeaderBtn').addEventListener('click', toggleCompact)"), 'compact header toggle must be bound');
+ok(app.includes("btn.setAttribute('aria-pressed', state.compact ? 'true' : 'false')"), 'compact state must be exposed');
+ok(/\.demand-summary\s*\{[\s\S]*?font-size:\s*13px;/m.test(css), 'demand line must be enlarged');
+ok(/\.assign-btn\s*\{[\s\S]*?width:\s*40px;\s*height:\s*40px;/m.test(css), 'assign button must be slightly smaller');
+ok(css.includes('.assign-btn::after'), 'assign button must preserve an extended touch target');
+ok(sw.includes("fantacalcio-checklist-v12"), 'service worker cache must be v12');
+console.log('v12 static tests: OK');

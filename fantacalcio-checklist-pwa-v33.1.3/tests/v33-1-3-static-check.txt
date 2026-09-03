@@ -1,0 +1,10 @@
+Aurea XI v33.1.3 static regression checklist
+- creditAdjustment included centrally in computeManagerStats
+- creditAdjustments persisted as settings record; backup format remains v5
+- Rose CR RIM. remains native summary toggle; + uses stopPropagation
+- manual credit adjustment updates participant balance and Max Bid through central stats
+- unassign default refund = current Q.At.; arbitrary non-negative integer allowed
+- unassign accounting uses creditAdjustment += refund - purchase price
+- auction state + credit adjustment persisted in one IndexedDB transaction
+- old backups without creditAdjustments default to zero
+- cache: fantacalcio-checklist-v33.1.3

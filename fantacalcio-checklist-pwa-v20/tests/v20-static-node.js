@@ -1,0 +1,16 @@
+const fs = require('fs');
+const assert = require('assert');
+const css = fs.readFileSync('style.css','utf8');
+const js = fs.readFileSync('app.js','utf8');
+const sw = fs.readFileSync('service-worker.js','utf8');
+assert(css.includes('/* v20 — tipografia uniforme e tastiera iPhone nella scheda giocatore */'));
+assert(css.includes('#filtersBtn'));
+assert(css.includes('font-size: 14px'));
+assert(css.includes('--visual-viewport-height'));
+assert(css.includes('.player-edit-sheet.keyboard-open'));
+assert(js.includes('window.visualViewport'));
+assert(js.includes('ensurePlayerFieldVisible'));
+assert(js.includes('schedulePlayerFieldVisibility'));
+assert(!js.includes("$('editComment').scrollIntoView"));
+assert(sw.includes('fantacalcio-checklist-v20'));
+console.log('v20 static tests OK');

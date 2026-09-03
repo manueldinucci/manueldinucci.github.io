@@ -1,0 +1,24 @@
+'use strict';
+const fs = require('fs');
+const path = require('path');
+const root = path.resolve(__dirname, '..');
+const html = fs.readFileSync(path.join(root,'index.html'),'utf8');
+const js = fs.readFileSync(path.join(root,'app.js'),'utf8');
+const sw = fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
+function assert(cond,msg){ if(!cond) throw new Error(msg); }
+assert(html.includes('id="filtersPanel" class="bottom-sheet filters-sheet hidden"'), 'Filtri non sono bottom sheet');
+assert(html.includes('id="closeFiltersBtn"'), 'Manca chiusura filtri');
+assert(!html.includes('id="editCap"'), 'Cap ancora nel dettaglio');
+assert(!html.includes('Ultra compatta'), 'Ultra compatta ancora presente');
+assert(!html.includes('id="opponentRoleSummary"'), 'Riepilogo pressione duplicato ancora presente');
+assert(!html.includes('id="auctionConfigSummary"'), 'Riepilogo configurazione ancora presente');
+const sortBlock = html.match(/<select id="managerSort">([\s\S]*?)<\/select>/)?.[1] || '';
+const values = [...sortBlock.matchAll(/value="([^"]+)"/g)].map(m=>m[1]);
+assert(JSON.stringify(values)===JSON.stringify(['slots','maxBid','budget']), 'Ordinamenti non ridotti ai tre richiesti');
+assert(html.includes('id="unassignSheet"'), 'Manca conferma annullamento assegnazione');
+assert(js.includes("$('liveModeBtn').textContent = 'ASTA'"), 'ASTA cambia etichetta');
+assert(js.includes('self-badge">TU'), 'Manca badge TU');
+assert(js.includes('managerRosterDetails'), 'Manca recap rosa');
+assert(js.includes("return '';\n  }\n\n  function purchaseText"), 'Range vuoto non viene soppresso');
+assert(sw.includes('fantacalcio-checklist-v8'), 'Cache Service Worker non v8');
+console.log('V8 static UX checks: OK');

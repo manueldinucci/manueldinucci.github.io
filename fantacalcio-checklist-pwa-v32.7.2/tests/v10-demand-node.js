@@ -1,0 +1,15 @@
+global.window = global;
+require('../auction-logic.js');
+const assert = (c,m)=>{ if(!c) throw new Error(m); };
+const managers = Array.from({length:8},(_,i)=>({id:`m${i}`,nome:`M${i}`}));
+const config = FantaAuction.makeDefaultConfig({budgetInitial:500,minPrice:1,roster:{P:3,D:8,C:8,A:6}});
+let players=[];
+let rows=FantaAuction.computeAllManagerStats(managers,players,config);
+assert(rows.reduce((s,x)=>s+x.stats.roleRemaining.P,0)===24,'Fabbisogno P iniziale deve essere 24');
+players=[{key:'p1',nome:'P1',ruolo:'P',preso:true,manager_id:'m0',manager_acquirente:'M0',prezzo_acquisto:1}];
+rows=FantaAuction.computeAllManagerStats(managers,players,config);
+assert(rows.reduce((s,x)=>s+x.stats.roleRemaining.P,0)===23,'Fabbisogno P dopo assegnazione deve essere 23');
+players.push({key:'a1',nome:'A1',ruolo:'A',preso:true,manager_id:'m1',manager_acquirente:'M1',prezzo_acquisto:10});
+rows=FantaAuction.computeAllManagerStats(managers,players,config);
+assert(rows.reduce((s,x)=>s+x.stats.roleRemaining.A,0)===47,'Fabbisogno A dopo una assegnazione deve essere 47');
+console.log('V10 demand derivation tests: OK');

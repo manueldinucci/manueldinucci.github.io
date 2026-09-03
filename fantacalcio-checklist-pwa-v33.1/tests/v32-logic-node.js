@@ -1,0 +1,21 @@
+const fs = require('fs');
+const vm = require('vm');
+const assert = require('assert');
+let code = fs.readFileSync('db.js','utf8');
+code = code.replace('window.FantaDB = {', 'window.__v32 = { splitPlayerRecord, defaultPersonal };\n  window.FantaDB = {');
+const sandbox = { window:{}, crypto:{ randomUUID:()=> 'generated-id' } };
+vm.createContext(sandbox);
+vm.runInContext(code, sandbox);
+const { splitPlayerRecord, defaultPersonal } = sandbox.window.__v32;
+
+const legacy = splitPlayerRecord({key:'legacy|club', nome:'Legacy', squadra:'Club', ruolo:'A', slot:'S5', preferito:true});
+assert.strictEqual(legacy.personal.oneCreditBuy, false, 'legacy record without oneCreditBuy must default false');
+assert.strictEqual(legacy.personal.preferito, true, 'favorite must remain independent');
+assert.strictEqual(legacy.personal.slot, 'S5', 'slot must remain independent');
+const marked = splitPlayerRecord({key:'marked|club', nome:'Marked', squadra:'Club', ruolo:'A', slot:'S4', target_max:10, oneCreditBuy:true});
+assert.strictEqual(marked.personal.oneCreditBuy, true);
+assert.strictEqual(marked.personal.target_max, 10, 'target must coexist independently with oneCreditBuy');
+const def = defaultPersonal('x');
+assert.strictEqual(def.oneCreditBuy, false);
+assert.strictEqual(def.preferito, false);
+console.log('v32 data-model logic checks: OK');

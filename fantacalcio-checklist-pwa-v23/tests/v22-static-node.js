@@ -1,0 +1,25 @@
+const fs = require('fs');
+const assert = require('assert');
+const players = fs.readFileSync('players.js','utf8');
+const db = fs.readFileSync('db.js','utf8');
+const js = fs.readFileSync('app.js','utf8');
+const css = fs.readFileSync('style.css','utf8');
+const sw = fs.readFileSync('service-worker.js','utf8');
+
+assert(/window\.SEED_PLAYERS\s*=\s*\[\s*\]/.test(players), 'seed runtime must be empty');
+assert(!players.includes('McTominay') && !players.includes('Svilar'), 'demo player data must not remain in runtime seed');
+assert(js.includes('await FantaDB.purgeLegacyDemoPlayers()'), 'v22 must migrate old demo records');
+assert(js.includes('await FantaDB.resetAll();'), 'full reset must not reseed demo records');
+assert(db.includes('async function purgeLegacyDemoPlayers()'));
+assert(db.includes("legacyDemoPurgedV22"));
+assert(js.includes("prezzo_ideale_min: num($('editTargetMin').value)"), 'clearing target min must clear legacy fallback');
+assert(js.includes("prezzo_ideale_max: num($('editTargetMax').value)"), 'clearing target max must clear legacy fallback');
+assert(js.includes('playerPrimaryMetaMarkup'));
+assert(js.includes('player-slot-badge'));
+assert(js.includes('player-target-pill'));
+assert(js.includes("${esc(target)} cr"));
+assert(css.includes('/* v22 — card più immediate'));
+assert(css.includes('.player-slot-badge'));
+assert(css.includes('.player-target-pill'));
+assert(/fantacalcio-checklist-v2[23]/.test(sw));
+console.log('v22 static tests: OK');

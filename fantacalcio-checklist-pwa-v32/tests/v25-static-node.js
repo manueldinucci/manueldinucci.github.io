@@ -1,0 +1,18 @@
+const fs=require('fs'), path=require('path'), assert=require('assert');
+const root=path.join(__dirname,'..');
+const app=fs.readFileSync(path.join(root,'app.js'),'utf8');
+const html=fs.readFileSync(path.join(root,'index.html'),'utf8');
+const css=fs.readFileSync(path.join(root,'style.css'),'utf8');
+const sw=fs.readFileSync(path.join(root,'service-worker.js'),'utf8');
+assert(Number((sw.match(/fantacalcio-checklist-v(\d+)/)||[])[1]||0) >= 25);
+assert(app.includes('Math.pow(n, 1.85)'));
+assert(app.includes("setSearchExpanded(true, true)"));
+assert(app.includes("filtersCountBadge"));
+assert(html.includes('id="searchToggleBtn"'));
+assert(html.includes('aria-label="Ordina per"'));
+assert(html.includes('aria-label="Filtri"'));
+assert(html.includes('M4 5h16l-6.2 7.1'));
+assert(css.includes('.player-card.slot-s1:not(.taken) .player-slot-badge'));
+assert(css.includes('.search-wrap.compact-search'));
+assert(css.includes('.search-wrap.expanded'));
+console.log('v25 static checks passed');
